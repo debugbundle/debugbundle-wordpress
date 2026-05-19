@@ -173,7 +173,7 @@ final class BrowserRelayRoute
             }
 
             if (is_scalar($value)) {
-                $flattened[strtolower($name)] = (string) $value;
+                $flattened[str_replace('_', '-', strtolower($name))] = (string) $value;
             }
         }
 

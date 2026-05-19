@@ -4,6 +4,7 @@ coverage/
 .dist/
 .pnpm-store/
 .tmp/
+.smoke/
 .phpunit.result.cache
 composer-setup.php
 .DS_Store

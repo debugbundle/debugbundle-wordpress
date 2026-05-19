@@ -140,5 +140,10 @@ final class RelaySpool
         if (!is_file($indexFile)) {
             @file_put_contents($indexFile, "<?php\n// Silence is golden.\n");
         }
+
+        $htaccessFile = $directory . '/.htaccess';
+        if (!is_file($htaccessFile)) {
+            @file_put_contents($htaccessFile, "Require all denied\nDeny from all\n");
+        }
     }
 }

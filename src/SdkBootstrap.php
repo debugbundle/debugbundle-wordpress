@@ -22,17 +22,23 @@ final class SdkBootstrap
             return;
         }
 
-        $this->sdk = new DebugBundleSdk();
-        $this->sdk->init([
-            'projectToken' => $this->settings->getProjectToken(),
-            'endpoint' => $this->settings->getEndpoint(),
-            'service' => $this->settings->getService(),
-            'environment' => $this->settings->getEnvironment(),
-            'sampleRate' => $this->settings->getSampleRate(),
-            'logLevel' => $this->settings->getLogLevel(),
-            'configFetcher' => new ConfigFetcher(),
-            'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
-        ]);
+        try {
+            $this->sdk = new DebugBundleSdk();
+            $this->sdk->init([
+                'projectToken' => $this->settings->getProjectToken(),
+                'endpoint' => $this->settings->getEndpoint(),
+                'service' => $this->settings->getService(),
+                'environment' => $this->settings->getEnvironment(),
+                'sampleRate' => $this->settings->getSampleRate(),
+                'logLevel' => $this->settings->getLogLevel(),
+                'configFetcher' => new ConfigFetcher(),
+                'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
+            ]);
+        } catch (\Throwable $throwable) {
+            $this->sdk = null;
+            $this->recordBackendDiagnostic($throwable);
+            return;
+        }
 
         if (function_exists('add_action')) {
             \add_action('init', [$this, 'onInit'], 0);
@@ -46,7 +52,11 @@ final class SdkBootstrap
             return;
         }
 
-        $this->sdk->beginRequest($this->buildRequestPayload());
+        try {
+            $this->sdk->beginRequest($this->buildRequestPayload());
+        } catch (\Throwable $throwable) {
+            $this->recordBackendDiagnostic($throwable);
+        }
     }
 
     public function onShutdown(): void
@@ -55,10 +65,17 @@ final class SdkBootstrap
             return;
         }
 
-        $this->attachContext();
-        $this->sdk->captureRequest($this->buildRequestPayload(), $this->buildResponsePayload());
-        $this->sdk->flush();
-        $this->sdk->endRequest();
+        try {
+            $this->attachContext();
+            $this->sdk->captureRequest($this->buildRequestPayload(), $this->buildResponsePayload());
+            $this->sdk->flush();
+            if ($this->sdk->getLastEventAt() !== null) {
+                Diagnostics::recordBackendFlush($this->sdk->getLastEventAt());
+            }
+            $this->sdk->endRequest();
+        } catch (\Throwable $throwable) {
+            $this->recordBackendDiagnostic($throwable);
+        }
     }
 
     private function attachContext(): void
@@ -169,5 +186,10 @@ final class SdkBootstrap
 
         $salt = function_exists('wp_salt') ? (string) \wp_salt('auth') : 'debugbundle-wordpress';
         return hash_hmac('sha256', (string) $userId, $salt);
+    }
+
+    private function recordBackendDiagnostic(\Throwable $throwable): void
+    {
+        Diagnostics::recordBackendError($throwable->getMessage());
     }
 }

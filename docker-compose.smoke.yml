@@ -19,6 +19,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mock-ingestion:
+        condition: service_healthy
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_NAME: wordpress
@@ -39,6 +41,25 @@ services:
       - wordpress_data:/var/www/html
       - ./:/var/www/html/wp-content/plugins/debugbundle
 
+  mock-ingestion:
+    image: node:24-alpine
+    working_dir: /workspace
+    command: ["node", "scripts/mock-ingestion.mjs"]
+    environment:
+      DEBUGBUNDLE_MOCK_EVENTS_FILE: /workspace/.smoke/ingestion-events.ndjson
+      DEBUGBUNDLE_MOCK_FAIL_FILE: /workspace/.smoke/fail-ingestion
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e 'fetch(\"http://127.0.0.1:18081/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./:/workspace
+
   wpcli:
     image: wordpress:cli-php8.2
     user: "33:33"
@@ -46,6 +67,8 @@ services:
       db:
         condition: service_healthy
       wordpress:
+        condition: service_healthy
+      mock-ingestion:
         condition: service_healthy
     environment:
       WORDPRESS_DB_HOST: db:3306

@@ -19,3 +19,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Added
 
 - Initial standalone WordPress plugin scaffold with backend capture, browser asset build, relay route, spool handling, settings page, and Docker-friendly CI/release workflows.
+- Admin backend/frontend test-event actions for setup verification.
+- Mock-ingestion WordPress smoke coverage for backend and frontend delivery.
+- Admin diagnostics for bundled SDK versions, PHP compatibility, flush status, relay errors, and spool size.
+- Mock-ingestion outage coverage for relay spool creation and retry flush.

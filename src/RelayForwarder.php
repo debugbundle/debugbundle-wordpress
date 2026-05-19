@@ -14,6 +14,7 @@ final class RelayForwarder
     public function forward(array $events): RelayForwardResult
     {
         if (!function_exists('wp_remote_post')) {
+            Diagnostics::recordRelayError('wp_remote_post unavailable');
             return new RelayForwardResult(false, false, 'wp_remote_post unavailable');
         }
 
@@ -28,6 +29,7 @@ final class RelayForwarder
 
         if (function_exists('is_wp_error') && \is_wp_error($response)) {
             $message = method_exists($response, 'get_error_message') ? (string) $response->get_error_message() : 'relay_forward_failed';
+            Diagnostics::recordRelayError($message);
             return new RelayForwardResult(false, false, $message);
         }
 
@@ -36,13 +38,16 @@ final class RelayForwarder
             : 500;
 
         if ($statusCode >= 200 && $statusCode < 300) {
+            Diagnostics::recordRelayFlush();
             return new RelayForwardResult(true, false, null);
         }
 
         if ($statusCode === 429 || $statusCode >= 500) {
+            Diagnostics::recordRelayError('retryable_http_' . $statusCode);
             return new RelayForwardResult(false, false, 'retryable_http_' . $statusCode);
         }
 
+        Diagnostics::recordRelayError('non_retryable_http_' . $statusCode);
         return new RelayForwardResult(false, true, 'non_retryable_http_' . $statusCode);
     }
 }

@@ -48,8 +48,29 @@ cp CHANGELOG.md .dist/debugbundle/
 cp SECURITY.md .dist/debugbundle/
 cp LICENSE .dist/debugbundle/
 cp -R src .dist/debugbundle/
-cp -R assets .dist/debugbundle/
-cp -R vendor .dist/debugbundle/
+mkdir -p .dist/debugbundle/assets
+cp -R assets/dist .dist/debugbundle/assets/
+
+if command -v composer >/dev/null 2>&1; then
+  cp composer.json .dist/debugbundle/
+  cp composer.lock .dist/debugbundle/
+  composer install \
+    --working-dir=.dist/debugbundle \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist
+  rm .dist/debugbundle/composer.json .dist/debugbundle/composer.lock
+else
+  if [ ! -d vendor ]; then
+    echo "Composer is required to build production vendor dependencies when vendor/ is missing" >&2
+    exit 1
+  fi
+  cp -R vendor .dist/debugbundle/
+fi
+
+find .dist/debugbundle/vendor -type d \( -name tests -o -name test -o -name examples -o -name .github \) -prune -exec rm -rf {} +
+find .dist/debugbundle/vendor -type f \( -name phpunit.xml.dist -o -name phpstan.neon -o -name coverage.xml -o -name composer.phar -o -name composer-setup.php \) -delete
 
 (
   cd .dist

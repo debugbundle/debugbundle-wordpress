@@ -6,7 +6,7 @@ This plugin captures backend PHP/WordPress incidents and user-facing browser inc
 
 ## Status
 
-Pre-release scaffold under active development.
+Pre-release plugin under active development. Public setup documentation lives at https://debugbundle.com/docs/integrations/wordpress.
 
 ## Features
 
@@ -16,6 +16,8 @@ Pre-release scaffold under active development.
 - Server-side project-token handling only
 - Bounded relay spool with retry via WP-Cron
 - Simple settings page under `Settings -> DebugBundle`
+- Compact diagnostics for SDK versions, PHP compatibility, flush status, and spool size
+- Backend and frontend test-event buttons for setup verification
 
 ## External Service Behavior
 
@@ -63,7 +65,7 @@ composer typecheck
 make smoke-wordpress
 ```
 
-This boots WordPress and MariaDB in Docker, installs WordPress, activates the plugin, and checks that the browser relay route is registered.
+This boots WordPress, MariaDB, and a mock DebugBundle ingestion service in Docker. It installs WordPress, activates the plugin, verifies the disabled relay response, configures the plugin against the mock endpoint, sends backend and frontend test events, asserts the mock ingestion service received them with the server-side project token, then simulates an ingestion outage and verifies relay spool recovery.
 
 ### WordPress.org assets
 

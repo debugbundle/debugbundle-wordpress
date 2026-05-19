@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       DebugBundle
- * Plugin URI:        https://debugbundle.com/integrations/wordpress
+ * Plugin URI:        https://debugbundle.com/docs/integrations/wordpress
  * Description:       Capture backend and frontend production incidents from WordPress into DebugBundle.
  * Version:           0.1.0
  * Requires at least: 6.5
@@ -19,6 +19,14 @@ declare(strict_types=1);
 
 if (!defined('ABSPATH')) {
     exit;
+}
+
+if (!defined('DEBUGBUNDLE_WORDPRESS_VERSION')) {
+    define('DEBUGBUNDLE_WORDPRESS_VERSION', '0.1.0');
+}
+
+if (!defined('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')) {
+    define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '0.1.7');
 }
 
 $autoload = __DIR__ . '/vendor/autoload.php';

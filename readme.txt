@@ -21,6 +21,8 @@ Features include:
 - same-origin WordPress REST relay for browser events
 - bounded spool and retry behavior for transient delivery failures
 - simple settings page under Settings -> DebugBundle
+- compact diagnostics for SDK versions, flush status, and spool size
+- backend and frontend test-event buttons for setup verification
 
 External service notice:
 
@@ -40,8 +42,9 @@ Privacy note:
 2. Go to Settings -> DebugBundle.
 3. Paste your DebugBundle project token.
 4. Save settings.
+5. Use the test-event buttons on the settings page to verify backend and frontend delivery.
 
-For development validation, the repository includes a Docker-based WordPress smoke test that installs WordPress, activates the plugin, and verifies the relay route is registered.
+For development validation, the repository includes a Docker-based WordPress smoke test that installs WordPress, activates the plugin, verifies backend and frontend delivery against a mock ingestion service, and proves relay spool recovery after a simulated ingestion outage.
 
 == Screenshots ==
 

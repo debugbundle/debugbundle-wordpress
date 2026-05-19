@@ -7,6 +7,11 @@ class WP_REST_Response
     public function __construct(public array $data = [], public int $status = 200)
     {
     }
+
+    public function get_status(): int
+    {
+        return $this->status;
+    }
 }
 
 class WP_Theme
@@ -29,17 +34,24 @@ function register_deactivation_hook(string $file, callable $callback): bool { re
 function add_options_page(string $page_title, string $menu_title, string $capability, string $menu_slug, callable $callback): string { return ''; }
 function register_setting(string $option_group, string $option_name, array $args = []): bool { return true; }
 function settings_fields(string $option_group): void {}
-function submit_button(string $text = 'Save Changes'): void {}
+function submit_button(string $text = 'Save Changes', string $type = 'primary', string $name = 'submit', bool $wrap = true): void {}
 function current_user_can(string $capability): bool { return true; }
 function checked(bool $checked, bool $current = true, bool $display = true): string { return $checked === $current ? 'checked="checked"' : ''; }
 function esc_attr(string $text): string { return $text; }
 function esc_html(string $text): string { return $text; }
+function admin_url(string $path = ''): string { return 'https://example.com/wp-admin/' . $path; }
+function add_query_arg(array $args, string $url = ''): string { return $url . '?' . http_build_query($args); }
+function wp_nonce_field(string|int $action = -1, string $name = '_wpnonce', bool $referer = true, bool $display = true): string { return ''; }
+function check_admin_referer(string|int $action = -1, string $query_arg = '_wpnonce'): int|false { return 1; }
+function wp_safe_redirect(string $location, int $status = 302): bool { return true; }
 function wp_add_inline_script(string $handle, string $data, string $position = 'after'): bool { return true; }
 function wp_enqueue_script(string $handle): bool { return true; }
 function wp_register_script(string $handle, string $src, array $deps = [], string|bool|null $ver = false, array|bool $args = []): bool { return true; }
 function plugins_url(string $path = '', string $plugin = ''): string { return $path; }
 function get_option(string $option, mixed $default = false): mixed { return $default; }
 function delete_option(string $option): bool { return true; }
+function get_transient(string $key): mixed { return false; }
+function set_transient(string $key, mixed $value, int $expiration): bool { return true; }
 function wp_get_environment_type(): string { return 'production'; }
 function home_url(string $path = '', string|null $scheme = null): string { return 'https://example.com' . $path; }
 function site_url(string $path = '', string|null $scheme = null): string { return 'https://example.com' . $path; }
