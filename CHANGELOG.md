@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Changed
 
 - Switched top-level plugin packaging metadata to GPLv2-or-later for WordPress distribution.
+- Aligned the REST browser relay route with the shared PHP relay behavior and vendored relay compliance fixtures while keeping WordPress-specific persistent limiting and spool handling.
 
 ### Added
 

@@ -72,10 +72,10 @@ final class BrowserRelayRoute
             'allowedOrigins' => $this->allowedOrigins(),
             'maxBodyBytes' => 262144,
             'rateLimitPerMinute' => 60,
+            'service' => $this->settings->getBrowserService(),
+            'environment' => $this->settings->getEnvironment(),
             'onAccept' => function (BrowserRelayAcceptedBatch $batch) use (&$acceptedEvents): void {
                 foreach ($batch->events as $event) {
-                    $event['service']['name'] = $this->settings->getBrowserService();
-                    $event['service']['environment'] = $this->settings->getEnvironment();
                     $acceptedEvents[] = $event;
                 }
             },
