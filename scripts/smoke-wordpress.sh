@@ -14,6 +14,24 @@ compose() {
   docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
+prepare_plugin() {
+  if [ ! -r "$REPO_DIR/vendor/autoload.php" ]; then
+    docker run --rm -t \
+      -v "$REPO_DIR:/workspace" \
+      -w /workspace \
+      composer:2 \
+      composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+  fi
+
+  if [ ! -r "$REPO_DIR/assets/dist/debugbundle-browser.js" ]; then
+    docker run --rm -t \
+      -v "$REPO_DIR:/workspace" \
+      -w /workspace \
+      node:24-alpine \
+      sh -lc "corepack enable && corepack pnpm install --frozen-lockfile=false && corepack pnpm build"
+  fi
+}
+
 cleanup() {
   compose down -v --remove-orphans >/dev/null 2>&1 || true
 }
@@ -22,6 +40,8 @@ trap cleanup EXIT INT TERM
 
 rm -rf "$REPO_DIR/.smoke"
 mkdir -p "$REPO_DIR/.smoke"
+
+prepare_plugin
 
 compose up -d --wait db mock-ingestion wordpress
 
