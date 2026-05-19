@@ -1,0 +1,9 @@
+parameters:
+  level: 1
+  paths:
+    - src
+    - tests
+  bootstrapFiles:
+    - stubs/wordpress.php
+  scanFiles:
+    - stubs/wordpress.php

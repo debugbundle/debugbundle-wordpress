@@ -1,0 +1,156 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable plugin version to release (for example 0.1.0)
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.32.1 --activate
+
+      - name: Resolve release version
+        id: release_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          if [[ -z "$version" ]]; then
+            echo "missing_version" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Validate PHP requirement
+        shell: bash
+        run: php -r '$composer=json_decode(file_get_contents("composer.json"), true); if (($composer["require"]["php"] ?? "") !== ">=8.2") { fwrite(STDERR, "unexpected_php_requirement\n"); exit(1);} '
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests and build
+        run: |
+          composer test
+          composer typecheck
+          pnpm build
+
+      - name: Make release script executable
+        run: chmod +x scripts/assemble-release.sh
+
+      - name: Assemble release ZIP
+        run: ./scripts/assemble-release.sh "${{ steps.release_version.outputs.value }}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.release_version.outputs.value }}
+          files: |
+            .dist/debugbundle-wordpress-${{ steps.release_version.outputs.value }}.zip
+            .dist/debugbundle-wordpress-${{ steps.release_version.outputs.value }}.zip.sha256
+          generate_release_notes: true
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests and build
+        run: |
+          composer test
+          composer typecheck
+          pnpm build
+
+      - name: Make release script executable
+        run: chmod +x scripts/assemble-release.sh
+
+      - name: Assemble release directory
+        run: ./scripts/assemble-release.sh "${{ steps.release_version.outputs.value }}"
+
+      - name: Install Subversion and rsync
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes subversion rsync
+
+      - name: Sync plugin to WordPress.org SVN working copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.release_version.outputs.value }}"
+          svn_url="https://plugins.svn.wordpress.org/${WORDPRESS_PLUGIN_SLUG}"
+          svn_dir="$(mktemp -d)"
+
+          svn checkout "$svn_url" "$svn_dir" \
+            --username "$WORDPRESS_ORG_USERNAME" \
+            --password "$WORDPRESS_ORG_PASSWORD" \
+            --non-interactive \
+            --no-auth-cache
+
+          mkdir -p "$svn_dir/trunk" "$svn_dir/tags"
+          rsync -rc --delete --exclude='.svn' .dist/debugbundle/ "$svn_dir/trunk/"
+
+          rm -rf "$svn_dir/tags/$version"
+          mkdir -p "$svn_dir/tags/$version"
+          rsync -rc --delete --exclude='.svn' "$svn_dir/trunk/" "$svn_dir/tags/$version/"
+
+          if [[ -d .wordpress-org/assets ]]; then
+            mkdir -p "$svn_dir/assets"
+            rsync -rc --delete --exclude='.svn' .wordpress-org/assets/ "$svn_dir/assets/"
+          fi
+
+          cd "$svn_dir"
+
+          while IFS= read -r path; do
+            svn rm --force "$path"
+          done < <(svn status | sed -n 's/^!       //p')
+
+          while IFS= read -r path; do
+            svn add --force "$path"
+          done < <(svn status | sed -n 's/^?       //p')
+
+          if [[ -z "$(svn status)" ]]; then
+            echo "No WordPress.org changes to commit"
+            exit 0
+          fi
+
+          svn commit -m "Deploy version $version" \
+            --username "$WORDPRESS_ORG_USERNAME" \
+            --password "$WORDPRESS_ORG_PASSWORD" \
+            --non-interactive \
+            --no-auth-cache
