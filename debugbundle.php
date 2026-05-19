@@ -3,7 +3,7 @@
  * Plugin Name:       DebugBundle
  * Plugin URI:        https://debugbundle.com/docs/integrations/wordpress
  * Description:       Capture backend and frontend production incidents from WordPress into DebugBundle.
- * Version:           0.1.0
+ * Version:           0.1.6
  * Requires at least: 6.5
  * Requires PHP:      8.2
  * Author:            DebugBundle
@@ -12,7 +12,6 @@
  * License URI:       https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * Text Domain:       debugbundle
  * Domain Path:       /languages
- * Update URI:        https://github.com/debugbundle/debugbundle-wordpress
  */
 
 declare(strict_types=1);
@@ -22,18 +21,18 @@ if (!defined('ABSPATH')) {
 }
 
 if (!defined('DEBUGBUNDLE_WORDPRESS_VERSION')) {
-    define('DEBUGBUNDLE_WORDPRESS_VERSION', '0.1.0');
+    define('DEBUGBUNDLE_WORDPRESS_VERSION', '0.1.6');
 }
 
 if (!defined('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')) {
     define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '0.1.7');
 }
 
-$autoload = __DIR__ . '/vendor/autoload.php';
-if (!is_readable($autoload)) {
+$debugbundleAutoload = __DIR__ . '/vendor/autoload.php';
+if (!is_readable($debugbundleAutoload)) {
     return;
 }
 
-require $autoload;
+require $debugbundleAutoload;
 
 \DebugBundleWp\Plugin::boot(__FILE__);

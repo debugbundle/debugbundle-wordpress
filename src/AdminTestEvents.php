@@ -8,8 +8,25 @@ use DebugBundle\DebugBundleSdk;
 
 final class AdminTestEvents
 {
-    public function __construct(private readonly Settings $settings)
-    {
+    private readonly Diagnostics $diagnostics;
+    private readonly RelaySpool $spool;
+
+    /** @var \Closure(): object */
+    private readonly \Closure $relayRouteFactory;
+
+    public function __construct(
+        private readonly Settings $settings,
+        ?Diagnostics $diagnostics = null,
+        ?RelaySpool $spool = null,
+        ?callable $relayRouteFactory = null,
+    ) {
+        $this->spool = $spool ?? new RelaySpool();
+        $this->diagnostics = $diagnostics ?? new Diagnostics($this->spool);
+        $this->relayRouteFactory = $relayRouteFactory !== null
+            ? \Closure::fromCallable($relayRouteFactory)
+            : function (): BrowserRelayRoute {
+                return new BrowserRelayRoute($this->settings, 'debugbundle_admin_test_relay');
+            };
     }
 
     public function sendBackend(): AdminTestResult
@@ -83,7 +100,10 @@ final class AdminTestEvents
         }
 
         try {
-            $route = new BrowserRelayRoute($this->settings, 'debugbundle_admin_test_relay');
+            $beforeStatus = $this->diagnostics->status();
+            $beforeSpoolCount = $this->spool->stats()['count'];
+            $routeFactory = $this->relayRouteFactory;
+            $route = $routeFactory();
             $response = $route->handleRequest(new class($this->sameOrigin(), $payload) {
                 public function __construct(
                     private readonly string $origin,
@@ -112,12 +132,38 @@ final class AdminTestEvents
             });
 
             $status = $this->responseStatus($response);
-            if ($status >= 200 && $status < 300) {
-                return new AdminTestResult(true, 'Frontend relay test event sent to DebugBundle.');
+            $body = $this->responseBody($response);
+            $accepted = $this->responseCount($body, 'accepted');
+            $rejected = $this->responseCount($body, 'rejected');
+            $errors = $this->responseErrors($body);
+
+            if ($status < 200 || $status >= 300) {
+                Diagnostics::recordRelayError('Frontend relay test event rejected with status ' . $status . '.');
+                return new AdminTestResult(false, 'Frontend relay test event was rejected with status ' . $status . '.');
             }
 
-            Diagnostics::recordRelayError('Frontend relay test event rejected with status ' . $status . '.');
-            return new AdminTestResult(false, 'Frontend relay test event was rejected with status ' . $status . '.');
+            if ($accepted < 1) {
+                return new AdminTestResult(false, 'Frontend relay test event was accepted by the route but no browser event passed validation.');
+            }
+
+            if ($rejected > 0 || $errors !== []) {
+                return new AdminTestResult(false, 'Frontend relay test event was only partially accepted: ' . $this->formatErrors($errors));
+            }
+
+            $afterSpoolCount = $this->spool->stats()['count'];
+            $afterStatus = $this->diagnostics->status();
+            $afterRelayError = (string) ($afterStatus['last_relay_error'] ?? '');
+            $beforeRelayError = (string) ($beforeStatus['last_relay_error'] ?? '');
+
+            if ($afterSpoolCount > $beforeSpoolCount) {
+                return new AdminTestResult(false, 'Frontend relay test event was queued for retry instead of being forwarded immediately. Check Last relay error in Status before expecting an incident.');
+            }
+
+            if ($afterRelayError !== '' && $afterRelayError !== $beforeRelayError) {
+                return new AdminTestResult(false, 'Frontend relay test event hit a relay delivery error: ' . $afterRelayError);
+            }
+
+            return new AdminTestResult(true, 'Frontend relay test event sent to DebugBundle for service ' . $this->settings->getBrowserService() . '.');
         } catch (\Throwable $throwable) {
             Diagnostics::recordRelayError($throwable->getMessage());
             return new AdminTestResult(false, 'Frontend relay test event failed: ' . $this->safeErrorMessage($throwable));
@@ -127,26 +173,43 @@ final class AdminTestEvents
     /** @return array<string, mixed> */
     private function browserTestEvent(): array
     {
+        $browserSdkVersion = defined('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')
+            ? (string) constant('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')
+            : '0.1.7';
+        $traceId = $this->uuidV4();
+        $sessionId = $this->uuidV4();
+        $route = '/wp-admin/options-general.php?page=debugbundle';
+
         return [
             'schema_version' => '2026-03-01',
             'event_id' => $this->uuidV4(),
             'event_type' => 'frontend_exception',
             'occurred_at' => gmdate('Y-m-d\TH:i:s') . 'Z',
             'sdk_name' => '@debugbundle/sdk-browser',
-            'sdk_version' => '0.1.7',
+            'sdk_version' => $browserSdkVersion,
             'service' => [
                 'name' => $this->settings->getBrowserService(),
+                'runtime' => 'browser',
+                'framework' => null,
                 'environment' => $this->settings->getEnvironment(),
             ],
             'correlation' => [
-                'trace_id' => $this->uuidV4(),
+                'request_id' => null,
+                'trace_id' => $traceId,
+                'session_id' => $sessionId,
+                'user_id_hash' => null,
             ],
             'payload' => [
                 'name' => 'DebugBundleWordPressFrontendTestError',
                 'message' => 'DebugBundle WordPress frontend test event',
-                'stack' => 'DebugBundleWordPressFrontendTestError: DebugBundle WordPress frontend test event',
-                'url' => $this->siteUrl('/'),
+                'stack' => "DebugBundleWordPressFrontendTestError: DebugBundle WordPress frontend test event\n    at wordpress-admin-test.js:1:1",
+                'route' => $route,
+                'browser' => [
+                    'name' => 'WordPress admin relay test',
+                    'version' => $browserSdkVersion,
+                ],
                 'breadcrumbs' => [],
+                'device' => null,
             ],
         ];
     }
@@ -154,7 +217,7 @@ final class AdminTestEvents
     private function sameOrigin(): string
     {
         $url = $this->siteUrl('/');
-        $parts = parse_url($url);
+        $parts = \wp_parse_url($url);
         if (!is_array($parts) || !isset($parts['scheme'], $parts['host'])) {
             return 'https://example.com';
         }
@@ -195,6 +258,57 @@ final class AdminTestEvents
         }
 
         return 500;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function responseBody(mixed $response): ?array
+    {
+        if (is_object($response) && method_exists($response, 'get_data')) {
+            $data = $response->get_data();
+            return is_array($data) ? $data : null;
+        }
+
+        if (is_object($response) && isset($response->body) && is_array($response->body)) {
+            return $response->body;
+        }
+
+        if (is_array($response) && isset($response['body']) && is_array($response['body'])) {
+            return $response['body'];
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed>|null $body */
+    private function responseCount(?array $body, string $key): int
+    {
+        if ($body === null || !isset($body[$key])) {
+            return 0;
+        }
+
+        return max(0, (int) $body[$key]);
+    }
+
+    /** @param array<string, mixed>|null $body
+     *  @return list<string>
+     */
+    private function responseErrors(?array $body): array
+    {
+        if ($body === null || !isset($body['errors']) || !is_array($body['errors'])) {
+            return [];
+        }
+
+        return array_values(array_filter($body['errors'], 'is_string'));
+    }
+
+    /** @param list<string> $errors */
+    private function formatErrors(array $errors): string
+    {
+        if ($errors === []) {
+            return 'unknown relay validation error';
+        }
+
+        return implode(' ', $errors);
     }
 
     private function safeErrorMessage(\Throwable $throwable): string

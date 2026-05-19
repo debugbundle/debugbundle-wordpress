@@ -80,7 +80,7 @@ This regenerates the icon, banner, and screenshot PNG assets in `.wordpress-org/
 Build a local release artifact with:
 
 ```bash
-make release-artifact VERSION=0.1.0
+make release-artifact VERSION=0.1.6
 ```
 
 This creates `.dist/debugbundle-wordpress-<version>.zip` and a matching SHA-256 checksum. The packaged plugin directory inside the archive remains `debugbundle/` for WordPress compatibility.

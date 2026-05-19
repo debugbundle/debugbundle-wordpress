@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace DebugBundleWp;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 final class Plugin
 {
     private const CRON_HOOK = 'debugbundle_flush_relay_spool';

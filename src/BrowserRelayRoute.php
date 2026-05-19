@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace DebugBundleWp;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use DebugBundle\Relay\BrowserRelayAcceptedBatch;
 use DebugBundle\Relay\BrowserRelayHandler;
 
@@ -63,9 +67,9 @@ final class BrowserRelayRoute
             return $this->response(['accepted' => 0, 'rejected' => 0, 'errors' => ['rate_limited']], 429);
         }
 
-        $headers = method_exists($request, 'get_headers') ? (array) $request->get_headers() : Sanitization::requestHeadersFromServer($_SERVER);
+        $headers = method_exists($request, 'get_headers') ? (array) $request->get_headers() : Sanitization::requestHeadersFromServer(Sanitization::serverInputArray());
         $body = method_exists($request, 'get_body') ? (string) $request->get_body() : file_get_contents('php://input');
-        $method = method_exists($request, 'get_method') ? (string) $request->get_method() : (string) ($_SERVER['REQUEST_METHOD'] ?? 'POST');
+        $method = method_exists($request, 'get_method') ? (string) $request->get_method() : Sanitization::requestMethod('POST');
 
         $acceptedEvents = [];
         $handler = new BrowserRelayHandler([
@@ -76,7 +80,7 @@ final class BrowserRelayRoute
             'environment' => $this->settings->getEnvironment(),
             'onAccept' => function (BrowserRelayAcceptedBatch $batch) use (&$acceptedEvents): void {
                 foreach ($batch->events as $event) {
-                    $acceptedEvents[] = $event;
+                    $acceptedEvents[] = $this->completeBrowserEventEnvelope($event);
                 }
             },
         ]);
@@ -142,7 +146,7 @@ final class BrowserRelayRoute
                 continue;
             }
 
-            $parts = parse_url($candidate);
+            $parts = \wp_parse_url($candidate);
             if (!is_array($parts) || !isset($parts['scheme'], $parts['host'])) {
                 continue;
             }
@@ -155,6 +159,30 @@ final class BrowserRelayRoute
         }
 
         return array_values(array_unique($origins));
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private function completeBrowserEventEnvelope(array $event): array
+    {
+        $service = isset($event['service']) && is_array($event['service']) ? $event['service'] : [];
+        $service['runtime'] = $service['runtime'] ?? 'browser';
+        $service['framework'] = $service['framework'] ?? null;
+        $event['service'] = $service;
+
+        if (isset($event['correlation']) && is_array($event['correlation'])) {
+            $correlation = $event['correlation'];
+            $event['correlation'] = [
+                'request_id' => isset($correlation['request_id']) && is_string($correlation['request_id']) ? $correlation['request_id'] : null,
+                'trace_id' => isset($correlation['trace_id']) && is_string($correlation['trace_id']) ? $correlation['trace_id'] : null,
+                'session_id' => isset($correlation['session_id']) && is_string($correlation['session_id']) ? $correlation['session_id'] : null,
+                'user_id_hash' => isset($correlation['user_id_hash']) && is_string($correlation['user_id_hash']) ? $correlation['user_id_hash'] : null,
+            ];
+        }
+
+        return $event;
     }
 
     /** @param array<string, mixed> $headers

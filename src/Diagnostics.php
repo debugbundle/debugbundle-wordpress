@@ -10,6 +10,7 @@ final class Diagnostics
     private const LAST_BACKEND_ERROR = 'debugbundle_last_backend_error';
     private const LAST_RELAY_FLUSH = 'debugbundle_last_relay_flush_at';
     private const LAST_RELAY_ERROR = 'debugbundle_last_relay_error';
+    private const LAST_RELAY_INGESTION_RESULT = 'debugbundle_last_relay_ingestion_result';
 
     public function __construct(private readonly RelaySpool $spool = new RelaySpool())
     {
@@ -29,6 +30,7 @@ final class Diagnostics
             'last_backend_error' => $this->transientString(self::LAST_BACKEND_ERROR),
             'last_relay_flush' => $this->transientString(self::LAST_RELAY_FLUSH),
             'last_relay_error' => $this->transientString(self::LAST_RELAY_ERROR),
+            'last_relay_ingestion_result' => $this->transientString(self::LAST_RELAY_INGESTION_RESULT),
             'spool_file_count' => $spoolStats['count'],
             'spool_size_bytes' => $spoolStats['size'],
         ];
@@ -52,6 +54,11 @@ final class Diagnostics
     public static function recordRelayError(string $message): void
     {
         self::setStatus(self::LAST_RELAY_ERROR, substr($message, 0, 500));
+    }
+
+    public static function recordRelayIngestionResult(int $accepted, int $rejected, string $errors): void
+    {
+        self::setStatus(self::LAST_RELAY_INGESTION_RESULT, substr(sprintf('accepted=%d rejected=%d errors=%s', $accepted, $rejected, $errors), 0, 500));
     }
 
     private function phpSdkVersion(): string

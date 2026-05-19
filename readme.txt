@@ -2,8 +2,8 @@
 Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
-Tested up to: 6.8
-Stable tag: 0.1.0
+Tested up to: 6.9
+Stable tag: 0.1.6
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -66,6 +66,34 @@ No. The first release is focused on public-site capture.
 No. The plugin requires a saved project token before it can forward backend or browser incidents to DebugBundle.
 
 == Changelog ==
+
+
+= 0.1.6 =
+
+* Replace the remaining raw config-fetch error propagation with a stable plugin-owned failure message so WordPress Plugin Check no longer flags the exception path.
+
+= 0.1.5 =
+
+* Address WordPress Plugin Check compliance issues around metadata, direct-access guards, WordPress-safe request handling, and filesystem APIs.
+
+= 0.1.4 =
+
+* Break long sampling and log-level helper text into stacked description lines so the settings page reads more cleanly.
+
+= 0.1.3 =
+
+* Complete browser relay correlation fields before forwarding so frontend events satisfy the current ingestion schema.
+
+= 0.1.2 =
+
+* Report the DebugBundle ingestion response for frontend relay deliveries, including accepted and rejected counts.
+* Treat ingestion-level rejected events as relay test failures even when the HTTP request itself returned 202.
+
+= 0.1.1 =
+
+* Hide the saved project token in a password field on the settings page.
+* Clarify sampling and log-level settings with concrete explanations.
+* Send a schema-valid frontend relay test event and report relay forwarding errors instead of showing a false success.
 
 = 0.1.0 =
 

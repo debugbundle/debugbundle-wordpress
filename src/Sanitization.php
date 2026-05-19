@@ -6,6 +6,13 @@ namespace DebugBundleWp;
 
 final class Sanitization
 {
+    /** @return array<string, mixed> */
+    public static function serverInputArray(): array
+    {
+        $server = filter_input_array(INPUT_SERVER, FILTER_UNSAFE_RAW);
+        return is_array($server) ? $server : [];
+    }
+
     /** @param array<string, mixed> $server
      *  @return array<string, string>
      */
@@ -32,10 +39,30 @@ final class Sanitization
         return $headers;
     }
 
+    public static function requestMethod(string $default): string
+    {
+        $method = self::serverValue('REQUEST_METHOD');
+        if ($method === null || $method === '') {
+            return $default;
+        }
+
+        return strtoupper($method);
+    }
+
+    public static function requestUri(string $default): string
+    {
+        $requestUri = self::serverValue('REQUEST_URI');
+        if ($requestUri === null || $requestUri === '') {
+            return $default;
+        }
+
+        return $requestUri;
+    }
+
     public static function ipAddress(): ?string
     {
         $candidates = [
-            $_SERVER['REMOTE_ADDR'] ?? null,
+            self::serverValue('REMOTE_ADDR'),
         ];
 
         foreach ($candidates as $candidate) {
@@ -55,5 +82,21 @@ final class Sanitization
     public static function hashIp(?string $ipAddress): string
     {
         return hash('sha256', $ipAddress ?? 'unknown');
+    }
+
+    private static function serverValue(string $key): ?string
+    {
+        $server = self::serverInputArray();
+        $candidate = $server[$key] ?? null;
+        if (!is_scalar($candidate)) {
+            return null;
+        }
+
+        $value = (string) $candidate;
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
+        }
+
+        return $value;
     }
 }

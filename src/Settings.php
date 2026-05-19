@@ -234,7 +234,7 @@ final class Settings
             $url = is_string($candidate) ? $candidate : '';
         }
 
-        $host = parse_url($url, PHP_URL_HOST);
+        $host = \wp_parse_url($url, PHP_URL_HOST);
         if (!is_string($host) || $host === '') {
             return 'wordpress-site';
         }

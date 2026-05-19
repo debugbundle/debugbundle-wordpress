@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace DebugBundleWp;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use DebugBundle\DebugBundleSdk;
 
 final class SdkBootstrap
@@ -99,18 +103,11 @@ final class SdkBootstrap
     /** @return array<string, mixed> */
     private function buildRequestPayload(): array
     {
-        $query = [];
-        foreach ($_GET as $key => $value) {
-            if (is_string($key)) {
-                $query[$key] = $value;
-            }
-        }
-
         return [
-            'method' => isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET',
+            'method' => Sanitization::requestMethod('GET'),
             'path' => $this->requestPath(),
-            'query' => $query,
-            'headers' => $this->requestHeaders(),
+            'query' => $this->requestQuery(),
+            'headers' => Sanitization::requestHeadersFromServer(Sanitization::serverInputArray()),
         ];
     }
 
@@ -125,33 +122,29 @@ final class SdkBootstrap
 
     private function requestPath(): string
     {
-        $requestUri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
-        $path = parse_url($requestUri, PHP_URL_PATH);
+        $requestUri = Sanitization::requestUri('/');
+        $path = \wp_parse_url($requestUri, PHP_URL_PATH);
         return is_string($path) && $path !== '' ? $path : '/';
     }
 
-    /** @return array<string, string> */
-    private function requestHeaders(): array
+    /** @return array<string, mixed> */
+    private function requestQuery(): array
     {
-        $headers = [];
-        foreach ($_SERVER as $name => $value) {
-            if (!is_string($name) || !is_scalar($value)) {
+        $query = filter_input_array(INPUT_GET, FILTER_UNSAFE_RAW);
+        if (!is_array($query)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($query as $name => $value) {
+            if (!is_string($name)) {
                 continue;
             }
 
-            $headerName = null;
-            if (str_starts_with($name, 'HTTP_')) {
-                $headerName = str_replace('_', '-', strtolower(substr($name, 5)));
-            } elseif (in_array($name, ['CONTENT_TYPE', 'CONTENT_LENGTH'], true)) {
-                $headerName = str_replace('_', '-', strtolower($name));
-            }
-
-            if ($headerName !== null) {
-                $headers[$headerName] = (string) $value;
-            }
+            $normalized[$name] = $value;
         }
 
-        return $headers;
+        return $normalized;
     }
 
     /** @return array<string, mixed>|null */

@@ -1,6 +1,6 @@
 {
   "name": "debugbundle-wordpress",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "license": "GPL-2.0-or-later",

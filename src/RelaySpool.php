@@ -29,11 +29,10 @@ final class RelaySpool
             return true;
         }
 
-        if (!@mkdir($path, 0700, true) && !is_dir($path)) {
+        if (!function_exists('wp_mkdir_p') || (!\wp_mkdir_p($path) && !is_dir($path))) {
             return false;
         }
 
-        @chmod($path, 0700);
         $this->writeIndexFile($path);
         return true;
     }
@@ -52,7 +51,6 @@ final class RelaySpool
             return null;
         }
 
-        @chmod($filePath, 0600);
         $this->prune();
         return $filePath;
     }
@@ -76,8 +74,8 @@ final class RelaySpool
 
     public function delete(string $filePath): void
     {
-        if (str_starts_with($filePath, $this->path())) {
-            @unlink($filePath);
+        if (str_starts_with($filePath, $this->path()) && function_exists('wp_delete_file')) {
+            \wp_delete_file($filePath);
         }
     }
 

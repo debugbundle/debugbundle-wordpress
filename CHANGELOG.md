@@ -6,6 +6,45 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-19
+
+### Fixed
+
+- Switched the remaining `ConfigFetcher` WP error path to a stable plugin-owned exception message so WordPress Plugin Check no longer flags raw exception output handling.
+
+## [0.1.5] - 2026-05-19
+
+### Fixed
+
+- Addressed WordPress Plugin Check issues across plugin metadata, direct-file-access protection, WordPress-safe input handling, URL parsing, and filesystem operations used by relay spooling and uninstall cleanup.
+
+## [0.1.4] - 2026-05-19
+
+### Changed
+
+- Broke long admin helper copy for sampling, browser session limits, and log levels into stacked description lines so the settings page reads more cleanly in the standard WordPress form layout.
+
+## [0.1.3] - 2026-05-19
+
+### Fixed
+
+- Completed browser relay correlation fields after the bundled PHP relay sanitizer so forwarded frontend events satisfy the current DebugBundle ingestion schema.
+
+## [0.1.2] - 2026-05-19
+
+### Fixed
+
+- Relay forwarding now parses DebugBundle ingestion response bodies and treats `accepted: 0`, partial acceptance, or rejected events as setup-test failures instead of false successful relay flushes.
+- The admin Status block now shows the last relay ingestion result so frontend relay tests expose accepted/rejected counts and rejection reasons.
+
+## [0.1.1] - 2026-05-19
+
+### Fixed
+
+- Hid the saved project token in a password field on the settings page so it no longer renders in plain text.
+- Expanded the sample-rate, frontend session sampling, frontend per-session event cap, and log-level descriptions with concrete behavior guidance.
+- Corrected the admin frontend relay test event payload to match the browser event contract and report relay forwarding failures instead of showing a false success.
+
 ### Changed
 
 - Switched top-level plugin packaging metadata to GPLv2-or-later for WordPress distribution.

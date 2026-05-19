@@ -28,8 +28,7 @@ final class ConfigFetcher
         ]);
 
         if (function_exists('is_wp_error') && \is_wp_error($response)) {
-            $message = method_exists($response, 'get_error_message') ? (string) $response->get_error_message() : 'config_request_failed';
-            throw new RuntimeException($message);
+            throw new RuntimeException('config_request_failed');
         }
 
         $statusCode = function_exists('wp_remote_retrieve_response_code')

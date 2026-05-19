@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 namespace {
-    function get_transient(string $key): int|false
-    {
-        return \DebugBundleWp\Tests\RateLimiterTestState::$instance?->get($key) ?? false;
+    if (!function_exists('get_transient')) {
+        function get_transient(string $key): int|false
+        {
+            return \DebugBundleWp\Tests\RateLimiterTestState::$instance?->get($key) ?? false;
+        }
     }
 
-    function set_transient(string $key, mixed $value, int $expiration): bool
-    {
-        \DebugBundleWp\Tests\RateLimiterTestState::$instance?->set($key, (int) $value);
-        return true;
+    if (!function_exists('set_transient')) {
+        function set_transient(string $key, mixed $value, int $expiration): bool
+        {
+            \DebugBundleWp\Tests\RateLimiterTestState::$instance?->set($key, (int) $value);
+            return true;
+        }
     }
 }
 
