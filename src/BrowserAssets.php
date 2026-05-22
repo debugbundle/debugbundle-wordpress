@@ -43,7 +43,7 @@ final class BrowserAssets
         }
 
         $assetUrl = \plugins_url($relativeAssetPath, $this->pluginFile);
-        $version = is_file($filePath) ? (string) filemtime($filePath) : '0.1.6';
+        $version = is_file($filePath) ? (string) filemtime($filePath) : '0.1.7';
 
         \wp_register_script($handle, $assetUrl, [], $version, true);
         \wp_add_inline_script(

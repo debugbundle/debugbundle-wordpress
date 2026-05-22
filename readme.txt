@@ -3,7 +3,7 @@ Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 0.1.6
+Stable tag: 0.1.7
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -67,6 +67,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 
 == Changelog ==
 
+
+= 0.1.7 =
+
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `0.1.8` so the shipped WordPress asset includes the trace-allowlist hardening fix.
 
 = 0.1.6 =
 

@@ -175,7 +175,7 @@ final class AdminTestEvents
     {
         $browserSdkVersion = defined('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')
             ? (string) constant('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')
-            : '0.1.7';
+            : '0.1.8';
         $traceId = $this->uuidV4();
         $sessionId = $this->uuidV4();
         $route = '/wp-admin/options-general.php?page=debugbundle';

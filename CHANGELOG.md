@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-05-22
+
+### Fixed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `0.1.8` so WordPress release artifacts inherit the browser trace-allowlist hardening that removes caller-provided regex execution.
+
 ## [0.1.6] - 2026-05-19
 
 ### Fixed

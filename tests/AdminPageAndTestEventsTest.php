@@ -350,7 +350,7 @@ final class AdminPageAndTestEventsTest extends TestCase
             'event_type' => 'frontend_exception',
             'occurred_at' => '2026-05-19T19:20:04Z',
             'sdk_name' => '@debugbundle/sdk-browser',
-            'sdk_version' => '0.1.7',
+            'sdk_version' => '0.1.8',
             'service' => [
                 'name' => 'demo-wordpress-browser',
                 'runtime' => 'browser',
@@ -368,7 +368,7 @@ final class AdminPageAndTestEventsTest extends TestCase
                 'message' => 'DebugBundle WordPress frontend test event',
                 'stack' => "DebugBundleWordPressFrontendTestError: DebugBundle WordPress frontend test event\n    at wordpress-admin-test.js:1:1",
                 'route' => '/wp-admin/options-general.php?page=debugbundle',
-                'browser' => ['name' => 'WordPress admin relay test', 'version' => '0.1.7'],
+                'browser' => ['name' => 'WordPress admin relay test', 'version' => '0.1.8'],
                 'breadcrumbs' => [],
                 'device' => null,
             ],
