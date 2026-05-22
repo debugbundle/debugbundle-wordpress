@@ -2,7 +2,7 @@
 Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
-Tested up to: 6.9
+Tested up to: 7.0
 Stable tag: 0.1.6
 Requires PHP: 8.2
 License: GPLv2 or later
