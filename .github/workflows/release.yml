@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -29,7 +29,7 @@ jobs:
           tools: composer:v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -76,11 +76,20 @@ jobs:
       - name: Assemble release ZIP
         run: ./scripts/assemble-release.sh "${{ steps.release_version.outputs.value }}"
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.release_version.outputs.value }}
-          files: |
-            .dist/debugbundle-wordpress-${{ steps.release_version.outputs.value }}.zip
-            .dist/debugbundle-wordpress-${{ steps.release_version.outputs.value }}.zip.sha256
-          generate_release_notes: true
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.release_version.outputs.value }}"
+          zip=".dist/debugbundle-wordpress-${{ steps.release_version.outputs.value }}.zip"
+          sha="${zip}.sha256"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$zip" "$sha" --clobber
+          else
+            gh release create "$tag" "$zip" "$sha" \
+              --target "$GITHUB_SHA" \
+              --generate-notes
+          fi
