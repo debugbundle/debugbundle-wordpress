@@ -10,7 +10,7 @@
   },
   "require": {
     "php": ">=8.2",
-    "debugbundle/sdk-php": "^0.1.0"
+    "debugbundle/sdk-php": "^0.1.9"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.5",
