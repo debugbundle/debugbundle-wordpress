@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-05-26
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `0.1.10`, raised the PHP SDK requirement to `debugbundle/sdk-php` `^0.1.9`, and synchronized release metadata files used by the automated plugin packaging checks.
+
 ## [0.1.7] - 2026-05-22
 
 ### Fixed
