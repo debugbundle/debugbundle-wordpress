@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-05-29
+
+### Fixed
+
+- Added browser relay preflight handling and matching CORS headers for the WordPress REST relay so split-host frontend deployments can post through the plugin safely.
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `0.1.11`, raised the PHP SDK requirement to `debugbundle/sdk-php` `^0.1.10`, and synchronized plugin release metadata for the new SDK release set.
+
 ## [0.1.10] - 2026-05-26
 
 ### Changed

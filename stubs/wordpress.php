@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 class WP_REST_Response
 {
-    public function __construct(public array $data = [], public int $status = 200)
+    public function __construct(public array $data = [], public int $status = 200, public array $headers = [])
     {
     }
 
     public function get_status(): int
     {
         return $this->status;
+    }
+
+    public function get_headers(): array
+    {
+        return $this->headers;
     }
 }
 

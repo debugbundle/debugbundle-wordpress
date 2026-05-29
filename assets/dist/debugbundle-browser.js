@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@0.1.8/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@0.1.11/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@0.1.8/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@0.1.11/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4248,7 +4248,408 @@
   var BALANCED_HIGH_VOLUME_ANOMALY_STATUSES = /* @__PURE__ */ new Set([400, 410]);
   var INVESTIGATIVE_ANOMALY_STATUSES = /* @__PURE__ */ new Set([...BALANCED_STANDARD_ANOMALY_STATUSES, ...BALANCED_HIGH_VOLUME_ANOMALY_STATUSES]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@0.1.8/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@0.1.11/node_modules/@debugbundle/shared-types/dist/capture-rules.js
+  var CAPTURE_RULE_EVENT_TYPES = [
+    "backend_exception",
+    "request_event",
+    "log_event",
+    "frontend_breadcrumb",
+    "frontend_exception",
+    "deploy_metadata",
+    "error_suppressed",
+    "probe_event"
+  ];
+  var CAPTURE_RULE_RUNTIME_VALUES = [
+    "browser",
+    "node",
+    "python",
+    "php",
+    "java",
+    "go",
+    "ruby",
+    "unknown"
+  ];
+  var CaptureRuleActionValues = ["demote", "sample", "drop"];
+  var CaptureRuleActionSchema = external_exports.enum(CaptureRuleActionValues);
+  var CaptureRuleSampleEventClassValues = ["preserve", "context"];
+  var CaptureRuleSampleEventClassSchema = external_exports.enum(CaptureRuleSampleEventClassValues);
+  var CaptureRuleRuntimeSchema = external_exports.enum(CAPTURE_RULE_RUNTIME_VALUES);
+  var CaptureRuleEventTypeSchema = external_exports.enum(CAPTURE_RULE_EVENT_TYPES);
+  var BrowserEventKindSchema = external_exports.enum(["window_error", "resource_error"]);
+  function normalizeOptionalTrimmedString(value) {
+    const trimmed = value == null ? void 0 : value.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : void 0;
+  }
+  function normalizeOptionalLowercaseHost(value) {
+    const trimmed = normalizeOptionalTrimmedString(value);
+    return trimmed == null ? void 0 : trimmed.toLowerCase();
+  }
+  function normalizeOptionalPath(value) {
+    const trimmed = normalizeOptionalTrimmedString(value);
+    if (trimmed === void 0) {
+      return void 0;
+    }
+    return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  }
+  function hasValue(value) {
+    return value !== void 0 && value !== null;
+  }
+  var UrlMatcherSchema = external_exports.object({
+    host: external_exports.string().min(1).max(255).optional(),
+    host_suffix: external_exports.string().min(1).max(255).optional(),
+    path_prefix: external_exports.string().min(1).max(1024).optional(),
+    path_equals: external_exports.string().min(1).max(1024).optional()
+  }).transform((value) => {
+    const normalized = {};
+    const host = normalizeOptionalLowercaseHost(value.host);
+    const hostSuffix = normalizeOptionalLowercaseHost(value.host_suffix);
+    const pathPrefix = normalizeOptionalPath(value.path_prefix);
+    const pathEquals = normalizeOptionalPath(value.path_equals);
+    if (host !== void 0) {
+      normalized.host = host;
+    }
+    if (hostSuffix !== void 0) {
+      normalized.host_suffix = hostSuffix;
+    }
+    if (pathPrefix !== void 0) {
+      normalized.path_prefix = pathPrefix;
+    }
+    if (pathEquals !== void 0) {
+      normalized.path_equals = pathEquals;
+    }
+    return normalized;
+  }).refine((value) => hasValue(value.host) || hasValue(value.host_suffix) || hasValue(value.path_prefix) || hasValue(value.path_equals), {
+    message: "URL matchers must include at least one host or path constraint."
+  });
+  var StatusRangeSchema = external_exports.object({
+    start: external_exports.number().int().min(100).max(599),
+    end: external_exports.number().int().min(100).max(599)
+  }).refine((value) => value.start <= value.end, {
+    message: "Status range start must be less than or equal to end."
+  });
+  var CaptureRuleFingerprintSchema = external_exports.object({
+    version: external_exports.string().min(1).max(32),
+    value: external_exports.string().min(1).max(256)
+  });
+  function normalizeStringArray(values) {
+    if (values === void 0) {
+      return void 0;
+    }
+    return Array.from(new Set(values.map((value) => value.trim()).filter((value) => value.length > 0)));
+  }
+  function normalizeNumberArray(values) {
+    if (values === void 0) {
+      return void 0;
+    }
+    return Array.from(new Set(values)).sort((left, right) => left - right);
+  }
+  var CaptureRuleMatcherSchema = external_exports.object({
+    event_types: external_exports.array(CaptureRuleEventTypeSchema).min(1).optional(),
+    services: external_exports.array(external_exports.string().min(1).max(120)).min(1).optional(),
+    environments: external_exports.array(external_exports.string().min(1).max(120)).min(1).optional(),
+    runtime: external_exports.array(CaptureRuleRuntimeSchema).min(1).optional(),
+    first_party: external_exports.boolean().optional(),
+    error_name: external_exports.string().min(1).max(120).optional(),
+    message_contains: external_exports.string().min(1).max(500).optional(),
+    message_equals: external_exports.string().min(1).max(500).optional(),
+    browser_event_kind: BrowserEventKindSchema.optional(),
+    resource_url: UrlMatcherSchema.optional(),
+    request_url: UrlMatcherSchema.optional(),
+    status_codes: external_exports.array(external_exports.number().int().min(100).max(599)).min(1).optional(),
+    status_ranges: external_exports.array(StatusRangeSchema).min(1).optional(),
+    fingerprint: CaptureRuleFingerprintSchema.optional()
+  }).transform((value) => {
+    const normalized = {};
+    const eventTypes = normalizeStringArray(value.event_types);
+    const services = normalizeStringArray(value.services);
+    const environments = normalizeStringArray(value.environments);
+    const runtime = normalizeStringArray(value.runtime);
+    const errorName = normalizeOptionalTrimmedString(value.error_name);
+    const messageContains = normalizeOptionalTrimmedString(value.message_contains);
+    const messageEquals = normalizeOptionalTrimmedString(value.message_equals);
+    const statusCodes = normalizeNumberArray(value.status_codes);
+    if (eventTypes !== void 0) {
+      normalized.event_types = eventTypes;
+    }
+    if (services !== void 0) {
+      normalized.services = services;
+    }
+    if (environments !== void 0) {
+      normalized.environments = environments;
+    }
+    if (runtime !== void 0) {
+      normalized.runtime = runtime;
+    }
+    if (value.first_party !== void 0) {
+      normalized.first_party = value.first_party;
+    }
+    if (errorName !== void 0) {
+      normalized.error_name = errorName;
+    }
+    if (messageContains !== void 0) {
+      normalized.message_contains = messageContains;
+    }
+    if (messageEquals !== void 0) {
+      normalized.message_equals = messageEquals;
+    }
+    if (value.browser_event_kind !== void 0) {
+      normalized.browser_event_kind = value.browser_event_kind;
+    }
+    if (value.resource_url !== void 0) {
+      normalized.resource_url = value.resource_url;
+    }
+    if (value.request_url !== void 0) {
+      normalized.request_url = value.request_url;
+    }
+    if (statusCodes !== void 0) {
+      normalized.status_codes = statusCodes;
+    }
+    if (value.status_ranges !== void 0) {
+      normalized.status_ranges = value.status_ranges;
+    }
+    if (value.fingerprint !== void 0) {
+      normalized.fingerprint = value.fingerprint;
+    }
+    return normalized;
+  }).superRefine((value, context) => {
+    const narrowingKeys = [
+      "services",
+      "environments",
+      "runtime",
+      "first_party",
+      "error_name",
+      "message_contains",
+      "message_equals",
+      "browser_event_kind",
+      "resource_url",
+      "request_url",
+      "status_codes",
+      "status_ranges",
+      "fingerprint"
+    ];
+    if (!narrowingKeys.some((key) => hasValue(value[key]))) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        message: "Capture rules must include at least one narrowing field beyond event_types."
+      });
+    }
+    if (value.browser_event_kind === "resource_error") {
+      const hasResourceConstraint = hasValue(value.resource_url) || hasValue(value.fingerprint);
+      if (!hasResourceConstraint) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          message: "Resource-error rules require a resource URL constraint or an exact fingerprint."
+        });
+      }
+    }
+  });
+  var CaptureRuleCoreObjectSchema = external_exports.object({
+    name: external_exports.string().trim().min(1).max(120),
+    description: external_exports.string().trim().max(500).nullable(),
+    enabled: external_exports.boolean(),
+    action: CaptureRuleActionSchema,
+    matcher: CaptureRuleMatcherSchema,
+    sample_rate: external_exports.number().min(0).max(1).nullable(),
+    sample_event_class: CaptureRuleSampleEventClassSchema.nullable(),
+    created_by_user_id: external_exports.string().min(1).max(120).nullable(),
+    created_from_incident_id: external_exports.string().min(1).max(120).nullable(),
+    created_from_event_id: external_exports.string().min(1).max(120).nullable(),
+    expires_at: external_exports.string().datetime().nullable()
+  });
+  function addCaptureRuleActionValidation(schema) {
+    return schema.superRefine((value, context) => {
+      if (value["action"] === "sample") {
+        if (value["sample_rate"] === null) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["sample_rate"],
+            message: "Sample rules require sample_rate."
+          });
+        }
+        if (value["sample_event_class"] === null) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["sample_event_class"],
+            message: "Sample rules require sample_event_class."
+          });
+        }
+        return;
+      }
+      if (value["sample_rate"] !== null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_rate"],
+          message: "Only sample rules can set sample_rate."
+        });
+      }
+      if (value["sample_event_class"] !== null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_event_class"],
+          message: "Only sample rules can set sample_event_class."
+        });
+      }
+    });
+  }
+  var CaptureRuleSchema = addCaptureRuleActionValidation(CaptureRuleCoreObjectSchema.extend({
+    id: external_exports.string().uuid(),
+    project_id: external_exports.string().min(1).max(120),
+    hit_count: external_exports.number().int().nonnegative(),
+    last_matched_at: external_exports.string().datetime().nullable(),
+    created_at: external_exports.string().datetime(),
+    updated_at: external_exports.string().datetime()
+  }));
+  var CaptureRuleCreateSchema = external_exports.object({
+    name: external_exports.string().trim().min(1).max(120),
+    description: external_exports.string().trim().max(500).nullable().default(null),
+    enabled: external_exports.boolean().default(true),
+    action: CaptureRuleActionSchema,
+    matcher: CaptureRuleMatcherSchema,
+    sample_rate: external_exports.number().min(0).max(1).nullable().optional(),
+    sample_event_class: CaptureRuleSampleEventClassSchema.nullable().optional(),
+    created_by_user_id: external_exports.string().min(1).max(120).nullable().default(null),
+    created_from_incident_id: external_exports.string().min(1).max(120).nullable().default(null),
+    created_from_event_id: external_exports.string().min(1).max(120).nullable().default(null),
+    expires_at: external_exports.string().datetime().nullable().default(null)
+  }).superRefine((value, context) => {
+    if (value.action === "sample") {
+      if (value.sample_rate === void 0 || value.sample_rate === null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_rate"],
+          message: "Sample rules require sample_rate."
+        });
+      }
+      return;
+    }
+    if (value.sample_rate !== void 0 && value.sample_rate !== null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["sample_rate"],
+        message: "Only sample rules can set sample_rate."
+      });
+    }
+    if (value.sample_event_class !== void 0 && value.sample_event_class !== null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["sample_event_class"],
+        message: "Only sample rules can set sample_event_class."
+      });
+    }
+  }).transform((value) => {
+    var _a;
+    return {
+      ...value,
+      sample_rate: value.action === "sample" ? value.sample_rate : null,
+      sample_event_class: value.action === "sample" ? (_a = value.sample_event_class) != null ? _a : "preserve" : null
+    };
+  });
+  var CaptureRuleUpdateSchema = external_exports.object({
+    name: external_exports.string().trim().min(1).max(120).optional(),
+    description: external_exports.string().trim().max(500).nullable().optional(),
+    enabled: external_exports.boolean().optional(),
+    action: CaptureRuleActionSchema.optional(),
+    matcher: CaptureRuleMatcherSchema.optional(),
+    sample_rate: external_exports.number().min(0).max(1).nullable().optional(),
+    sample_event_class: CaptureRuleSampleEventClassSchema.nullable().optional(),
+    expires_at: external_exports.string().datetime().nullable().optional()
+  }).superRefine((value, context) => {
+    if (Object.keys(value).length === 0) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        message: "At least one capture rule field must be provided."
+      });
+    }
+    const resolvedAction = value.action;
+    if (resolvedAction === "sample") {
+      if (!("sample_rate" in value)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_rate"],
+          message: "Sample rule updates must include sample_rate when changing action to sample."
+        });
+      }
+      if (!("sample_event_class" in value)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_event_class"],
+          message: "Sample rule updates must include sample_event_class when changing action to sample."
+        });
+      }
+      return;
+    }
+    if ("sample_rate" in value) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["sample_rate"],
+        message: "Sample rule fields can only be updated while setting action to sample."
+      });
+    }
+    if ("sample_event_class" in value) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["sample_event_class"],
+        message: "Sample rule fields can only be updated while setting action to sample."
+      });
+    }
+  });
+  var CaptureRuleResponseSchema = external_exports.object({
+    rule: CaptureRuleSchema
+  });
+  var CaptureRulesResponseSchema = external_exports.object({
+    access_mode: external_exports.enum(["manage", "preview"]),
+    rules: external_exports.array(CaptureRuleSchema)
+  });
+  var CaptureRulesFileSchema = external_exports.object({
+    version: external_exports.literal(1),
+    rules: external_exports.array(CaptureRuleSchema)
+  });
+  var CaptureRuleEvaluationUrlSchema = external_exports.object({
+    host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
+    path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
+  });
+  var CaptureRuleEvaluationContextSchema = external_exports.object({
+    project_id: external_exports.string().min(1).max(120),
+    event_id: external_exports.string().uuid(),
+    event_type: CaptureRuleEventTypeSchema,
+    service: external_exports.string().min(1).optional(),
+    environment: external_exports.string().min(1).optional(),
+    runtime: CaptureRuleRuntimeSchema,
+    first_party: external_exports.boolean().optional(),
+    error_name: external_exports.string().min(1).optional(),
+    message: external_exports.string().min(1).optional(),
+    browser_event_kind: BrowserEventKindSchema.optional(),
+    resource_url: CaptureRuleEvaluationUrlSchema.optional(),
+    request_url: CaptureRuleEvaluationUrlSchema.optional(),
+    status_code: external_exports.number().int().min(0).max(599).optional(),
+    fingerprint: CaptureRuleFingerprintSchema.optional()
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@0.1.11/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
+  var CaptureRuleSuggestionSchema = external_exports.object({
+    suggestion_id: external_exports.string().min(1).max(120),
+    label: external_exports.string().min(1).max(200),
+    recommended_action: CaptureRuleActionSchema,
+    confidence: CaptureRuleSuggestionConfidenceSchema,
+    reason: external_exports.string().min(1).max(500),
+    requires_confirmation: external_exports.boolean(),
+    rule: CaptureRuleCreateSchema
+  });
+  var CaptureRuleSuggestionsResponseSchema = external_exports.object({
+    suggestions: external_exports.array(CaptureRuleSuggestionSchema),
+    bundle_status: external_exports.enum(["ready", "pending", "failed"]).optional(),
+    bundle_reason: external_exports.string().nullable().optional()
+  });
+  var CreateCaptureRuleFromSuggestionSchema = external_exports.object({
+    suggestion_id: external_exports.string().min(1).max(120),
+    name: external_exports.string().trim().min(1).max(120).optional(),
+    description: external_exports.string().trim().max(500).nullable().optional(),
+    enabled: external_exports.boolean().optional(),
+    expires_at: external_exports.string().datetime().nullable().optional()
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@0.1.11/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4271,7 +4672,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@0.1.8/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@0.1.11/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4405,6 +4806,18 @@
     connection_type: external_exports.string().nullable(),
     color_scheme_preference: external_exports.enum(["light", "dark", "no-preference"]).nullable()
   }).strict();
+  var BrowserExceptionEventSchema = external_exports.object({
+    kind: external_exports.enum(["window_error", "resource_error"]),
+    message: external_exports.string().nullable(),
+    file_name: external_exports.string().nullable(),
+    line_number: external_exports.number().int().nonnegative().nullable(),
+    column_number: external_exports.number().int().nonnegative().nullable(),
+    target: external_exports.object({
+      tag_name: external_exports.string().nullable(),
+      source_url: external_exports.string().nullable()
+    }).nullable(),
+    opaque: external_exports.boolean()
+  }).strict();
   var FrontendExceptionPayloadSchema = external_exports.object({
     name: external_exports.string().min(1),
     message: external_exports.string().min(1),
@@ -4416,6 +4829,7 @@
     }),
     breadcrumbs: external_exports.array(FrontendExceptionBreadcrumbSchema).optional(),
     device: DeviceInfoSchema.nullable().optional(),
+    browser_event: BrowserExceptionEventSchema.optional(),
     dom_context: external_exports.object({
       mode: external_exports.literal("lightweight"),
       html_excerpt: external_exports.string().min(1)
@@ -4781,11 +5195,537 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  function asRecord(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      return null;
+    }
+    return value;
+  }
+  function asString(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  }
+  function asBoolean(value) {
+    return typeof value === "boolean" ? value : null;
+  }
+  function asInteger(value) {
+    return typeof value === "number" && Number.isInteger(value) ? value : null;
+  }
+  function asNumber(value) {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+  function normalizeRuntime(value) {
+    switch (value == null ? void 0 : value.trim().toLowerCase()) {
+      case "browser":
+        return "browser";
+      case "node":
+      case "nodejs":
+        return "node";
+      case "python":
+        return "python";
+      case "php":
+        return "php";
+      case "java":
+        return "java";
+      case "go":
+      case "golang":
+        return "go";
+      case "ruby":
+        return "ruby";
+      default:
+        return "unknown";
+    }
+  }
+  function normalizePath(value) {
+    var _a;
+    const path = (_a = value.split(/[?#]/, 1)[0]) != null ? _a : "";
+    if (path.length === 0) {
+      return "/";
+    }
+    return path.startsWith("/") ? path : `/${path}`;
+  }
+  function normalizeEvaluationUrl(value) {
+    const trimmed = value == null ? void 0 : value.trim();
+    if (trimmed === void 0 || trimmed.length === 0) {
+      return {};
+    }
+    if (trimmed.startsWith("/")) {
+      return {
+        url: { path: normalizePath(trimmed) },
+        first_party: true
+      };
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return {
+          url: {
+            ...parsed.hostname.length > 0 ? { host: parsed.hostname.toLowerCase() } : {},
+            path: normalizePath(parsed.pathname)
+          },
+          first_party: false
+        };
+      }
+    } catch {
+      return {};
+    }
+    return {};
+  }
+  function parseStringArray(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const values = value.map((entry) => asString(entry)).filter((entry) => entry !== null);
+    return values.length > 0 ? Array.from(new Set(values)) : void 0;
+  }
+  function parseNumberArray(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const values = value.map((entry) => asInteger(entry)).filter((entry) => entry !== null);
+    return values.length > 0 ? Array.from(new Set(values)).sort((left, right) => left - right) : void 0;
+  }
+  function parseStatusRanges(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const ranges = value.map((entry) => {
+      const record = asRecord(entry);
+      const start = asInteger(record == null ? void 0 : record["start"]);
+      const end = asInteger(record == null ? void 0 : record["end"]);
+      if (start === null || end === null || start > end) {
+        return null;
+      }
+      return { start, end };
+    }).filter((entry) => entry !== null);
+    return ranges.length > 0 ? ranges : void 0;
+  }
+  function parseUrlMatcher(value) {
+    var _a, _b;
+    const record = asRecord(value);
+    if (record === null) {
+      return void 0;
+    }
+    const host = (_a = asString(record["host"])) == null ? void 0 : _a.toLowerCase();
+    const hostSuffix = (_b = asString(record["host_suffix"])) == null ? void 0 : _b.toLowerCase();
+    const pathPrefix = asString(record["path_prefix"]);
+    const pathEquals = asString(record["path_equals"]);
+    if (host === void 0 && hostSuffix === void 0 && pathPrefix === void 0 && pathEquals === void 0) {
+      return void 0;
+    }
+    return {
+      ...host === void 0 ? {} : { host },
+      ...hostSuffix === void 0 ? {} : { host_suffix: hostSuffix },
+      ...pathPrefix === null ? {} : { path_prefix: normalizePath(pathPrefix) },
+      ...pathEquals === null ? {} : { path_equals: normalizePath(pathEquals) }
+    };
+  }
+  function parseMatcher(value) {
+    const record = asRecord(value);
+    if (record === null) {
+      return null;
+    }
+    const eventTypes = parseStringArray(record["event_types"]);
+    const services = parseStringArray(record["services"]);
+    const environments = parseStringArray(record["environments"]);
+    const runtimeValues = parseStringArray(record["runtime"]);
+    const firstParty = asBoolean(record["first_party"]);
+    const errorName = asString(record["error_name"]);
+    const messageContains = asString(record["message_contains"]);
+    const messageEquals = asString(record["message_equals"]);
+    const resourceUrl = parseUrlMatcher(record["resource_url"]);
+    const requestUrl = parseUrlMatcher(record["request_url"]);
+    const statusCodes = parseNumberArray(record["status_codes"]);
+    const statusRanges = parseStatusRanges(record["status_ranges"]);
+    const matcher = {
+      ...eventTypes === void 0 ? {} : { event_types: eventTypes },
+      ...services === void 0 ? {} : { services },
+      ...environments === void 0 ? {} : { environments },
+      ...runtimeValues === void 0 ? {} : { runtime: runtimeValues.map((entry) => normalizeRuntime(entry)) },
+      ...firstParty === null ? {} : { first_party: firstParty },
+      ...errorName === null ? {} : { error_name: errorName },
+      ...messageContains === null ? {} : { message_contains: messageContains },
+      ...messageEquals === null ? {} : { message_equals: messageEquals },
+      ...record["browser_event_kind"] === "window_error" || record["browser_event_kind"] === "resource_error" ? { browser_event_kind: record["browser_event_kind"] } : {},
+      ...resourceUrl === void 0 ? {} : { resource_url: resourceUrl },
+      ...requestUrl === void 0 ? {} : { request_url: requestUrl },
+      ...statusCodes === void 0 ? {} : { status_codes: statusCodes },
+      ...statusRanges === void 0 ? {} : { status_ranges: statusRanges }
+    };
+    const fingerprintRecord = asRecord(record["fingerprint"]);
+    const fingerprintVersion = asString(fingerprintRecord == null ? void 0 : fingerprintRecord["version"]);
+    const fingerprintValue = asString(fingerprintRecord == null ? void 0 : fingerprintRecord["value"]);
+    if (fingerprintVersion !== null && fingerprintValue !== null) {
+      matcher.fingerprint = {
+        version: fingerprintVersion,
+        value: fingerprintValue
+      };
+    }
+    const narrowingKeys = [
+      matcher.services,
+      matcher.environments,
+      matcher.runtime,
+      matcher.first_party,
+      matcher.error_name,
+      matcher.message_contains,
+      matcher.message_equals,
+      matcher.browser_event_kind,
+      matcher.resource_url,
+      matcher.request_url,
+      matcher.status_codes,
+      matcher.status_ranges,
+      matcher.fingerprint
+    ];
+    if (!narrowingKeys.some((entry) => entry !== void 0)) {
+      return null;
+    }
+    if (matcher.browser_event_kind === "resource_error" && matcher.resource_url === void 0 && matcher.fingerprint === void 0) {
+      return null;
+    }
+    return matcher;
+  }
+  function parseCaptureRule(value) {
+    var _a;
+    const record = asRecord(value);
+    if (record === null) {
+      return null;
+    }
+    const id = asString(record["id"]);
+    const projectId = asString(record["project_id"]);
+    const name = asString(record["name"]);
+    const actionValue = record["action"];
+    const matcher = parseMatcher(record["matcher"]);
+    const enabled = asBoolean(record["enabled"]);
+    const updatedAt = asString(record["updated_at"]);
+    const createdAt = asString(record["created_at"]);
+    const action = actionValue === "demote" || actionValue === "sample" || actionValue === "drop" ? actionValue : null;
+    if (id === null || projectId === null || name === null || action === null || matcher === null || enabled === null || updatedAt === null || createdAt === null) {
+      return null;
+    }
+    const sampleRate = record["sample_rate"] === null ? null : asNumber(record["sample_rate"]);
+    const sampleEventClass = record["sample_event_class"] === "preserve" || record["sample_event_class"] === "context" ? record["sample_event_class"] : record["sample_event_class"] === null || record["sample_event_class"] === void 0 ? null : null;
+    if (action === "sample" && (sampleRate === null || sampleEventClass === null)) {
+      return null;
+    }
+    if (action !== "sample" && (sampleRate !== null || sampleEventClass !== null)) {
+      return null;
+    }
+    return {
+      id,
+      project_id: projectId,
+      name,
+      description: record["description"] === null ? null : asString(record["description"]),
+      enabled,
+      action,
+      matcher,
+      sample_rate: sampleRate,
+      sample_event_class: sampleEventClass,
+      created_by_user_id: record["created_by_user_id"] === null ? null : asString(record["created_by_user_id"]),
+      created_from_incident_id: record["created_from_incident_id"] === null ? null : asString(record["created_from_incident_id"]),
+      created_from_event_id: record["created_from_event_id"] === null ? null : asString(record["created_from_event_id"]),
+      expires_at: record["expires_at"] === null ? null : asString(record["expires_at"]),
+      hit_count: (_a = asInteger(record["hit_count"])) != null ? _a : 0,
+      last_matched_at: record["last_matched_at"] === null ? null : asString(record["last_matched_at"]),
+      created_at: createdAt,
+      updated_at: updatedAt
+    };
+  }
+  function parseRemoteCaptureRulesPayload(payload) {
+    const record = asRecord(payload);
+    if (record === null || !Array.isArray(record["capture_rules"])) {
+      return [];
+    }
+    return record["capture_rules"].map((candidate) => parseCaptureRule(candidate)).filter((rule) => rule !== null);
+  }
+  function buildEvaluationContext(projectId, event) {
+    var _a;
+    const base = {
+      project_id: projectId,
+      event_id: event.event_id,
+      event_type: event.event_type,
+      service: event.service.name,
+      environment: event.service.environment,
+      runtime: normalizeRuntime(event.service.runtime)
+    };
+    if (event.event_type === "frontend_exception") {
+      const payload = event.payload;
+      const browserEvent = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
+      const target = typeof (browserEvent == null ? void 0 : browserEvent["target"]) === "object" && browserEvent["target"] !== null ? browserEvent["target"] : null;
+      const sourceUrl = typeof (target == null ? void 0 : target["source_url"]) === "string" ? target["source_url"] : typeof (browserEvent == null ? void 0 : browserEvent["file_name"]) === "string" ? browserEvent["file_name"] : null;
+      const browserEventKind = (browserEvent == null ? void 0 : browserEvent["kind"]) === "window_error" || (browserEvent == null ? void 0 : browserEvent["kind"]) === "resource_error" ? browserEvent["kind"] : void 0;
+      const resourceUrl = normalizeEvaluationUrl(sourceUrl);
+      return {
+        ...base,
+        ...resourceUrl.first_party === void 0 ? {} : { first_party: resourceUrl.first_party },
+        error_name: event.payload.name,
+        message: event.payload.message,
+        ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
+        ...resourceUrl.url === void 0 ? {} : { resource_url: resourceUrl.url }
+      };
+    }
+    if (event.event_type === "request_event") {
+      const requestUrl = normalizeEvaluationUrl(event.payload.path);
+      return {
+        ...base,
+        first_party: (_a = requestUrl.first_party) != null ? _a : true,
+        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
+        status_code: event.payload.response_status
+      };
+    }
+    if (event.event_type === "frontend_breadcrumb" && event.payload.breadcrumb_type === "network_request") {
+      const rawUrl = typeof event.payload.data["url"] === "string" ? event.payload.data["url"] : null;
+      const requestUrl = normalizeEvaluationUrl(rawUrl);
+      const statusCode = typeof event.payload.data["status_code"] === "number" ? event.payload.data["status_code"] : void 0;
+      return {
+        ...base,
+        ...requestUrl.first_party === void 0 ? {} : { first_party: requestUrl.first_party },
+        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
+        ...statusCode === void 0 ? {} : { status_code: statusCode }
+      };
+    }
+    if (event.event_type === "log_event") {
+      return {
+        ...base,
+        message: event.payload.message
+      };
+    }
+    return base;
+  }
+  function matchesUrlMatcher(matcher, value) {
+    if (matcher === void 0) {
+      return true;
+    }
+    if (value === void 0) {
+      return false;
+    }
+    if (matcher.host !== void 0 && value.host !== matcher.host) {
+      return false;
+    }
+    if (matcher.host_suffix !== void 0 && (value.host === void 0 || !value.host.endsWith(matcher.host_suffix))) {
+      return false;
+    }
+    if (matcher.path_equals !== void 0 && value.path !== matcher.path_equals) {
+      return false;
+    }
+    if (matcher.path_prefix !== void 0 && !value.path.startsWith(matcher.path_prefix)) {
+      return false;
+    }
+    return true;
+  }
+  function matchesRule(rule, context) {
+    const matcher = rule.matcher;
+    if (matcher.event_types !== void 0 && !matcher.event_types.includes(context.event_type)) {
+      return false;
+    }
+    if (matcher.services !== void 0 && (context.service === void 0 || !matcher.services.includes(context.service))) {
+      return false;
+    }
+    if (matcher.environments !== void 0 && (context.environment === void 0 || !matcher.environments.includes(context.environment))) {
+      return false;
+    }
+    if (matcher.runtime !== void 0 && !matcher.runtime.includes(context.runtime)) {
+      return false;
+    }
+    if (matcher.first_party !== void 0 && matcher.first_party !== context.first_party) {
+      return false;
+    }
+    if (matcher.error_name !== void 0 && matcher.error_name !== context.error_name) {
+      return false;
+    }
+    if (matcher.message_equals !== void 0 && matcher.message_equals !== context.message) {
+      return false;
+    }
+    if (matcher.message_contains !== void 0 && (context.message === void 0 || !context.message.includes(matcher.message_contains))) {
+      return false;
+    }
+    if (matcher.browser_event_kind !== void 0 && matcher.browser_event_kind !== context.browser_event_kind) {
+      return false;
+    }
+    if (!matchesUrlMatcher(matcher.resource_url, context.resource_url)) {
+      return false;
+    }
+    if (!matchesUrlMatcher(matcher.request_url, context.request_url)) {
+      return false;
+    }
+    if (matcher.status_codes !== void 0 && (context.status_code === void 0 || !matcher.status_codes.includes(context.status_code))) {
+      return false;
+    }
+    if (matcher.status_ranges !== void 0 && (context.status_code === void 0 || !matcher.status_ranges.some((range) => {
+      const statusCode = context.status_code;
+      return statusCode !== void 0 && statusCode >= range.start && statusCode <= range.end;
+    }))) {
+      return false;
+    }
+    if (matcher.fingerprint !== void 0 && (context.fingerprint === void 0 || context.fingerprint.version !== matcher.fingerprint.version || context.fingerprint.value !== matcher.fingerprint.value)) {
+      return false;
+    }
+    return true;
+  }
+  function getSpecificityScore(rule) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const matcher = rule.matcher;
+    let score = 0;
+    if (matcher.fingerprint !== void 0) {
+      score += 1e3;
+    }
+    if (((_a = matcher.resource_url) == null ? void 0 : _a.host) !== void 0) {
+      score += 250;
+    }
+    if (((_b = matcher.request_url) == null ? void 0 : _b.host) !== void 0) {
+      score += 250;
+    }
+    if (((_c = matcher.resource_url) == null ? void 0 : _c.path_equals) !== void 0 || ((_d = matcher.request_url) == null ? void 0 : _d.path_equals) !== void 0) {
+      score += 200;
+    }
+    if (matcher.status_codes !== void 0) {
+      score += 150;
+    }
+    if (matcher.browser_event_kind !== void 0) {
+      score += 100;
+    }
+    if (((_e = matcher.resource_url) == null ? void 0 : _e.host_suffix) !== void 0 || ((_f = matcher.request_url) == null ? void 0 : _f.host_suffix) !== void 0) {
+      score += 90;
+    }
+    if (((_g = matcher.resource_url) == null ? void 0 : _g.path_prefix) !== void 0 || ((_h = matcher.request_url) == null ? void 0 : _h.path_prefix) !== void 0) {
+      score += 80;
+    }
+    if (matcher.error_name !== void 0) {
+      score += 70;
+    }
+    if (matcher.message_equals !== void 0) {
+      score += 60;
+    }
+    if (matcher.message_contains !== void 0) {
+      score += 50;
+    }
+    if (matcher.first_party !== void 0) {
+      score += 40;
+    }
+    if (matcher.services !== void 0) {
+      score += 30;
+    }
+    if (matcher.environments !== void 0) {
+      score += 20;
+    }
+    if (matcher.runtime !== void 0) {
+      score += 10;
+    }
+    if (matcher.event_types !== void 0) {
+      score += 5;
+    }
+    return score;
+  }
+  function compareRules(left, right) {
+    const specificityDifference = getSpecificityScore(right) - getSpecificityScore(left);
+    if (specificityDifference !== 0) {
+      return specificityDifference;
+    }
+    const updatedDifference = Date.parse(right.updated_at) - Date.parse(left.updated_at);
+    if (updatedDifference !== 0) {
+      return updatedDifference;
+    }
+    return left.id.localeCompare(right.id);
+  }
+  function stableUnitFloat(seed) {
+    let hash = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+      hash ^= seed.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) / 4294967296;
+  }
+  function shouldSample(projectId, ruleId, eventId, sampleRate) {
+    if (sampleRate <= 0) {
+      return false;
+    }
+    if (sampleRate >= 1) {
+      return true;
+    }
+    return stableUnitFloat(`${projectId}:${ruleId}:${eventId}`) < sampleRate;
+  }
+  function evaluateBrowserCaptureRulesForEvent(rules, projectId, event, now) {
+    var _a;
+    const context = buildEvaluationContext(projectId, event);
+    const activeRules = rules.filter((rule) => rule.enabled && (rule.expires_at === null || Date.parse(rule.expires_at) > Date.parse(now))).sort(compareRules);
+    for (const rule of activeRules) {
+      if (!matchesRule(rule, context)) {
+        continue;
+      }
+      if (rule.action === "demote") {
+        return {
+          rule_id: rule.id,
+          action: "demote",
+          outcome: "demote",
+          sample_rate: null,
+          sample_event_class: null
+        };
+      }
+      if (rule.action === "drop") {
+        return {
+          rule_id: rule.id,
+          action: "drop",
+          outcome: "drop",
+          sample_rate: null,
+          sample_event_class: null
+        };
+      }
+      const sampledIn = shouldSample(projectId, rule.id, event.event_id, (_a = rule.sample_rate) != null ? _a : 0);
+      return {
+        rule_id: rule.id,
+        action: "sample",
+        outcome: sampledIn ? "sampled_in" : "sampled_out",
+        sample_rate: rule.sample_rate,
+        sample_event_class: rule.sample_event_class
+      };
+    }
+    return null;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/package.json
+  var package_default = {
+    name: "@debugbundle/sdk-browser",
+    version: "0.1.11",
+    private: false,
+    type: "module",
+    license: "AGPL-3.0-only",
+    description: "Browser SDK for DebugBundle",
+    repository: {
+      type: "git",
+      url: "git+https://github.com/debugbundle/debugbundle-js.git",
+      directory: "packages/sdk-browser"
+    },
+    bugs: {
+      url: "https://github.com/debugbundle/debugbundle-js/issues"
+    },
+    homepage: "https://github.com/debugbundle/debugbundle-js/tree/main/packages/sdk-browser",
+    files: [
+      "dist",
+      "README.md",
+      "LICENSE"
+    ],
+    main: "./dist/index.js",
+    types: "./dist/index.d.ts",
+    exports: {
+      ".": {
+        types: "./dist/index.d.ts",
+        import: "./dist/index.js"
+      }
+    },
+    publishConfig: {
+      access: "public"
+    },
+    dependencies: {
+      "@debugbundle/shared-types": "0.1.11",
+      "@debugbundle/redaction": "0.1.11"
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
-  var SDK_VERSION = "0.1.0";
+  var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
   var DEFAULT_ENDPOINT = "https://api.debugbundle.com/v1/events";
+  var DEFAULT_RELAY_ENDPOINT = "/debugbundle/browser";
   var DEFAULT_BATCH_SIZE = 10;
   var DEFAULT_FLUSH_INTERVAL_MS = 3e3;
   var DEFAULT_REQUEST_TIMEOUT_MS = 5e3;
@@ -4804,7 +5744,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -4924,6 +5864,66 @@
       stack: "Error: Unknown browser error"
     };
   }
+  function getStringField(record, key) {
+    const value = record[key];
+    return typeof value === "string" && value.length > 0 ? value : null;
+  }
+  function sanitizeBrowserEventUrl(value) {
+    var _a;
+    if (value === null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+    const locationHref = (_a = getLocationSource()) == null ? void 0 : _a.href;
+    const baseHref = typeof locationHref === "string" && locationHref.length > 0 ? locationHref : "https://debugbundle.local";
+    try {
+      const parsed = new URL(trimmed, baseHref);
+      const isRelative = !/^[a-z][a-z\d+\-.]*:/i.test(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        const path = parsed.pathname || "/";
+        return isRelative ? path : `${parsed.origin}${path}`;
+      }
+      return `${parsed.protocol.replace(/:$/, "")}:`;
+    } catch {
+      const firstUnsafeIndex = trimmed.search(/[?#]/);
+      return firstUnsafeIndex === -1 ? trimmed.slice(0, 512) : trimmed.slice(0, firstUnsafeIndex);
+    }
+  }
+  function getNonnegativeIntegerField(record, key) {
+    const value = record[key];
+    return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+  }
+  function normalizeBrowserErrorTarget(target) {
+    var _a, _b, _c;
+    const record = normalizeUnknownRecord(target);
+    const tagName = (_b = (_a = getStringField(record, "tagName")) == null ? void 0 : _a.toLowerCase()) != null ? _b : null;
+    const sourceUrl = (_c = getStringField(record, "src")) != null ? _c : getStringField(record, "href");
+    if (tagName === null && sourceUrl === null) {
+      return null;
+    }
+    return {
+      tag_name: tagName,
+      source_url: sanitizeBrowserEventUrl(sourceUrl)
+    };
+  }
+  function normalizeBrowserErrorEvent(event) {
+    const record = normalizeUnknownRecord(event);
+    const target = normalizeBrowserErrorTarget(record["target"]);
+    const hasErrorObject = record["error"] instanceof Error;
+    const kind = target !== null && target.source_url !== null ? "resource_error" : "window_error";
+    return {
+      kind,
+      message: getStringField(record, "message"),
+      file_name: sanitizeBrowserEventUrl(getStringField(record, "filename")),
+      line_number: getNonnegativeIntegerField(record, "lineno"),
+      column_number: getNonnegativeIntegerField(record, "colno"),
+      target,
+      opaque: !hasErrorObject
+    };
+  }
   function captureCallerTrace(skipFrames, maxFrames) {
     var _a;
     const sentinel = {};
@@ -4979,7 +5979,7 @@
       const response = await fetchImpl(request.endpoint, {
         method: "POST",
         headers: request.headers,
-        body: buildBrowserTransportRequestBody(request.endpoint, request.events)
+        body: buildBrowserTransportRequestBody(request.transportMode, request.events)
       });
       const retryAfterMs = parseRetryAfter((_b = (_a = response.headers) == null ? void 0 : _a.get("Retry-After")) != null ? _b : null);
       return {
@@ -4989,8 +5989,8 @@
       };
     };
   }
-  function buildBrowserTransportRequestBody(endpoint, events) {
-    if (isAbsoluteHttpUrl(endpoint)) {
+  function buildBrowserTransportRequestBody(transportMode, events) {
+    if (transportMode === "direct") {
       return JSON.stringify({ events });
     }
     return JSON.stringify({ batch: events });
@@ -5014,10 +6014,44 @@
       return false;
     }
   }
+  function isValidRelayEndpoint(value) {
+    return isValidRelayEndpointPath(value) || isAbsoluteHttpUrl(value);
+  }
   function resolveBrowserTransport(input) {
     var _a, _b;
     const endpoint = (_a = input.endpoint) == null ? void 0 : _a.trim();
     const projectToken = (_b = input.projectToken) == null ? void 0 : _b.trim();
+    const transportMode = input.transportMode;
+    if (transportMode === "relay") {
+      const relayEndpoint = endpoint !== void 0 && endpoint.length > 0 ? endpoint : DEFAULT_RELAY_ENDPOINT;
+      if (!isValidRelayEndpoint(relayEndpoint)) {
+        return {
+          mode: "disabled",
+          endpoint: null,
+          projectToken: null
+        };
+      }
+      return {
+        mode: "relay",
+        endpoint: relayEndpoint,
+        projectToken: null
+      };
+    }
+    if (transportMode === "direct") {
+      const directEndpoint = endpoint !== void 0 && endpoint.length > 0 ? endpoint : DEFAULT_ENDPOINT;
+      if (!isAbsoluteHttpUrl(directEndpoint) || projectToken === void 0 || projectToken.length === 0) {
+        return {
+          mode: "disabled",
+          endpoint: null,
+          projectToken: null
+        };
+      }
+      return {
+        mode: "direct",
+        endpoint: directEndpoint,
+        projectToken
+      };
+    }
     if (endpoint !== void 0 && endpoint.length > 0) {
       if (isAbsoluteHttpUrl(endpoint)) {
         if (projectToken === void 0 || projectToken.length === 0) {
@@ -5095,26 +6129,26 @@
     }
     return endpoint;
   }
-  function asRecord(value) {
+  function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
     }
     return value;
   }
-  function asString(value) {
+  function asString2(value) {
     return typeof value === "string" && value.length > 0 ? value : null;
   }
   function parseRemoteProbeDirective(value, nowMs) {
-    const record = asRecord(value);
+    const record = asRecord2(value);
     if (record === null) {
       return null;
     }
-    const activationId = asString(record["activation_id"]);
-    const labelPattern = asString(record["label_pattern"]);
-    const service = asString(record["service"]);
-    const environment = asString(record["environment"]);
-    const expiresAt = asString(record["expires_at"]);
-    const triggerExpiresAt = asString(record["trigger_expires_at"]);
+    const activationId = asString2(record["activation_id"]);
+    const labelPattern = asString2(record["label_pattern"]);
+    const service = asString2(record["service"]);
+    const environment = asString2(record["environment"]);
+    const expiresAt = asString2(record["expires_at"]);
+    const triggerExpiresAt = asString2(record["trigger_expires_at"]);
     if (activationId === null || labelPattern === null || service === null || environment === null || expiresAt === null || Number.isNaN(Date.parse(expiresAt))) {
       return null;
     }
@@ -5131,11 +6165,11 @@
     };
   }
   function parseRemoteProbeConfigPayload(payload, nowMs) {
-    const record = asRecord(payload);
+    const record = asRecord2(payload);
     if (record === null) {
       return null;
     }
-    const capturePolicy = asRecord(record["capture_policy"]);
+    const capturePolicy = asRecord2(record["capture_policy"]);
     const immediateClientErrorStatuses = capturePolicy !== null && Array.isArray(capturePolicy["immediate_client_error_statuses"]) ? capturePolicy["immediate_client_error_statuses"].filter((entry) => typeof entry === "number" && Number.isInteger(entry) && entry >= 400 && entry <= 499).sort((left, right) => left - right) : [];
     const requestFailurePreset = capturePolicy !== null && isBrowserCapturePreset(capturePolicy["preset"]) ? capturePolicy["preset"] : DEFAULT_REQUEST_FAILURE_PRESET;
     const requestCaptureEvents = capturePolicy !== null && isBrowserCaptureRequestEvents(capturePolicy["capture_request_events"]) ? capturePolicy["capture_request_events"] : DEFAULT_REQUEST_CAPTURE_EVENTS;
@@ -5143,7 +6177,7 @@
       probesEnabled: record["probes_enabled"] === true,
       remoteProbesEnabled: record["remote_probes_enabled"] === true,
       directives: Array.isArray(record["active_probes"]) ? record["active_probes"].map((directive) => parseRemoteProbeDirective(directive, nowMs)).filter((directive) => directive !== null) : [],
-      triggerTokenKey: asString(record["trigger_token_key"]),
+      triggerTokenKey: asString2(record["trigger_token_key"]),
       requestFailurePreset,
       requestCaptureEvents,
       immediateClientErrorStatuses: immediateClientErrorStatuses.length === 0 ? [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES] : Array.from(new Set(immediateClientErrorStatuses))
@@ -5156,8 +6190,8 @@
     return value === "off" || value === "failures_only" || value === "filtered" || value === "all";
   }
   function parseIngestionProbeDirectives(payload, nowMs) {
-    const record = asRecord(payload);
-    const directivesRecord = record === null ? null : asRecord(record["probe_directives"]);
+    const record = asRecord2(payload);
+    const directivesRecord = record === null ? null : asRecord2(record["probe_directives"]);
     if (directivesRecord === null || !Array.isArray(directivesRecord["active_probes"])) {
       return null;
     }
@@ -5299,7 +6333,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -5382,6 +6416,12 @@
     if (extras.responseContentLength !== void 0) {
       data["response_content_length"] = extras.responseContentLength;
     }
+    if (extras.failureKind !== void 0) {
+      data["failure_kind"] = extras.failureKind;
+    }
+    if (extras.failureReason !== void 0) {
+      data["failure_reason"] = extras.failureReason;
+    }
     const meta = extras.requestMetadata;
     if ((meta == null ? void 0 : meta.operation) !== void 0)
       data["operation"] = meta.operation;
@@ -5390,6 +6430,21 @@
     if ((meta == null ? void 0 : meta.feature) !== void 0)
       data["feature"] = meta.feature;
     return data;
+  }
+  function normalizeNetworkFailureReason(error) {
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return truncateBody(error.message.trim());
+    }
+    if (typeof error === "string" && error.trim().length > 0) {
+      return truncateBody(error.trim());
+    }
+    if (typeof error === "object" && error !== null) {
+      const message = error["message"];
+      if (typeof message === "string" && message.trim().length > 0) {
+        return truncateBody(message.trim());
+      }
+    }
+    return "network failure";
   }
   function installConsoleHook(config2, addBreadcrumb) {
     const consoleSource = getConsoleSource();
@@ -5434,7 +6489,7 @@
       originalConsoleWarn
     };
   }
-  function installNetworkHook(config2, addBreadcrumb, captureRequestFailure, shouldCaptureNetworkRequest, getCurrentRoute) {
+  function installNetworkHook(config2, addBreadcrumb, captureRequestFailure, shouldCaptureNetworkRequest, shouldCaptureNetworkFailure, getCurrentRoute) {
     const fetchSource = getFetchSource();
     const xmlHttpRequestConstructor = getXmlHttpRequestConstructor();
     if (config2 === null || fetchSource === null && xmlHttpRequestConstructor === null) {
@@ -5453,41 +6508,63 @@
         const injectTraceHeader = shouldInjectTraceHeader(input, config2.tracePropagationTargets);
         const traceId = injectTraceHeader ? createBrowserTraceId() : null;
         const startedAt = Date.now();
-        const response = await fetchSource(input, {
-          ...forwardedInit,
-          headers: {
-            ...requestHeaders != null ? requestHeaders : {},
-            ...traceId === null ? {} : { "X-DebugBundle-Trace-Id": traceId }
-          }
-        });
-        const durationMs = Date.now() - startedAt;
-        const shouldCaptureNetworkBreadcrumb = config2.captureNetwork === true && input !== config2.endpoint && input !== configEndpoint && shouldCaptureNetworkRequest(input, response.status, durationMs);
-        if (shouldCaptureNetworkBreadcrumb || injectTraceHeader && response.status >= 400) {
-          const responseBody = await captureResponseBody(response);
+        try {
+          const response = await fetchSource(input, {
+            ...forwardedInit,
+            headers: {
+              ...requestHeaders != null ? requestHeaders : {},
+              ...traceId === null ? {} : { "X-DebugBundle-Trace-Id": traceId }
+            }
+          });
+          const durationMs = Date.now() - startedAt;
+          const shouldCaptureNetworkBreadcrumb = config2.captureNetwork === true && input !== config2.endpoint && input !== configEndpoint && shouldCaptureNetworkRequest(input, response.status, durationMs);
           const requestBody = captureRequestBody(inputInit);
-          const responseHeaders = extractResponseHeaders(response);
-          const contentLengthHeader = (_a = response.headers) == null ? void 0 : _a.get("content-length");
-          const responseContentLength = contentLengthHeader !== null && contentLengthHeader !== void 0 ? parseInt(contentLengthHeader, 10) : void 0;
-          const breadcrumb = {
-            ts: (/* @__PURE__ */ new Date()).toISOString(),
-            breadcrumb_type: "network_request",
-            route: getCurrentRoute(),
-            data: buildNetworkBreadcrumbData(input, typeof inputInit.method === "string" ? inputInit.method : "GET", response.status, durationMs, callerTrace, {
-              requestMetadata,
-              responseBody,
-              requestBody,
-              responseHeaders,
-              responseContentLength: Number.isFinite(responseContentLength) ? responseContentLength : void 0
-            })
-          };
-          if (shouldCaptureNetworkBreadcrumb) {
-            addBreadcrumb(breadcrumb);
+          if (shouldCaptureNetworkBreadcrumb || injectTraceHeader && response.status >= 400) {
+            const responseBody = await captureResponseBody(response);
+            const responseHeaders = extractResponseHeaders(response);
+            const contentLengthHeader = (_a = response.headers) == null ? void 0 : _a.get("content-length");
+            const responseContentLength = contentLengthHeader !== null && contentLengthHeader !== void 0 ? parseInt(contentLengthHeader, 10) : void 0;
+            const breadcrumb = {
+              ts: (/* @__PURE__ */ new Date()).toISOString(),
+              breadcrumb_type: "network_request",
+              route: getCurrentRoute(),
+              data: buildNetworkBreadcrumbData(input, typeof inputInit.method === "string" ? inputInit.method : "GET", response.status, durationMs, callerTrace, {
+                requestMetadata,
+                responseBody,
+                requestBody,
+                responseHeaders,
+                responseContentLength: Number.isFinite(responseContentLength) ? responseContentLength : void 0
+              })
+            };
+            if (shouldCaptureNetworkBreadcrumb) {
+              addBreadcrumb(breadcrumb);
+            }
+            if (injectTraceHeader && response.status >= 400) {
+              captureRequestFailure(breadcrumb);
+            }
           }
-          if (injectTraceHeader && response.status >= 400) {
-            captureRequestFailure(breadcrumb);
+          return response;
+        } catch (error) {
+          const durationMs = Date.now() - startedAt;
+          const shouldCaptureFailedNetworkBreadcrumb = config2.captureNetwork === true && input !== config2.endpoint && input !== configEndpoint && shouldCaptureNetworkFailure(input, durationMs);
+          if (shouldCaptureFailedNetworkBreadcrumb) {
+            addBreadcrumb({
+              ts: (/* @__PURE__ */ new Date()).toISOString(),
+              breadcrumb_type: "network_request",
+              route: getCurrentRoute(),
+              data: buildNetworkBreadcrumbData(input, typeof inputInit.method === "string" ? inputInit.method : "GET", 0, durationMs, callerTrace, {
+                requestMetadata,
+                responseBody: void 0,
+                requestBody: captureRequestBody(inputInit),
+                responseHeaders: void 0,
+                responseContentLength: void 0,
+                failureKind: "network_error",
+                failureReason: normalizeNetworkFailureReason(error)
+              })
+            });
           }
+          throw error;
         }
-        return response;
       };
     }
     if (xmlHttpRequestConstructor !== null) {
@@ -5582,7 +6659,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -5687,7 +6764,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -5776,7 +6853,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.8/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@0.1.11/node_modules/@debugbundle/sdk-browser/dist/index.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -5890,7 +6967,8 @@
       const enabled = (_a = config2.enabled) != null ? _a : true;
       const resolvedTransport = resolveBrowserTransport({
         endpoint: config2.endpoint,
-        projectToken: config2.projectToken
+        projectToken: config2.projectToken,
+        transportMode: config2.transportMode
       });
       if (!enabled || resolvedTransport.mode === "disabled" || resolvedTransport.endpoint === null) {
         return;
@@ -5920,6 +6998,7 @@
         maxProbeEntriesPerLabel: normalizePositiveNumber(config2.maxProbeEntriesPerLabel, 10),
         probeFlushOnError: normalizeBoolean(config2.probeFlushOnError, true),
         requestTimeoutMs: normalizePositiveNumber(config2.requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS),
+        captureRules: [],
         fetchImpl: getFetchSource(),
         transport: (_f = config2.transport) != null ? _f : createFetchTransport(),
         transportMode: resolvedTransport.mode
@@ -5985,6 +7064,9 @@
             dom_context: domContext
           }
         });
+        if (context.browser_event !== void 0) {
+          event.payload["browser_event"] = context.browser_event;
+        }
         this.removeEmptyProjectToken(event, config2);
         this.enqueueEvent(event);
       } catch {
@@ -6124,6 +7206,7 @@
             endpoint: config2.endpoint,
             headers: this.getTransportHeaders(config2),
             events,
+            transportMode: config2.transportMode,
             timeout_ms: config2.requestTimeoutMs
           });
           if (response.status >= 200 && response.status < 300) {
@@ -6235,7 +7318,11 @@
         const onError = (event) => {
           var _a, _b;
           const maybeError = normalizeUnknownRecord(event);
-          this.captureException((_b = (_a = maybeError["error"]) != null ? _a : maybeError["message"]) != null ? _b : new Error("Window error"));
+          const browserEvent = normalizeBrowserErrorEvent(event);
+          const fallbackMessage = browserEvent.kind === "resource_error" ? "Browser resource load error" : "Window error";
+          this.captureException((_b = (_a = maybeError["error"]) != null ? _a : maybeError["message"]) != null ? _b : new Error(fallbackMessage), {
+            browser_event: browserEvent
+          });
         };
         const onUnhandledRejection = (event) => {
           var _a;
@@ -6243,10 +7330,10 @@
           this.captureException((_a = maybeError["reason"]) != null ? _a : new Error("Unhandled promise rejection"));
         };
         windowSource.addEventListener("pagehide", onPageHide);
-        windowSource.addEventListener("error", onError);
+        windowSource.addEventListener("error", onError, true);
         windowSource.addEventListener("unhandledrejection", onUnhandledRejection);
         this.registeredListeners.push(() => windowSource.removeEventListener("pagehide", onPageHide));
-        this.registeredListeners.push(() => windowSource.removeEventListener("error", onError));
+        this.registeredListeners.push(() => windowSource.removeEventListener("error", onError, true));
         this.registeredListeners.push(() => windowSource.removeEventListener("unhandledrejection", onUnhandledRejection));
       }
       const documentSource = getDocumentSource();
@@ -6320,7 +7407,7 @@
         this.addBreadcrumb(breadcrumb);
       }, (breadcrumb) => {
         this.captureNetworkRequestFailure(breadcrumb);
-      }, (url, statusCode, durationMs) => this.shouldCaptureNetworkRequest(url, statusCode, durationMs), () => this.getCurrentRoute());
+      }, (url, statusCode, durationMs) => this.shouldCaptureNetworkRequest(url, statusCode, durationMs), (url, durationMs) => this.shouldCaptureFailedNetworkRequest(url, durationMs), () => this.getCurrentRoute());
       this.originalFetch = networkHooks.originalFetch;
       this.originalXmlHttpRequest = networkHooks.originalXmlHttpRequest;
     }
@@ -6488,15 +7575,71 @@
       return typeof locationSource.pathname === "string" ? locationSource.pathname : null;
     }
     enqueueEvent(event, countTowardSession = true) {
-      if (!this.shouldCaptureBySampleRate(event)) {
+      const resolvedEvent = this.applyCaptureRulesToEvent(event);
+      if (resolvedEvent === null) {
         return;
       }
-      const suppressionKey = this.buildSuppressionKey(event);
+      if (!this.shouldCaptureBySampleRate(resolvedEvent)) {
+        return;
+      }
+      const suppressionKey = this.buildSuppressionKey(resolvedEvent);
       if (suppressionKey !== null && !this.suppressionTracker.shouldCapture(suppressionKey, Date.now())) {
         this.scheduleFlush();
         return;
       }
-      this.enqueueInternalEvent(event, countTowardSession);
+      this.enqueueInternalEvent(resolvedEvent, countTowardSession);
+    }
+    applyCaptureRulesToEvent(event) {
+      var _a;
+      const config2 = this.config;
+      if (config2 === null || config2.captureRules.length === 0) {
+        return event;
+      }
+      const projectId = (_a = config2.captureRules[0]) == null ? void 0 : _a.project_id;
+      if (typeof projectId !== "string" || projectId.length === 0) {
+        return event;
+      }
+      try {
+        const captureRule = evaluateBrowserCaptureRulesForEvent(config2.captureRules, projectId, event, (/* @__PURE__ */ new Date()).toISOString());
+        if (captureRule === null) {
+          return event;
+        }
+        if (captureRule.outcome === "drop" || captureRule.outcome === "sampled_out") {
+          return null;
+        }
+        if (event.event_type === "frontend_exception" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
+          this.addBreadcrumb(this.createDemotedExceptionBreadcrumb(event, captureRule));
+          return null;
+        }
+        if (event.event_type === "request_event" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
+          return null;
+        }
+      } catch {
+        return event;
+      }
+      return event;
+    }
+    createDemotedExceptionBreadcrumb(event, captureRule) {
+      var _a;
+      const payload = event.payload;
+      const browserEventRecord = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
+      const targetRecord = typeof (browserEventRecord == null ? void 0 : browserEventRecord["target"]) === "object" && browserEventRecord["target"] !== null ? browserEventRecord["target"] : null;
+      const browserEventKind = (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "window_error" || (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "resource_error" ? browserEventRecord["kind"] : void 0;
+      const sourceUrl = typeof (targetRecord == null ? void 0 : targetRecord["source_url"]) === "string" ? targetRecord["source_url"] : typeof (browserEventRecord == null ? void 0 : browserEventRecord["file_name"]) === "string" ? browserEventRecord["file_name"] : null;
+      return {
+        ts: event.occurred_at,
+        breadcrumb_type: "console_log",
+        route: (_a = event.payload.route) != null ? _a : this.getCurrentRoute(),
+        data: {
+          level: "error",
+          message: `${event.payload.name}: ${event.payload.message}`,
+          source: "capture_rule_demoted_exception",
+          capture_rule_action: captureRule.action,
+          capture_rule_outcome: captureRule.outcome,
+          ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
+          ...sourceUrl === null ? {} : { source_url: sourceUrl }
+        }
+      };
     }
     enqueueInternalEvent(event, countTowardSession = true) {
       const config2 = this.config;
@@ -6582,7 +7725,7 @@
         return;
       }
       const pendingEvents = [...this.bufferedEvents];
-      const body = buildBrowserTransportRequestBody(config2.endpoint, pendingEvents);
+      const body = buildBrowserTransportRequestBody(config2.transportMode, pendingEvents);
       const flushViaKeepalive = () => {
         if (config2.fetchImpl === null) {
           void this.flush();
@@ -6712,6 +7855,23 @@
       }
       return matchesStatusCodeFilter(statusCode, filter.statusCodes);
     }
+    shouldCaptureFailedNetworkRequest(url, durationMs) {
+      const config2 = this.config;
+      if (config2 === null) {
+        return false;
+      }
+      const filter = config2.networkFilter;
+      if (filter.urlPatterns.length > 0 && !filter.urlPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
+        return false;
+      }
+      if (filter.urlDenyPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
+        return false;
+      }
+      if (filter.minResponseTime !== null && durationMs < filter.minResponseTime) {
+        return false;
+      }
+      return true;
+    }
     pruneExpiredRemoteProbeDirectives(nowMs) {
       const directives = this.remoteProbeState.directives.filter((directive) => Date.parse(directive.expiresAt) > nowMs);
       if (this.activeTriggerDirective !== null && Date.parse(this.activeTriggerDirective.expiresAt) <= nowMs) {
@@ -6747,6 +7907,7 @@
           this.pruneExpiredRemoteProbeDirectives(Date.now());
           await this.activatePendingTriggerTokenIfPossible();
         }
+        config2.captureRules = parseRemoteCaptureRulesPayload(payload);
       } catch {
         return;
       }

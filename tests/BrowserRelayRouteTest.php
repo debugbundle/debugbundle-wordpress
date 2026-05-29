@@ -49,6 +49,26 @@ final class BrowserRelayRouteTest extends TestCase
         self::assertSame($fixture['expected']['errors'], $response['body']['errors']);
     }
 
+    public function testHandleRequestAnswersAllowedPreflight(): void
+    {
+        if (!defined(Settings::PROJECT_TOKEN_CONSTANT)) {
+            define(Settings::PROJECT_TOKEN_CONSTANT, 'dbundle_proj_test');
+        }
+
+        $route = new BrowserRelayRoute(new Settings(), 'debugbundle_test_cron');
+        $response = $route->handleRequest($this->createWordPressRelayRequest([
+            'origin' => 'https://example.com',
+            'host' => 'example.com',
+            'access-control-request-method' => 'POST',
+            'access-control-request-headers' => 'content-type',
+        ], '', 'OPTIONS'));
+
+        self::assertIsArray($response);
+        self::assertSame(204, $response['status']);
+        self::assertSame('https://example.com', $response['headers']['Access-Control-Allow-Origin']);
+        self::assertSame('POST, OPTIONS', $response['headers']['Access-Control-Allow-Methods']);
+    }
+
     /** @param array<string, mixed> $request */
     private function createWordPressRelayRequestFromFixture(array $request): object
     {
@@ -63,6 +83,12 @@ final class BrowserRelayRouteTest extends TestCase
             : json_encode($request['bodyJson'] ?? ['batch' => []], JSON_THROW_ON_ERROR);
         $method = (string) ($request['method'] ?? 'POST');
 
+        return $this->createWordPressRelayRequest($headers, $body, $method);
+    }
+
+    /** @param array<string, string> $headers */
+    private function createWordPressRelayRequest(array $headers, string $body, string $method): object
+    {
         return new class($headers, $body, $method) {
             /** @param array<string, string> $headers */
             public function __construct(

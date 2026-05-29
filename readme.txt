@@ -3,7 +3,7 @@ Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 0.1.10
+Stable tag: 0.1.11
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -67,9 +67,11 @@ No. The plugin requires a saved project token before it can forward backend or b
 
 == Changelog ==
 
-= 0.1.10 =
 
-* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `0.1.10` and require `debugbundle/sdk-php` `^0.1.9` so the plugin ships with the current SDK release set.
+= 0.1.11 =
+
+* Add browser relay preflight handling and matching CORS headers for the WordPress REST relay so split-host frontend deployments can use the plugin relay safely.
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `0.1.11` and require `debugbundle/sdk-php` `^0.1.10` so the plugin ships with the current SDK release set.
 
 
 = 0.1.7 =

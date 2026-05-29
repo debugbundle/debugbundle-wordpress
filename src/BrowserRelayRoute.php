@@ -42,7 +42,7 @@ final class BrowserRelayRoute
         }
 
         \register_rest_route('debugbundle/v1', '/browser', [
-            'methods' => 'POST',
+            'methods' => ['POST', 'OPTIONS'],
             'permission_callback' => '__return_true',
             'callback' => [$this, 'handleRequest'],
         ]);
@@ -59,6 +59,19 @@ final class BrowserRelayRoute
             return $this->response(['accepted' => 0, 'rejected' => 0, 'errors' => ['frontend_capture_disabled']], 404);
         }
 
+        $headers = method_exists($request, 'get_headers') ? (array) $request->get_headers() : Sanitization::requestHeadersFromServer(Sanitization::serverInputArray());
+        $body = method_exists($request, 'get_body') ? (string) $request->get_body() : file_get_contents('php://input');
+        $method = method_exists($request, 'get_method') ? (string) $request->get_method() : Sanitization::requestMethod('POST');
+        $flattenedHeaders = $this->flattenHeaders($headers);
+
+        if (strtoupper($method) === 'OPTIONS') {
+            $origin = $this->sourceOrigin($flattenedHeaders);
+            if ($origin === null || !$this->isAllowedOrigin($origin, $flattenedHeaders['host'] ?? null)) {
+                return $this->response(null, 403);
+            }
+            return $this->response(null, 204, $this->corsHeaders($origin));
+        }
+
         $ipAddress = Sanitization::ipAddress();
         if (!$this->rateLimiter->allow($ipAddress)) {
             if (function_exists('header')) {
@@ -66,10 +79,6 @@ final class BrowserRelayRoute
             }
             return $this->response(['accepted' => 0, 'rejected' => 0, 'errors' => ['rate_limited']], 429);
         }
-
-        $headers = method_exists($request, 'get_headers') ? (array) $request->get_headers() : Sanitization::requestHeadersFromServer(Sanitization::serverInputArray());
-        $body = method_exists($request, 'get_body') ? (string) $request->get_body() : file_get_contents('php://input');
-        $method = method_exists($request, 'get_method') ? (string) $request->get_method() : Sanitization::requestMethod('POST');
 
         $acceptedEvents = [];
         $handler = new BrowserRelayHandler([
@@ -87,10 +96,18 @@ final class BrowserRelayRoute
 
         $relayResponse = $handler->handle([
             'method' => $method,
-            'headers' => $this->flattenHeaders($headers),
+            'headers' => $flattenedHeaders,
             'body' => is_string($body) ? $body : '',
             'ipAddress' => $ipAddress,
         ]);
+
+        $responseHeaders = $relayResponse->headers ?? [];
+        if ($responseHeaders === []) {
+            $origin = $this->sourceOrigin($flattenedHeaders);
+            if ($origin !== null && $this->isAllowedOrigin($origin, $flattenedHeaders['host'] ?? null)) {
+                $responseHeaders = $this->corsHeaders($origin);
+            }
+        }
 
         if ($acceptedEvents !== []) {
             $spoolFile = $this->spool->write($acceptedEvents);
@@ -106,7 +123,7 @@ final class BrowserRelayRoute
             }
         }
 
-        return $this->response($relayResponse->body ?? ['accepted' => 0, 'rejected' => 0, 'errors' => []], $relayResponse->status);
+        return $this->response($relayResponse->body ?? null, $relayResponse->status, $responseHeaders);
     }
 
     public function flushSpool(): void
@@ -161,6 +178,66 @@ final class BrowserRelayRoute
         return array_values(array_unique($origins));
     }
 
+    /** @param array<string, string> $headers */
+    private function sourceOrigin(array $headers): ?string
+    {
+        $origin = trim($headers['origin'] ?? '');
+        if ($origin !== '') {
+            return $origin;
+        }
+
+        $referer = trim($headers['referer'] ?? '');
+        if ($referer === '') {
+            return null;
+        }
+
+        $parts = parse_url($referer);
+        if (!is_array($parts) || !isset($parts['scheme'], $parts['host'])) {
+            return null;
+        }
+
+        $sourceOrigin = $parts['scheme'] . '://' . $parts['host'];
+        if (isset($parts['port'])) {
+            $sourceOrigin .= ':' . $parts['port'];
+        }
+        return $sourceOrigin;
+    }
+
+    private function isAllowedOrigin(string $origin, ?string $host = null): bool
+    {
+        $normalizedOrigin = $this->normalizeOrigin($origin);
+        foreach ($this->allowedOrigins() as $allowedOrigin) {
+            if ($this->normalizeOrigin($allowedOrigin) === $normalizedOrigin) {
+                return true;
+            }
+        }
+
+        if ($host !== null && trim($host) !== '') {
+            $parts = parse_url($origin);
+            $originHost = is_array($parts) && isset($parts['host']) ? strtolower((string) $parts['host']) : '';
+            return $originHost !== '' && $originHost === strtolower(explode(':', trim($host))[0] ?? '');
+        }
+
+        return false;
+    }
+
+    private function normalizeOrigin(string $origin): string
+    {
+        return rtrim(strtolower(trim($origin)), '/');
+    }
+
+    /** @return array<string, string> */
+    private function corsHeaders(string $origin): array
+    {
+        return [
+            'Access-Control-Allow-Origin' => $origin,
+            'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+            'Access-Control-Allow-Headers' => 'content-type',
+            'Access-Control-Max-Age' => '600',
+            'Vary' => 'Origin',
+        ];
+    }
+
     /**
      * @param array<string, mixed> $event
      * @return array<string, mixed>
@@ -208,16 +285,18 @@ final class BrowserRelayRoute
         return $flattened;
     }
 
-    /** @param array<string, mixed> $body */
-    private function response(array $body, int $status): mixed
+    /** @param array<string, mixed>|null $body */
+    /** @param array<string, string> $headers */
+    private function response(?array $body, int $status, array $headers = []): mixed
     {
         if (class_exists('WP_REST_Response')) {
-            return new \WP_REST_Response($body, $status);
+            return new \WP_REST_Response($body, $status, $headers);
         }
 
         return [
             'status' => $status,
             'body' => $body,
+            'headers' => $headers,
         ];
     }
 
