@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-31
+
+### Changed
+
+- Marked the first stable WordPress plugin release after the relay, spool, and diagnostics flow settled across live smoke coverage.
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.0.0`, raised the PHP SDK requirement to `debugbundle/sdk-php` `^1.0.0`, and synchronized plugin release metadata for the stable SDK line.
+
 ## [0.1.11] - 2026-05-29
 
 ### Fixed

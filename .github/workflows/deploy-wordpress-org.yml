@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Stable plugin version to deploy (for example 0.1.0)
+        description: Stable plugin version to deploy (for example 1.0.0)
         required: true
         type: string
 
