@@ -10,6 +10,7 @@ final class Settings
     public const PROJECT_TOKEN_CONSTANT = 'DEBUGBUNDLE_PROJECT_TOKEN';
     public const DEFAULT_ENDPOINT = 'https://api.debugbundle.com/v1/events';
     public const DEFAULT_RELAY_ROUTE = '/wp-json/debugbundle/v1/browser';
+    private const SETTINGS_VERSION = 2;
 
     /** @return array<string, mixed> */
     public function all(): array
@@ -18,6 +19,10 @@ final class Settings
         if (function_exists('get_option')) {
             $candidate = \get_option(self::OPTION_NAME, []);
             $stored = is_array($candidate) ? $candidate : [];
+        }
+
+        if ($stored !== [] && !array_key_exists('browser_load_in_head', $stored)) {
+            $stored['browser_load_in_head'] = false;
         }
 
         return array_merge($this->defaults(), $stored);
@@ -45,13 +50,14 @@ final class Settings
             'endpoint' => $endpoint !== '' ? $endpoint : self::DEFAULT_ENDPOINT,
             'backend_capture_enabled' => (bool) ($input['backend_capture_enabled'] ?? true),
             'frontend_capture_enabled' => (bool) ($input['frontend_capture_enabled'] ?? true),
+            'browser_load_in_head' => (bool) ($input['browser_load_in_head'] ?? false),
             'sample_rate' => $this->sanitizeSampleRate($input['sample_rate'] ?? 1.0),
             'browser_session_sample_rate' => $this->sanitizeSampleRate($input['browser_session_sample_rate'] ?? 1.0),
             'browser_max_events_per_session' => max(1, (int) ($input['browser_max_events_per_session'] ?? 100)),
             'browser_capture_console' => (bool) ($input['browser_capture_console'] ?? false),
             'log_level' => in_array($logLevel, $allowedLogLevels, true) ? $logLevel : 'warning',
             'delete_on_uninstall' => (bool) ($input['delete_on_uninstall'] ?? false),
-            'settings_version' => 1,
+            'settings_version' => self::SETTINGS_VERSION,
         ];
 
         return $sanitized;
@@ -153,6 +159,11 @@ final class Settings
         return (bool) $this->all()['browser_capture_console'];
     }
 
+    public function shouldLoadBrowserInHead(): bool
+    {
+        return (bool) $this->all()['browser_load_in_head'];
+    }
+
     public function shouldDeleteOnUninstall(): bool
     {
         return (bool) $this->all()['delete_on_uninstall'];
@@ -204,13 +215,14 @@ final class Settings
             'endpoint' => self::DEFAULT_ENDPOINT,
             'backend_capture_enabled' => true,
             'frontend_capture_enabled' => true,
+            'browser_load_in_head' => true,
             'sample_rate' => 1.0,
             'browser_session_sample_rate' => 1.0,
             'browser_max_events_per_session' => 100,
             'browser_capture_console' => false,
             'log_level' => 'warning',
             'delete_on_uninstall' => false,
-            'settings_version' => 1,
+            'settings_version' => self::SETTINGS_VERSION,
         ];
     }
 

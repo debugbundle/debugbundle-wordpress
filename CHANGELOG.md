@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-03
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.0.1` so WordPress release artifacts inherit the opaque browser-native error enrichment used for improved bundle diagnostics.
+- Enabled document-head browser SDK loading by default for new installs while preserving footer loading on upgraded installs until an administrator changes the setting.
+
 ## [1.0.0] - 2026-05-31
 
 ### Changed

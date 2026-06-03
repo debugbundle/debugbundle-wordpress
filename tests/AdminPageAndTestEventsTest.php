@@ -190,6 +190,7 @@ final class AdminPageAndTestEventsTest extends TestCase
                 'endpoint' => Settings::DEFAULT_ENDPOINT,
                 'backend_capture_enabled' => true,
                 'frontend_capture_enabled' => true,
+                'browser_load_in_head' => false,
                 'sample_rate' => 1.0,
                 'browser_session_sample_rate' => 1.0,
                 'browser_max_events_per_session' => 100,
@@ -225,6 +226,7 @@ final class AdminPageAndTestEventsTest extends TestCase
         self::assertStringContainsString('Controls how much backend traffic is captured.', $output);
         self::assertStringContainsString('</p><p class="description">Use 1.0 to capture everything, 0.5 to keep about half of events, or 0.0 to stop sending backend events.', $output);
         self::assertStringContainsString('Controls how many visitor sessions enable frontend capture at all.', $output);
+        self::assertStringContainsString('Load browser SDK in document head', $output);
         self::assertStringContainsString('Limits non-exception frontend events per browser session', $output);
         self::assertStringContainsString('Debug captures everything.', $output);
         self::assertStringContainsString('</p><p class="description">Choose the minimum backend log severity to capture.', $output);

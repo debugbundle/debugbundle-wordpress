@@ -7,8 +7,20 @@ namespace DebugBundleWp\Tests;
 use DebugBundleWp\Settings;
 use PHPUnit\Framework\TestCase;
 
+if (!function_exists('get_option')) {
+    function get_option(string $option, mixed $default = false): mixed
+    {
+        return $GLOBALS['debugbundle_wp_test_options'][$option] ?? $default;
+    }
+}
+
 final class SettingsTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        unset($GLOBALS['debugbundle_wp_test_options']);
+    }
+
     public function testSanitizeClampsSampleRatesAndNormalizesFields(): void
     {
         $settings = new Settings();
@@ -18,6 +30,7 @@ final class SettingsTest extends TestCase
             'sample_rate' => 5,
             'browser_session_sample_rate' => -1,
             'browser_max_events_per_session' => 0,
+            'browser_load_in_head' => true,
             'log_level' => 'INVALID',
             'enabled' => true,
         ]);
@@ -26,6 +39,7 @@ final class SettingsTest extends TestCase
         self::assertSame(1.0, $sanitized['sample_rate']);
         self::assertSame(0.0, $sanitized['browser_session_sample_rate']);
         self::assertSame(1, $sanitized['browser_max_events_per_session']);
+        self::assertTrue($sanitized['browser_load_in_head']);
         self::assertSame('warning', $sanitized['log_level']);
     }
 
@@ -40,6 +54,29 @@ final class SettingsTest extends TestCase
         self::assertStringStartsWith('dbundl', $masked);
         self::assertStringEndsWith('wxyz', $masked);
         self::assertStringNotContainsString('mnopqrst', $masked);
+    }
+
+    public function testNewInstallsDefaultToHeadLoading(): void
+    {
+        $settings = new Settings();
+
+        self::assertTrue($settings->shouldLoadBrowserInHead());
+    }
+
+    public function testLegacySavedSettingsKeepFooterLoadingUntilExplicitlyChanged(): void
+    {
+        $GLOBALS['debugbundle_wp_test_options'] = [
+            Settings::OPTION_NAME => [
+                'enabled' => true,
+                'project_token' => 'dbundle_proj_test_1234567890',
+                'frontend_capture_enabled' => true,
+                'settings_version' => 1,
+            ],
+        ];
+
+        $settings = new Settings();
+
+        self::assertFalse($settings->shouldLoadBrowserInHead());
     }
 
     /** @param array<string, mixed> $values */

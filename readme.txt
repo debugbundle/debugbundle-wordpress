@@ -3,7 +3,7 @@ Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -23,11 +23,13 @@ Features include:
 - simple settings page under Settings -> DebugBundle
 - compact diagnostics for SDK versions, flush status, and spool size
 - backend and frontend test-event buttons for setup verification
+- document-head loading for the bundled browser SDK on new installs, with upgraded installs preserving footer loading until explicitly changed
 
 External service notice:
 
 - The plugin only sends incident data to the DebugBundle service after a site administrator enters a DebugBundle project token in the plugin settings and saves it.
 - Browser JavaScript is served from this plugin package, not from a third-party CDN.
+- New installs load the bundled browser SDK in the document head by default. Upgraded installs preserve footer loading until a site administrator explicitly changes the plugin setting.
 - Browser incidents are posted to a same-origin WordPress REST route first and then forwarded server-side to DebugBundle.
 
 Privacy note:
@@ -67,6 +69,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 
 == Changelog ==
 
+
+= 1.0.1 =
+
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.0.1` so the plugin ships the opaque browser-error enrichment and head-loading defaults together on the stable SDK line.
 
 = 1.0.0 =
 

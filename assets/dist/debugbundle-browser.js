@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.0.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.0.1/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4248,7 +4248,7 @@
   var BALANCED_HIGH_VOLUME_ANOMALY_STATUSES = /* @__PURE__ */ new Set([400, 410]);
   var INVESTIGATIVE_ANOMALY_STATUSES = /* @__PURE__ */ new Set([...BALANCED_STANDARD_ANOMALY_STATUSES, ...BALANCED_HIGH_VOLUME_ANOMALY_STATUSES]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.0/node_modules/@debugbundle/shared-types/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-rules.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4625,7 +4625,7 @@
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4649,7 +4649,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4672,7 +4672,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4814,8 +4814,24 @@
     column_number: external_exports.number().int().nonnegative().nullable(),
     target: external_exports.object({
       tag_name: external_exports.string().nullable(),
-      source_url: external_exports.string().nullable()
-    }).nullable(),
+      source_url: external_exports.string().nullable(),
+      attributes: external_exports.object({
+        rel: external_exports.string().optional(),
+        as: external_exports.string().optional(),
+        type: external_exports.string().optional(),
+        media: external_exports.string().optional(),
+        cross_origin: external_exports.string().optional(),
+        async: external_exports.boolean().optional(),
+        defer: external_exports.boolean().optional(),
+        integrity_present: external_exports.boolean().optional()
+      }).strict().optional()
+    }).strict().nullable(),
+    page: external_exports.object({
+      url: external_exports.string().nullable(),
+      referrer: external_exports.string().nullable(),
+      ready_state: external_exports.enum(["loading", "interactive", "complete"]).nullable(),
+      visibility_state: external_exports.enum(["visible", "hidden", "prerender", "unloaded"]).nullable()
+    }).strict().optional(),
     opaque: external_exports.boolean()
   }).strict();
   var FrontendExceptionPayloadSchema = external_exports.object({
@@ -5195,7 +5211,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -5681,10 +5697,10 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.0.0",
+    version: "1.0.1",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -5715,12 +5731,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.0.0",
-      "@debugbundle/redaction": "1.0.0"
+      "@debugbundle/shared-types": "1.0.1",
+      "@debugbundle/redaction": "1.0.1"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -5744,7 +5760,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -5868,6 +5884,10 @@
     const value = record[key];
     return typeof value === "string" && value.length > 0 ? value : null;
   }
+  function getBooleanField(record, key) {
+    const value = record[key];
+    return typeof value === "boolean" ? value : void 0;
+  }
   function sanitizeBrowserEventUrl(value) {
     var _a;
     if (value === null) {
@@ -5896,17 +5916,63 @@
     const value = record[key];
     return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
   }
+  function normalizeReadyState(value) {
+    return value === "loading" || value === "interactive" || value === "complete" ? value : null;
+  }
+  function normalizeVisibilityState(value) {
+    return value === "visible" || value === "hidden" || value === "prerender" || value === "unloaded" ? value : null;
+  }
+  function normalizeBrowserErrorPage() {
+    const locationSource = getLocationSource();
+    const documentSource = getDocumentSource();
+    return {
+      url: sanitizeBrowserEventUrl(typeof (locationSource == null ? void 0 : locationSource.href) === "string" ? locationSource.href : null),
+      referrer: sanitizeBrowserEventUrl(typeof (documentSource == null ? void 0 : documentSource.referrer) === "string" ? documentSource.referrer : null),
+      ready_state: normalizeReadyState(documentSource == null ? void 0 : documentSource.readyState),
+      visibility_state: normalizeVisibilityState(documentSource == null ? void 0 : documentSource.visibilityState)
+    };
+  }
+  function normalizeBrowserErrorTargetAttributes(record) {
+    const attributes = {};
+    const rel = getStringField(record, "rel");
+    const as = getStringField(record, "as");
+    const type = getStringField(record, "type");
+    const media = getStringField(record, "media");
+    const crossOrigin = getStringField(record, "crossOrigin");
+    const async = getBooleanField(record, "async");
+    const defer = getBooleanField(record, "defer");
+    const integrity = getStringField(record, "integrity");
+    if (rel !== null)
+      attributes.rel = rel.slice(0, 128);
+    if (as !== null)
+      attributes.as = as.slice(0, 64);
+    if (type !== null)
+      attributes.type = type.slice(0, 128);
+    if (media !== null)
+      attributes.media = media.slice(0, 128);
+    if (crossOrigin !== null)
+      attributes.cross_origin = crossOrigin.slice(0, 64);
+    if (async !== void 0)
+      attributes.async = async;
+    if (defer !== void 0)
+      attributes.defer = defer;
+    if (integrity !== null)
+      attributes.integrity_present = true;
+    return Object.keys(attributes).length > 0 ? attributes : void 0;
+  }
   function normalizeBrowserErrorTarget(target) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const record = normalizeUnknownRecord(target);
     const tagName = (_b = (_a = getStringField(record, "tagName")) == null ? void 0 : _a.toLowerCase()) != null ? _b : null;
-    const sourceUrl = (_c = getStringField(record, "src")) != null ? _c : getStringField(record, "href");
+    const sourceUrl = (_d = (_c = getStringField(record, "src")) != null ? _c : getStringField(record, "href")) != null ? _d : getStringField(record, "currentSrc");
+    const attributes = normalizeBrowserErrorTargetAttributes(record);
     if (tagName === null && sourceUrl === null) {
       return null;
     }
     return {
       tag_name: tagName,
-      source_url: sanitizeBrowserEventUrl(sourceUrl)
+      source_url: sanitizeBrowserEventUrl(sourceUrl),
+      ...attributes === void 0 ? {} : { attributes }
     };
   }
   function normalizeBrowserErrorEvent(event) {
@@ -5921,6 +5987,7 @@
       line_number: getNonnegativeIntegerField(record, "lineno"),
       column_number: getNonnegativeIntegerField(record, "colno"),
       target,
+      page: normalizeBrowserErrorPage(),
       opaque: !hasErrorObject
     };
   }
@@ -6333,7 +6400,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -6659,7 +6726,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -6764,7 +6831,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -6853,7 +6920,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/index.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];

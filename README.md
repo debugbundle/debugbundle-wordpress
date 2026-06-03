@@ -49,6 +49,7 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 | Enable backend capture | enabled | Capture PHP/WordPress backend events. |
 | Enable frontend capture | enabled | Capture browser events. |
 | Capture browser console warnings/errors | disabled | Include frontend console breadcrumbs. |
+| Load browser SDK in document head | enabled for new installs | Load the browser SDK earlier for page-load and early-script failures. Upgraded installs keep footer loading until this setting is explicitly changed. |
 | Sample rate | `1.0` | Backend event sampling rate. |
 | Browser session sample rate | `1.0` | Fraction of browser sessions with frontend capture enabled. |
 | Browser max events per session | `100` | Limit non-exception browser events per session. |
@@ -59,6 +60,7 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 
 - The plugin does not send incident data until an administrator saves a project token or defines `DEBUGBUNDLE_PROJECT_TOKEN`.
 - Browser JavaScript is bundled into the plugin and served locally from WordPress.
+- New installs load the browser SDK in the document head by default. Upgraded installs that predate this setting continue to load it in the footer until an administrator explicitly changes the option.
 - Browser incidents are posted to the same-origin REST route first, then forwarded server-side to DebugBundle.
 - A bounded relay spool retries delivery after transient ingestion failures.
 

@@ -98,6 +98,7 @@ final class AdminPage
         $this->renderCheckboxRow('Enable plugin', Settings::OPTION_NAME . '[enabled]', (bool) ($values['enabled'] ?? true));
         $this->renderCheckboxRow('Enable backend capture', Settings::OPTION_NAME . '[backend_capture_enabled]', (bool) ($values['backend_capture_enabled'] ?? true));
         $this->renderCheckboxRow('Enable frontend capture', Settings::OPTION_NAME . '[frontend_capture_enabled]', (bool) ($values['frontend_capture_enabled'] ?? true));
+        $this->renderCheckboxRow('Load browser SDK in document head', Settings::OPTION_NAME . '[browser_load_in_head]', (bool) ($values['browser_load_in_head'] ?? false));
         $this->renderCheckboxRow('Capture browser console warnings/errors', Settings::OPTION_NAME . '[browser_capture_console]', (bool) ($values['browser_capture_console'] ?? false));
         $this->renderTextRow('Sample rate', Settings::OPTION_NAME . '[sample_rate]', (string) ($values['sample_rate'] ?? '1'), [
             'Controls how much backend traffic is captured.',
