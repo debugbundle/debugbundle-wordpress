@@ -96,7 +96,7 @@ if (!$result->success) {
 }
 ' --allow-root
 
-browser_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000001","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.0.1","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000002"},"payload":{"name":"DebugBundleWordPressSmokeFrontendError","message":"DebugBundle WordPress smoke frontend event","stack":"DebugBundleWordPressSmokeFrontendError: DebugBundle WordPress smoke frontend event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
+browser_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000001","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.1.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000002"},"payload":{"name":"DebugBundleWordPressSmokeFrontendError","message":"DebugBundle WordPress smoke frontend event","stack":"DebugBundleWordPressSmokeFrontendError: DebugBundle WordPress smoke frontend event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
   -X POST "$RELAY_URL" \
@@ -131,7 +131,7 @@ if ! grep -q 'Bearer dbundle_proj_smoke' "$MOCK_EVENTS_FILE"; then
 fi
 
 touch "$REPO_DIR/.smoke/fail-ingestion"
-spool_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000101","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.0.1","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000102"},"payload":{"name":"DebugBundleWordPressSpoolSmokeError","message":"DebugBundle WordPress spool smoke event","stack":"DebugBundleWordPressSpoolSmokeError: DebugBundle WordPress spool smoke event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
+spool_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000101","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.1.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000102"},"payload":{"name":"DebugBundleWordPressSpoolSmokeError","message":"DebugBundle WordPress spool smoke event","stack":"DebugBundleWordPressSpoolSmokeError: DebugBundle WordPress spool smoke event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
   -X POST "$RELAY_URL" \

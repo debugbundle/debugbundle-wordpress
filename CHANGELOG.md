@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-08
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.1.0` and raised the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.0` so WordPress inherits the path-scoped client-error capture policy updates on both runtime surfaces.
+- Synchronized plugin metadata, smoke fixtures, and release documentation with the `1.1.0` SDK line.
+
 ## [1.0.1] - 2026-06-03
 
 ### Changed

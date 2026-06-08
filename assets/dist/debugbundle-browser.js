@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.0.1/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.1.0/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4176,25 +4176,74 @@
   var RequestSignalClassificationValues = ["incident_signal", "context_signal"];
   var RequestSignalClassificationSchema = external_exports.enum(RequestSignalClassificationValues);
   var RECOMMENDED_IMMEDIATE_CLIENT_ERROR_STATUSES = [401, 403, 409, 422];
+  var HTTP_METHOD_VALUES = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
   var ImmediateClientErrorStatusSchema = external_exports.number().int().min(400).max(499);
+  var HttpMethodSchema = external_exports.enum(HTTP_METHOD_VALUES);
   function normalizeImmediateClientErrorStatuses(statuses) {
     return Array.from(new Set(statuses)).sort((left, right) => left - right);
   }
   var ImmediateClientErrorStatusesSchema = external_exports.array(ImmediateClientErrorStatusSchema).max(12).transform((statuses) => normalizeImmediateClientErrorStatuses(statuses));
+  function normalizePathPattern(value) {
+    return value.trim().replace(/\/{2,}/g, "/");
+  }
+  function isValidPathPattern(value) {
+    const normalized = normalizePathPattern(value);
+    if (!normalized.startsWith("/") || normalized.includes("?") || normalized.includes("#")) {
+      return false;
+    }
+    const wildcardIndex = normalized.indexOf("*");
+    return wildcardIndex === -1 || wildcardIndex === normalized.length - 1;
+  }
+  function normalizeHttpMethods(methods) {
+    if (methods === void 0 || methods.length === 0) {
+      return [];
+    }
+    const normalized = methods.map((method) => method.toUpperCase()).filter((method) => HTTP_METHOD_VALUES.includes(method));
+    return Array.from(new Set(normalized)).sort();
+  }
+  function normalizeImmediateClientErrorPathRules(rules) {
+    const normalized = rules.map((rule) => ({
+      status_code: rule.status_code,
+      path_pattern: normalizePathPattern(rule.path_pattern),
+      methods: normalizeHttpMethods(rule.methods)
+    }));
+    const deduped = /* @__PURE__ */ new Map();
+    for (const rule of normalized) {
+      deduped.set(`${rule.status_code}:${rule.path_pattern}:${rule.methods.join(",")}`, rule);
+    }
+    return Array.from(deduped.values()).sort((left, right) => {
+      if (left.status_code !== right.status_code)
+        return left.status_code - right.status_code;
+      const pathComparison = left.path_pattern.localeCompare(right.path_pattern);
+      if (pathComparison !== 0)
+        return pathComparison;
+      return left.methods.join(",").localeCompare(right.methods.join(","));
+    });
+  }
+  var ImmediateClientErrorPathRuleSchema = external_exports.object({
+    status_code: ImmediateClientErrorStatusSchema,
+    path_pattern: external_exports.string().min(1).max(256).transform(normalizePathPattern).refine(isValidPathPattern, {
+      message: "path_pattern must start with / and may only use a terminal * wildcard"
+    }),
+    methods: external_exports.array(HttpMethodSchema).max(7).optional().default([]).transform(normalizeHttpMethods)
+  });
+  var ImmediateClientErrorPathRulesSchema = external_exports.array(ImmediateClientErrorPathRuleSchema).max(25).transform((rules) => normalizeImmediateClientErrorPathRules(rules));
   var ResolvedCapturePolicySchema = external_exports.object({
     preset: CapturePresetSchema,
     capture_logs: CaptureLogsSchema,
     capture_request_events: CaptureRequestEventsSchema,
     capture_breadcrumbs: CaptureBreadcrumbsSchema,
     capture_probe_events: CaptureProbeEventsSchema,
-    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema
+    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema,
+    immediate_client_error_path_rules: ImmediateClientErrorPathRulesSchema.default([])
   });
   var CapturePolicyOverridesSchema = external_exports.object({
     capture_logs: CaptureLogsSchema.nullable(),
     capture_request_events: CaptureRequestEventsSchema.nullable(),
     capture_breadcrumbs: CaptureBreadcrumbsSchema.nullable(),
     capture_probe_events: CaptureProbeEventsSchema.nullable(),
-    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema.nullable()
+    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema.nullable(),
+    immediate_client_error_path_rules: ImmediateClientErrorPathRulesSchema.nullable().default(null)
   });
   var CapturePolicyResponseSchema = external_exports.object({
     access_mode: external_exports.enum(["manage", "preview"]),
@@ -4209,6 +4258,7 @@
     capture_breadcrumbs: CaptureBreadcrumbsSchema.nullable(),
     capture_probe_events: CaptureProbeEventsSchema.nullable(),
     immediate_client_error_statuses: ImmediateClientErrorStatusesSchema.nullable(),
+    immediate_client_error_path_rules: ImmediateClientErrorPathRulesSchema.nullable().default(null),
     updated_at: external_exports.string().datetime()
   });
   var CapturePolicyUpdateSchema = external_exports.object({
@@ -4217,7 +4267,8 @@
     capture_request_events: CaptureRequestEventsSchema.nullable().optional(),
     capture_breadcrumbs: CaptureBreadcrumbsSchema.nullable().optional(),
     capture_probe_events: CaptureProbeEventsSchema.nullable().optional(),
-    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema.nullable().optional()
+    immediate_client_error_statuses: ImmediateClientErrorStatusesSchema.nullable().optional(),
+    immediate_client_error_path_rules: ImmediateClientErrorPathRulesSchema.nullable().optional()
   });
   var PRESET_DEFAULTS = {
     minimal: {
@@ -4225,30 +4276,30 @@
       capture_request_events: "failures_only",
       capture_breadcrumbs: "local_only",
       capture_probe_events: "buffer_only",
-      immediate_client_error_statuses: []
+      immediate_client_error_statuses: [],
+      immediate_client_error_path_rules: []
     },
     balanced: {
       capture_logs: "warning",
       capture_request_events: "failures_only",
       capture_breadcrumbs: "exception_only",
       capture_probe_events: "buffer_only",
-      immediate_client_error_statuses: []
+      immediate_client_error_statuses: [],
+      immediate_client_error_path_rules: []
     },
     investigative: {
       capture_logs: "info",
       capture_request_events: "all",
       capture_breadcrumbs: "standalone",
       capture_probe_events: "standalone_when_activated",
-      immediate_client_error_statuses: [...RECOMMENDED_IMMEDIATE_CLIENT_ERROR_STATUSES]
+      immediate_client_error_statuses: [...RECOMMENDED_IMMEDIATE_CLIENT_ERROR_STATUSES],
+      immediate_client_error_path_rules: []
     }
   };
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
-  var BALANCED_STANDARD_ANOMALY_STATUSES = /* @__PURE__ */ new Set([401, 403, 404, 409, 422]);
-  var BALANCED_HIGH_VOLUME_ANOMALY_STATUSES = /* @__PURE__ */ new Set([400, 410]);
-  var INVESTIGATIVE_ANOMALY_STATUSES = /* @__PURE__ */ new Set([...BALANCED_STANDARD_ANOMALY_STATUSES, ...BALANCED_HIGH_VOLUME_ANOMALY_STATUSES]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-rules.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4625,7 +4676,7 @@
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4649,7 +4700,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4672,7 +4723,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.0.1/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -5211,7 +5262,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -5697,10 +5748,10 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.0.1",
+    version: "1.1.0",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -5731,12 +5782,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.0.1",
-      "@debugbundle/redaction": "1.0.1"
+      "@debugbundle/shared-types": "1.1.0",
+      "@debugbundle/redaction": "1.1.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -5760,10 +5811,11 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
+  var VALID_HTTP_METHODS = /* @__PURE__ */ new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
   function getWindowSource() {
     const candidate = globalThis["window"];
     if (candidate === null || typeof candidate !== "object") {
@@ -6238,6 +6290,7 @@
     }
     const capturePolicy = asRecord2(record["capture_policy"]);
     const immediateClientErrorStatuses = capturePolicy !== null && Array.isArray(capturePolicy["immediate_client_error_statuses"]) ? capturePolicy["immediate_client_error_statuses"].filter((entry) => typeof entry === "number" && Number.isInteger(entry) && entry >= 400 && entry <= 499).sort((left, right) => left - right) : [];
+    const immediateClientErrorPathRules = capturePolicy !== null ? parseImmediateClientErrorPathRules(capturePolicy["immediate_client_error_path_rules"]) : [];
     const requestFailurePreset = capturePolicy !== null && isBrowserCapturePreset(capturePolicy["preset"]) ? capturePolicy["preset"] : DEFAULT_REQUEST_FAILURE_PRESET;
     const requestCaptureEvents = capturePolicy !== null && isBrowserCaptureRequestEvents(capturePolicy["capture_request_events"]) ? capturePolicy["capture_request_events"] : DEFAULT_REQUEST_CAPTURE_EVENTS;
     return {
@@ -6247,8 +6300,43 @@
       triggerTokenKey: asString2(record["trigger_token_key"]),
       requestFailurePreset,
       requestCaptureEvents,
-      immediateClientErrorStatuses: immediateClientErrorStatuses.length === 0 ? [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES] : Array.from(new Set(immediateClientErrorStatuses))
+      immediateClientErrorStatuses: immediateClientErrorStatuses.length === 0 ? [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES] : Array.from(new Set(immediateClientErrorStatuses)),
+      immediateClientErrorPathRules
     };
+  }
+  function parseImmediateClientErrorPathRules(value) {
+    if (!Array.isArray(value) || value.length > 25) {
+      return [];
+    }
+    const rules = [];
+    for (const item of value) {
+      const record = asRecord2(item);
+      const statusCode = record == null ? void 0 : record["status_code"];
+      const pathPattern = record == null ? void 0 : record["path_pattern"];
+      const rawMethods = Array.isArray(record == null ? void 0 : record["methods"]) ? record["methods"] : [];
+      if (typeof statusCode !== "number" || !Number.isInteger(statusCode) || statusCode < 400 || statusCode > 499 || typeof pathPattern !== "string" || !isValidPathPattern2(pathPattern) || rawMethods.length > 7) {
+        return [];
+      }
+      const methods = [];
+      for (const rawMethod of rawMethods) {
+        const method = typeof rawMethod === "string" ? rawMethod.toUpperCase() : "";
+        if (!VALID_HTTP_METHODS.has(method)) {
+          return [];
+        }
+        if (!methods.includes(method)) {
+          methods.push(method);
+        }
+      }
+      rules.push({ statusCode, pathPattern, methods });
+    }
+    return rules;
+  }
+  function isValidPathPattern2(value) {
+    if (value.length === 0 || value.length > 256 || !value.startsWith("/") || value.includes("?") || value.includes("#")) {
+      return false;
+    }
+    const wildcardIndex = value.indexOf("*");
+    return wildcardIndex === -1 || wildcardIndex === value.length - 1;
   }
   function isBrowserCapturePreset(value) {
     return value === "minimal" || value === "balanced" || value === "investigative";
@@ -6400,7 +6488,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -6726,7 +6814,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -6831,7 +6919,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -6920,7 +7008,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.0.1/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -6932,15 +7020,13 @@
       triggerTokenKey: null,
       requestFailurePreset: DEFAULT_REQUEST_FAILURE_PRESET2,
       requestCaptureEvents: DEFAULT_REQUEST_CAPTURE_EVENTS2,
-      immediateClientErrorStatuses: [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2]
+      immediateClientErrorStatuses: [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2],
+      immediateClientErrorPathRules: []
     };
   }
   var BALANCED_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES2, 409]);
-  var BALANCED_STANDARD_ANOMALY_STATUSES2 = /* @__PURE__ */ new Set([401, 403, 404, 409, 422]);
-  var BALANCED_HIGH_VOLUME_ANOMALY_STATUSES2 = /* @__PURE__ */ new Set([400, 410]);
-  var INVESTIGATIVE_ANOMALY_STATUSES2 = /* @__PURE__ */ new Set([...BALANCED_STANDARD_ANOMALY_STATUSES2, ...BALANCED_HIGH_VOLUME_ANOMALY_STATUSES2]);
-  function isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses = []) {
+  function isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
     if (!Number.isFinite(statusCode)) {
       return false;
     }
@@ -6948,6 +7034,9 @@
       return true;
     }
     if (immediateClientErrorStatuses.includes(statusCode)) {
+      return true;
+    }
+    if (matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, immediateClientErrorPathRules)) {
       return true;
     }
     if (preset === "investigative") {
@@ -6958,27 +7047,46 @@
     }
     return false;
   }
-  function isRequestAnomalyCandidateStatus(statusCode, preset) {
-    if (!Number.isFinite(statusCode) || statusCode < 400 || statusCode >= 500) {
+  function matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, rules) {
+    if (statusCode < 400 || statusCode > 499 || requestPath === void 0) {
       return false;
     }
-    if (preset === "investigative") {
-      return INVESTIGATIVE_ANOMALY_STATUSES2.has(statusCode);
-    }
-    if (preset === "balanced") {
-      return BALANCED_STANDARD_ANOMALY_STATUSES2.has(statusCode) || BALANCED_HIGH_VOLUME_ANOMALY_STATUSES2.has(statusCode);
-    }
-    return false;
+    const normalizedPath = normalizeRequestPath(requestPath);
+    const normalizedMethod = typeof httpMethod === "string" ? httpMethod.toUpperCase() : null;
+    return rules.some((rule) => {
+      if (rule.statusCode !== statusCode) {
+        return false;
+      }
+      if (rule.methods.length > 0 && (normalizedMethod === null || !rule.methods.includes(normalizedMethod))) {
+        return false;
+      }
+      if (rule.pathPattern.endsWith("*")) {
+        return normalizedPath.startsWith(rule.pathPattern.slice(0, -1));
+      }
+      return normalizedPath === rule.pathPattern;
+    });
   }
-  function shouldCaptureRequestStatus(statusCode, preset, policy, immediateClientErrorStatuses = []) {
-    if (isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses)) {
+  function normalizeRequestPath(value) {
+    var _a, _b;
+    try {
+      return new URL(value, (_b = (_a = getLocationSource()) == null ? void 0 : _a.href) != null ? _b : "https://debugbundle.local").pathname || "/";
+    } catch {
+      const queryIndex = value.indexOf("?");
+      const fragmentIndex = value.indexOf("#");
+      const end = queryIndex === -1 ? fragmentIndex === -1 ? value.length : fragmentIndex : fragmentIndex === -1 ? queryIndex : Math.min(queryIndex, fragmentIndex);
+      const path = value.slice(0, end);
+      return path.startsWith("/") && path.length > 0 ? path : "/";
+    }
+  }
+  function shouldCaptureRequestStatus(statusCode, preset, policy, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
+    if (isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses, requestPath, httpMethod, immediateClientErrorPathRules)) {
       return true;
     }
     if (policy === "all") {
       return Number.isFinite(statusCode) && statusCode >= 400;
     }
     if (policy === "failures_only") {
-      return isRequestAnomalyCandidateStatus(statusCode, preset);
+      return statusCode >= 500;
     }
     return false;
   }
@@ -7587,7 +7695,7 @@
       }
       const data = breadcrumb.data;
       const statusCode = typeof data["status_code"] === "number" ? data["status_code"] : 0;
-      if (!shouldCaptureRequestStatus(statusCode, this.remoteProbeState.requestFailurePreset, this.remoteProbeState.requestCaptureEvents, this.remoteProbeState.immediateClientErrorStatuses)) {
+      if (!shouldCaptureRequestStatus(statusCode, this.remoteProbeState.requestFailurePreset, this.remoteProbeState.requestCaptureEvents, this.remoteProbeState.immediateClientErrorStatuses, typeof data["url"] === "string" ? data["url"] : void 0, typeof data["method"] === "string" ? data["method"] : void 0, this.remoteProbeState.immediateClientErrorPathRules)) {
         return;
       }
       const rawUrl = typeof data["url"] === "string" && data["url"].length > 0 ? data["url"] : "/";
@@ -7760,7 +7868,7 @@
       if (config2 === null) {
         return false;
       }
-      if (event.event_type === "frontend_exception" || event.event_type === "error_suppressed" || event.event_type === "request_event" && isImmediateRequestIncidentStatus(event.payload.response_status, this.remoteProbeState.requestFailurePreset, this.remoteProbeState.immediateClientErrorStatuses)) {
+      if (event.event_type === "frontend_exception" || event.event_type === "error_suppressed" || event.event_type === "request_event" && isImmediateRequestIncidentStatus(event.payload.response_status, this.remoteProbeState.requestFailurePreset, this.remoteProbeState.immediateClientErrorStatuses, event.payload.path, event.payload.method, this.remoteProbeState.immediateClientErrorPathRules)) {
         return true;
       }
       return config2.sampleRate >= 1 || Math.random() <= config2.sampleRate;
