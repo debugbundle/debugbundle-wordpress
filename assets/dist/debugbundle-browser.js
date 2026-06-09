@@ -1,3 +1,4 @@
+"use strict";
 (() => {
   var __defProp = Object.defineProperty;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -7,7 +8,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.1.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.2.0/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4153,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4299,7 +4300,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4327,6 +4328,7 @@
   var CaptureRuleRuntimeSchema = external_exports.enum(CAPTURE_RULE_RUNTIME_VALUES);
   var CaptureRuleEventTypeSchema = external_exports.enum(CAPTURE_RULE_EVENT_TYPES);
   var BrowserEventKindSchema = external_exports.enum(["window_error", "resource_error"]);
+  var CaptureRuleClientKindSchema = external_exports.enum(["human", "bot", "unknown"]);
   function normalizeOptionalTrimmedString(value) {
     const trimmed = value == null ? void 0 : value.trim();
     return trimmed && trimmed.length > 0 ? trimmed : void 0;
@@ -4404,6 +4406,9 @@
     message_contains: external_exports.string().min(1).max(500).optional(),
     message_equals: external_exports.string().min(1).max(500).optional(),
     browser_event_kind: BrowserEventKindSchema.optional(),
+    browser_event_opaque: external_exports.boolean().optional(),
+    client_kind: CaptureRuleClientKindSchema.optional(),
+    bot_family: external_exports.string().min(1).max(120).optional(),
     resource_url: UrlMatcherSchema.optional(),
     request_url: UrlMatcherSchema.optional(),
     status_codes: external_exports.array(external_exports.number().int().min(100).max(599)).min(1).optional(),
@@ -4418,6 +4423,7 @@
     const errorName = normalizeOptionalTrimmedString(value.error_name);
     const messageContains = normalizeOptionalTrimmedString(value.message_contains);
     const messageEquals = normalizeOptionalTrimmedString(value.message_equals);
+    const botFamily = normalizeOptionalTrimmedString(value.bot_family);
     const statusCodes = normalizeNumberArray(value.status_codes);
     if (eventTypes !== void 0) {
       normalized.event_types = eventTypes;
@@ -4446,6 +4452,15 @@
     if (value.browser_event_kind !== void 0) {
       normalized.browser_event_kind = value.browser_event_kind;
     }
+    if (value.browser_event_opaque !== void 0) {
+      normalized.browser_event_opaque = value.browser_event_opaque;
+    }
+    if (value.client_kind !== void 0) {
+      normalized.client_kind = value.client_kind;
+    }
+    if (botFamily !== void 0) {
+      normalized.bot_family = botFamily;
+    }
     if (value.resource_url !== void 0) {
       normalized.resource_url = value.resource_url;
     }
@@ -4472,6 +4487,9 @@
       "message_contains",
       "message_equals",
       "browser_event_kind",
+      "browser_event_opaque",
+      "client_kind",
+      "bot_family",
       "resource_url",
       "request_url",
       "status_codes",
@@ -4655,6 +4673,8 @@
     version: external_exports.literal(1),
     rules: external_exports.array(CaptureRuleSchema)
   });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -4670,13 +4690,16 @@
     error_name: external_exports.string().min(1).optional(),
     message: external_exports.string().min(1).optional(),
     browser_event_kind: BrowserEventKindSchema.optional(),
+    browser_event_opaque: external_exports.boolean().optional(),
+    client_kind: CaptureRuleClientKindSchema.optional(),
+    bot_family: external_exports.string().min(1).max(120).optional(),
     resource_url: CaptureRuleEvaluationUrlSchema.optional(),
     request_url: CaptureRuleEvaluationUrlSchema.optional(),
     status_code: external_exports.number().int().min(0).max(599).optional(),
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4700,7 +4723,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4723,7 +4746,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.1.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.2.0/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4885,6 +4908,12 @@
     }).strict().optional(),
     opaque: external_exports.boolean()
   }).strict();
+  var FrontendRejectionReasonSchema = external_exports.object({
+    kind: external_exports.enum(["error", "string", "object", "null", "undefined", "unknown"]),
+    name: external_exports.string().min(1).optional(),
+    message: external_exports.string().min(1).optional(),
+    preview: external_exports.string().min(1).optional()
+  }).strict();
   var FrontendExceptionPayloadSchema = external_exports.object({
     name: external_exports.string().min(1),
     message: external_exports.string().min(1),
@@ -4897,6 +4926,7 @@
     breadcrumbs: external_exports.array(FrontendExceptionBreadcrumbSchema).optional(),
     device: DeviceInfoSchema.nullable().optional(),
     browser_event: BrowserExceptionEventSchema.optional(),
+    rejection_reason: FrontendRejectionReasonSchema.optional(),
     dom_context: external_exports.object({
       mode: external_exports.literal("lightweight"),
       html_excerpt: external_exports.string().min(1)
@@ -5262,7 +5292,30 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  function cloneEvent(event) {
+    return JSON.parse(JSON.stringify(event));
+  }
+  function applyBrowserBeforeSend(event, beforeSend) {
+    if (beforeSend === void 0) {
+      return event;
+    }
+    try {
+      const result = beforeSend(cloneEvent(event));
+      if (result === null) {
+        return null;
+      }
+      if (result === void 0) {
+        return event;
+      }
+      const parsed = EventEnvelopeSchema.safeParse(result);
+      return parsed.success ? parsed.data : event;
+    } catch {
+      return event;
+    }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -5400,6 +5453,9 @@
     const errorName = asString(record["error_name"]);
     const messageContains = asString(record["message_contains"]);
     const messageEquals = asString(record["message_equals"]);
+    const browserEventOpaque = asBoolean(record["browser_event_opaque"]);
+    const clientKind = record["client_kind"] === "human" || record["client_kind"] === "bot" || record["client_kind"] === "unknown" ? record["client_kind"] : null;
+    const botFamily = asString(record["bot_family"]);
     const resourceUrl = parseUrlMatcher(record["resource_url"]);
     const requestUrl = parseUrlMatcher(record["request_url"]);
     const statusCodes = parseNumberArray(record["status_codes"]);
@@ -5414,6 +5470,9 @@
       ...messageContains === null ? {} : { message_contains: messageContains },
       ...messageEquals === null ? {} : { message_equals: messageEquals },
       ...record["browser_event_kind"] === "window_error" || record["browser_event_kind"] === "resource_error" ? { browser_event_kind: record["browser_event_kind"] } : {},
+      ...browserEventOpaque === null ? {} : { browser_event_opaque: browserEventOpaque },
+      ...clientKind === null ? {} : { client_kind: clientKind },
+      ...botFamily === null ? {} : { bot_family: botFamily },
       ...resourceUrl === void 0 ? {} : { resource_url: resourceUrl },
       ...requestUrl === void 0 ? {} : { request_url: requestUrl },
       ...statusCodes === void 0 ? {} : { status_codes: statusCodes },
@@ -5437,6 +5496,9 @@
       matcher.message_contains,
       matcher.message_equals,
       matcher.browser_event_kind,
+      matcher.browser_event_opaque,
+      matcher.client_kind,
+      matcher.bot_family,
       matcher.resource_url,
       matcher.request_url,
       matcher.status_codes,
@@ -5450,6 +5512,37 @@
       return null;
     }
     return matcher;
+  }
+  function classifyClientFromUserAgent(userAgent) {
+    if (userAgent === null) {
+      return { client_kind: "unknown" };
+    }
+    const lower = userAgent.toLowerCase();
+    const knownBots = [
+      { family: "Googlebot", markers: ["googlebot", "adsbot-google", "google-inspectiontool"] },
+      { family: "Bingbot", markers: ["bingbot", "msnbot"] },
+      { family: "DuckDuckBot", markers: ["duckduckbot"] },
+      { family: "Applebot", markers: ["applebot"] },
+      { family: "YandexBot", markers: ["yandexbot"] },
+      { family: "Baiduspider", markers: ["baiduspider"] },
+      { family: "FacebookBot", markers: ["facebookexternalhit", "facebot"] },
+      { family: "LinkedInBot", markers: ["linkedinbot"] },
+      { family: "TwitterBot", markers: ["twitterbot"] },
+      { family: "Slackbot", markers: ["slackbot"] }
+    ];
+    const knownBot = knownBots.find((entry) => entry.markers.some((marker) => lower.includes(marker)));
+    if (knownBot !== void 0) {
+      return { client_kind: "bot", bot_family: knownBot.family };
+    }
+    if (/\b(bot|crawler|spider|slurp)\b/.test(lower)) {
+      return { client_kind: "bot", bot_family: "OtherBot" };
+    }
+    return { client_kind: "human" };
+  }
+  function readDeviceUserAgent(payload) {
+    const record = asRecord(payload);
+    const device = asRecord(record == null ? void 0 : record["device"]);
+    return asString(device == null ? void 0 : device["user_agent"]);
   }
   function parseCaptureRule(value) {
     var _a;
@@ -5514,6 +5607,11 @@
       environment: event.service.environment,
       runtime: normalizeRuntime(event.service.runtime)
     };
+    const client = classifyClientFromUserAgent(readDeviceUserAgent(event.payload));
+    const baseWithClient = {
+      ...base,
+      ...client
+    };
     if (event.event_type === "frontend_exception") {
       const payload = event.payload;
       const browserEvent = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
@@ -5522,18 +5620,19 @@
       const browserEventKind = (browserEvent == null ? void 0 : browserEvent["kind"]) === "window_error" || (browserEvent == null ? void 0 : browserEvent["kind"]) === "resource_error" ? browserEvent["kind"] : void 0;
       const resourceUrl = normalizeEvaluationUrl(sourceUrl);
       return {
-        ...base,
+        ...baseWithClient,
         ...resourceUrl.first_party === void 0 ? {} : { first_party: resourceUrl.first_party },
         error_name: event.payload.name,
         message: event.payload.message,
         ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
+        ...typeof (browserEvent == null ? void 0 : browserEvent["opaque"]) === "boolean" ? { browser_event_opaque: browserEvent["opaque"] } : {},
         ...resourceUrl.url === void 0 ? {} : { resource_url: resourceUrl.url }
       };
     }
     if (event.event_type === "request_event") {
       const requestUrl = normalizeEvaluationUrl(event.payload.path);
       return {
-        ...base,
+        ...baseWithClient,
         first_party: (_a = requestUrl.first_party) != null ? _a : true,
         ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
         status_code: event.payload.response_status
@@ -5544,7 +5643,7 @@
       const requestUrl = normalizeEvaluationUrl(rawUrl);
       const statusCode = typeof event.payload.data["status_code"] === "number" ? event.payload.data["status_code"] : void 0;
       return {
-        ...base,
+        ...baseWithClient,
         ...requestUrl.first_party === void 0 ? {} : { first_party: requestUrl.first_party },
         ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
         ...statusCode === void 0 ? {} : { status_code: statusCode }
@@ -5552,11 +5651,11 @@
     }
     if (event.event_type === "log_event") {
       return {
-        ...base,
+        ...baseWithClient,
         message: event.payload.message
       };
     }
-    return base;
+    return baseWithClient;
   }
   function matchesUrlMatcher(matcher, value) {
     if (matcher === void 0) {
@@ -5608,6 +5707,15 @@
     if (matcher.browser_event_kind !== void 0 && matcher.browser_event_kind !== context.browser_event_kind) {
       return false;
     }
+    if (matcher.browser_event_opaque !== void 0 && matcher.browser_event_opaque !== context.browser_event_opaque) {
+      return false;
+    }
+    if (matcher.client_kind !== void 0 && matcher.client_kind !== context.client_kind) {
+      return false;
+    }
+    if (matcher.bot_family !== void 0 && matcher.bot_family !== context.bot_family) {
+      return false;
+    }
     if (!matchesUrlMatcher(matcher.resource_url, context.resource_url)) {
       return false;
     }
@@ -5650,6 +5758,9 @@
     if (matcher.browser_event_kind !== void 0) {
       score += 100;
     }
+    if (matcher.browser_event_opaque !== void 0) {
+      score += 100;
+    }
     if (((_e = matcher.resource_url) == null ? void 0 : _e.host_suffix) !== void 0 || ((_f = matcher.request_url) == null ? void 0 : _f.host_suffix) !== void 0) {
       score += 90;
     }
@@ -5665,8 +5776,14 @@
     if (matcher.message_contains !== void 0) {
       score += 50;
     }
+    if (matcher.bot_family !== void 0) {
+      score += 45;
+    }
     if (matcher.first_party !== void 0) {
       score += 40;
+    }
+    if (matcher.client_kind !== void 0) {
+      score += 35;
     }
     if (matcher.services !== void 0) {
       score += 30;
@@ -5748,10 +5865,10 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.1.0",
+    version: "1.2.0",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -5782,12 +5899,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.1.0",
-      "@debugbundle/redaction": "1.1.0"
+      "@debugbundle/shared-types": "1.2.0",
+      "@debugbundle/redaction": "1.2.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -5811,7 +5928,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6488,7 +6605,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -6814,7 +6931,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -6919,7 +7036,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -7008,10 +7125,11 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.1.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.2.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
+  var MAX_REJECTION_REASON_PREVIEW_LENGTH = 500;
   function createInitialRemoteProbeState() {
     return {
       probesEnabled: false,
@@ -7022,6 +7140,59 @@
       requestCaptureEvents: DEFAULT_REQUEST_CAPTURE_EVENTS2,
       immediateClientErrorStatuses: [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2],
       immediateClientErrorPathRules: []
+    };
+  }
+  function truncateRejectionReasonPreview(value) {
+    return value.length > MAX_REJECTION_REASON_PREVIEW_LENGTH ? `${value.slice(0, MAX_REJECTION_REASON_PREVIEW_LENGTH)}[truncated]` : value;
+  }
+  function readReasonStringField(record, key) {
+    const value = record[key];
+    return typeof value === "string" && value.trim().length > 0 ? truncateRejectionReasonPreview(value.trim()) : void 0;
+  }
+  function normalizeUnhandledRejectionReason(reason) {
+    var _a;
+    if (reason instanceof Error) {
+      return {
+        error: reason,
+        rejectionReason: {
+          kind: "error",
+          name: reason.name || "Error",
+          message: truncateRejectionReasonPreview(reason.message || "Unknown rejection error")
+        }
+      };
+    }
+    if (typeof reason === "string") {
+      const preview2 = truncateRejectionReasonPreview(reason.length > 0 ? reason : "[empty string]");
+      return {
+        error: new Error(reason.length > 0 ? reason : "Unhandled promise rejection"),
+        rejectionReason: { kind: "string", preview: preview2 }
+      };
+    }
+    if (reason === null) {
+      return {
+        error: new Error("Unhandled promise rejection: null"),
+        rejectionReason: { kind: "null", preview: "null" }
+      };
+    }
+    if (reason === void 0) {
+      return {
+        error: new Error("Unhandled promise rejection: undefined"),
+        rejectionReason: { kind: "undefined", preview: "undefined" }
+      };
+    }
+    const record = normalizeUnknownRecord(reason);
+    const name = readReasonStringField(record, "name");
+    const message = readReasonStringField(record, "message");
+    const constructorName = typeof reason === "object" && reason !== null && "constructor" in reason ? (_a = reason.constructor) == null ? void 0 : _a.name : void 0;
+    const preview = typeof constructorName === "string" && constructorName.length > 0 ? constructorName : "object";
+    return {
+      error: new Error(message != null ? message : "Unhandled promise rejection"),
+      rejectionReason: {
+        kind: "object",
+        ...name === void 0 ? {} : { name },
+        ...message === void 0 ? {} : { message },
+        preview
+      }
     };
   }
   var BALANCED_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
@@ -7176,7 +7347,8 @@
         captureRules: [],
         fetchImpl: getFetchSource(),
         transport: (_f = config2.transport) != null ? _f : createFetchTransport(),
-        transportMode: resolvedTransport.mode
+        transportMode: resolvedTransport.mode,
+        ...config2.beforeSend === void 0 ? {} : { beforeSend: config2.beforeSend }
       };
       this.authRejected = false;
       this.sessionSampledIn = this.config.sessionSampleRate >= 1 || Math.random() < this.config.sessionSampleRate;
@@ -7241,6 +7413,9 @@
         });
         if (context.browser_event !== void 0) {
           event.payload["browser_event"] = context.browser_event;
+        }
+        if (context.rejection_reason !== void 0) {
+          event.payload["rejection_reason"] = context.rejection_reason;
         }
         this.removeEmptyProjectToken(event, config2);
         this.enqueueEvent(event);
@@ -7500,9 +7675,11 @@
           });
         };
         const onUnhandledRejection = (event) => {
-          var _a;
           const maybeError = normalizeUnknownRecord(event);
-          this.captureException((_a = maybeError["reason"]) != null ? _a : new Error("Unhandled promise rejection"));
+          const rejection = normalizeUnhandledRejectionReason(maybeError["reason"]);
+          this.captureException(rejection.error, {
+            rejection_reason: rejection.rejectionReason
+          });
         };
         windowSource.addEventListener("pagehide", onPageHide);
         windowSource.addEventListener("error", onError, true);
@@ -7750,7 +7927,12 @@
       return typeof locationSource.pathname === "string" ? locationSource.pathname : null;
     }
     enqueueEvent(event, countTowardSession = true) {
-      const resolvedEvent = this.applyCaptureRulesToEvent(event);
+      var _a;
+      const beforeSendEvent = applyBrowserBeforeSend(event, (_a = this.config) == null ? void 0 : _a.beforeSend);
+      if (beforeSendEvent === null) {
+        return;
+      }
+      const resolvedEvent = this.applyCaptureRulesToEvent(beforeSendEvent);
       if (resolvedEvent === null) {
         return;
       }
@@ -7762,7 +7944,7 @@
         this.scheduleFlush();
         return;
       }
-      this.enqueueInternalEvent(resolvedEvent, countTowardSession);
+      this.enqueueInternalEvent(resolvedEvent, countTowardSession, false);
     }
     applyCaptureRulesToEvent(event) {
       var _a;
@@ -7816,10 +7998,17 @@
         }
       };
     }
-    enqueueInternalEvent(event, countTowardSession = true) {
+    enqueueInternalEvent(event, countTowardSession = true, applyBeforeSend = true) {
       const config2 = this.config;
       if (config2 === null || this.authRejected) {
         return;
+      }
+      if (applyBeforeSend) {
+        const beforeSendEvent = applyBrowserBeforeSend(event, config2.beforeSend);
+        if (beforeSendEvent === null) {
+          return;
+        }
+        event = beforeSendEvent;
       }
       this.bufferedEvents.push(event);
       if (countTowardSession && event.event_type !== "frontend_exception") {

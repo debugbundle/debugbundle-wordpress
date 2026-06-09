@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-09
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.2.0` so WordPress inherits the browser `beforeSend` hook, bounded rejection-reason capture, and bot-aware browser-noise controls on the stable JS SDK line.
+- Synchronized plugin metadata, smoke fixtures, and release documentation with the `1.2.0` browser SDK line while keeping the PHP SDK requirement on `debugbundle/sdk-php` `^1.1.0`.
+
 ## [1.1.0] - 2026-06-08
 
 ### Changed
