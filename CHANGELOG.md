@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-16
+
+### Fixed
+
+- Replaced the remaining raw `parse_url()` relay-origin parsing calls with `wp_parse_url()` so the WordPress REST browser relay satisfies current WordPress Plugin Check URL-parsing guidance consistently.
+
 ## [1.2.0] - 2026-06-09
 
 ### Changed

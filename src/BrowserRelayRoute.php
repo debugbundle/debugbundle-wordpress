@@ -191,7 +191,7 @@ final class BrowserRelayRoute
             return null;
         }
 
-        $parts = parse_url($referer);
+        $parts = \wp_parse_url($referer);
         if (!is_array($parts) || !isset($parts['scheme'], $parts['host'])) {
             return null;
         }
@@ -213,7 +213,7 @@ final class BrowserRelayRoute
         }
 
         if ($host !== null && trim($host) !== '') {
-            $parts = parse_url($origin);
+            $parts = \wp_parse_url($origin);
             $originHost = is_array($parts) && isset($parts['host']) ? strtolower((string) $parts['host']) : '';
             return $originHost !== '' && $originHost === strtolower(explode(':', trim($host))[0] ?? '');
         }
