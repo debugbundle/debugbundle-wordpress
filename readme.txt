@@ -3,7 +3,7 @@ Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -69,6 +69,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 
 == Changelog ==
 
+
+= 1.2.2 =
+
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.3.0` so the plugin ships the browser fetch-header preservation fix on the current stable JS SDK line.
 
 = 1.2.1 =
 

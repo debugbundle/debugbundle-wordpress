@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-06-17
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.3.0` so WordPress inherits the browser fetch-header preservation fix and the aligned trace-propagation documentation on the current stable JS SDK line.
+
 ## [1.2.1] - 2026-06-16
 
 ### Fixed
