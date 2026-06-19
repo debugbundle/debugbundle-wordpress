@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-06-19
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.3.1` and raised the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.2` so WordPress inherits the canonical event-envelope fixes across both runtime surfaces.
+
 ## [1.2.2] - 2026-06-17
 
 ### Changed

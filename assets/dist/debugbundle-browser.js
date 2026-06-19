@@ -1,4 +1,3 @@
-"use strict";
 (() => {
   var __defProp = Object.defineProperty;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -8,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.3.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.3.1/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4153,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4300,7 +4299,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4674,7 +4673,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -4699,7 +4698,7 @@
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4723,7 +4722,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4746,7 +4745,30 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.3.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  var PROJECT_COLOR_TAG_VALUES = [
+    "red",
+    "orange",
+    "amber",
+    "yellow",
+    "lime",
+    "green",
+    "emerald",
+    "teal",
+    "cyan",
+    "sky",
+    "blue",
+    "indigo",
+    "violet",
+    "purple",
+    "fuchsia",
+    "pink",
+    "rose",
+    "slate"
+  ];
+  var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.3.1/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4779,11 +4801,19 @@
     environment: external_exports.string().min(1)
   });
   var CorrelationSchema = external_exports.object({
-    request_id: external_exports.string().nullable(),
-    trace_id: external_exports.string().nullable(),
-    session_id: external_exports.string().nullable(),
-    user_id_hash: external_exports.string().nullable()
-  }).strict();
+    request_id: external_exports.string().nullable().optional(),
+    trace_id: external_exports.string().nullable().optional(),
+    session_id: external_exports.string().nullable().optional(),
+    user_id_hash: external_exports.string().nullable().optional()
+  }).strict().transform((value) => {
+    var _a, _b, _c, _d;
+    return {
+      request_id: (_a = value.request_id) != null ? _a : null,
+      trace_id: (_b = value.trace_id) != null ? _b : null,
+      session_id: (_c = value.session_id) != null ? _c : null,
+      user_id_hash: (_d = value.user_id_hash) != null ? _d : null
+    };
+  });
   var InlineProbeDataItemSchema = external_exports.object({
     label: external_exports.string().min(1),
     data: external_exports.record(external_exports.string(), external_exports.unknown()),
@@ -4963,7 +4993,8 @@
     sdk_version: external_exports.string().min(1),
     service: ServiceSchema,
     occurred_at: external_exports.string().datetime(),
-    correlation: CorrelationSchema.optional()
+    correlation: CorrelationSchema.optional(),
+    context: external_exports.record(external_exports.string(), external_exports.unknown()).optional()
   }).strict();
   var EventEnvelopeSchema = external_exports.discriminatedUnion("event_type", [
     EnvelopeBaseSchema.extend({ event_type: external_exports.literal("backend_exception"), payload: BackendExceptionPayloadSchema }),
@@ -4993,6 +5024,7 @@
         session_id: null,
         user_id_hash: null
       },
+      context: input.context,
       payload: input.payload
     };
     return EventEnvelopeSchema.parse(candidate);
@@ -5292,7 +5324,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -5315,7 +5347,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -5865,10 +5897,10 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.3.0",
+    version: "1.3.1",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -5899,12 +5931,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.3.0",
-      "@debugbundle/redaction": "1.3.0"
+      "@debugbundle/shared-types": "1.3.1",
+      "@debugbundle/redaction": "1.3.1"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -5928,7 +5960,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6605,7 +6637,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -6990,7 +7022,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -7095,7 +7127,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -7184,7 +7216,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.3.1/node_modules/@debugbundle/sdk-browser/dist/index.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
