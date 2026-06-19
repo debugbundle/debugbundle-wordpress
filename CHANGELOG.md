@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-06-20
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.4.0` so WordPress inherits the latest capture-rule suggestion contract and bundle metadata updates from the stable JS SDK line.
+
 ## [1.2.3] - 2026-06-19
 
 ### Changed

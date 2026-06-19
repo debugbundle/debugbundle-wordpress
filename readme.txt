@@ -3,7 +3,7 @@ Contributors: debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.2.3
+Stable tag: 1.2.4
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -70,9 +70,9 @@ No. The plugin requires a saved project token before it can forward backend or b
 == Changelog ==
 
 
-= 1.2.3 =
+= 1.2.4 =
 
-* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.3.1` and require `debugbundle/sdk-php` `^1.1.2` so the plugin ships the canonical event-envelope fixes across the stable browser and PHP SDK line.
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.4.0` so the plugin ships the latest capture-rule suggestion contract and bundle metadata updates across the stable browser SDK line.
 
 = 1.2.2 =
 

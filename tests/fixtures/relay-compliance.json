@@ -19,7 +19,7 @@
               "event_id": "00000000-0000-4000-8000-000000000401",
               "event_type": "frontend_exception",
               "sdk_name": "evil-browser-sdk",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:00:00.000Z",
               "service": {
                 "name": "checkout-web",
@@ -105,7 +105,7 @@
               "event_id": "00000000-0000-4000-8000-000000000402",
               "event_type": "frontend_exception",
               "sdk_name": "@debugbundle/sdk-browser",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:01:00.000Z",
               "service": {
                 "name": "checkout-web",
@@ -178,7 +178,7 @@
               "project_token": "dbundle_proj_stolen",
               "organization_id": "org_123",
               "sdk_name": "spoofed-sdk",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:02:00.000Z",
               "service": {
                 "name": "checkout-web",
@@ -218,7 +218,7 @@
           "event_id": "00000000-0000-4000-8000-000000000404",
           "event_type": "frontend_exception",
           "sdk_name": "@debugbundle/sdk-browser",
-          "sdk_version": "1.2.3",
+          "sdk_version": "1.2.4",
           "occurred_at": "2026-05-19T10:02:00.000Z",
           "service": {
             "name": "checkout-web",
@@ -415,7 +415,7 @@
               "event_id": "00000000-0000-4000-8000-000000000405",
               "event_type": "frontend_exception",
               "sdk_name": "@debugbundle/sdk-browser",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:03:00.000Z",
               "service": {
                 "name": "ignored-browser-service",
@@ -449,7 +449,7 @@
           "event_id": "00000000-0000-4000-8000-000000000405",
           "event_type": "frontend_exception",
           "sdk_name": "@debugbundle/sdk-browser",
-          "sdk_version": "1.2.3",
+          "sdk_version": "1.2.4",
           "occurred_at": "2026-05-19T10:03:00.000Z",
           "service": {
             "name": "checkout-web",
@@ -493,7 +493,7 @@
               "event_id": "00000000-0000-4000-8000-000000000406",
               "event_type": "frontend_exception",
               "sdk_name": "@debugbundle/sdk-browser",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:04:00.000Z",
               "service": {
                 "name": "checkout-web",
@@ -527,7 +527,7 @@
           "event_id": "00000000-0000-4000-8000-000000000406",
           "event_type": "frontend_exception",
           "sdk_name": "@debugbundle/sdk-browser",
-          "sdk_version": "1.2.3",
+          "sdk_version": "1.2.4",
           "occurred_at": "2026-05-19T10:04:00.000Z",
           "service": {
             "name": "checkout-web",
@@ -573,7 +573,7 @@
               "event_id": "00000000-0000-4000-8000-000000000407",
               "event_type": "frontend_exception",
               "sdk_name": "@debugbundle/sdk-browser",
-              "sdk_version": "1.2.3",
+              "sdk_version": "1.2.4",
               "occurred_at": "2026-05-19T10:05:00.000Z",
               "service": {
                 "name": "checkout-web",
@@ -608,7 +608,7 @@
             "event_id": "00000000-0000-4000-8000-000000000407",
             "event_type": "frontend_exception",
             "sdk_name": "@debugbundle/sdk-browser",
-            "sdk_version": "1.2.3",
+            "sdk_version": "1.2.4",
             "project_token": "dbundle_proj_test",
             "occurred_at": "2026-05-19T10:05:00.000Z",
             "service": {
