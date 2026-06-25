@@ -1,9 +1,9 @@
 === DebugBundle ===
-Contributors: debugbundle
+Contributors: owenfar, debugbundle
 Tags: debugging, monitoring, error-tracking, observability, javascript
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.2.4
+Stable tag: 1.2.5
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -25,19 +25,6 @@ Features include:
 - backend and frontend test-event buttons for setup verification
 - document-head loading for the bundled browser SDK on new installs, with upgraded installs preserving footer loading until explicitly changed
 
-External service notice:
-
-- The plugin only sends incident data to the DebugBundle service after a site administrator enters a DebugBundle project token in the plugin settings and saves it.
-- Browser JavaScript is served from this plugin package, not from a third-party CDN.
-- New installs load the bundled browser SDK in the document head by default. Upgraded installs preserve footer loading until a site administrator explicitly changes the plugin setting.
-- Browser incidents are posted to a same-origin WordPress REST route first and then forwarded server-side to DebugBundle.
-
-Privacy note:
-
-- The plugin is intended to send operational incident and request telemetry needed for debugging.
-- The project token stays server-side and is never exposed to page JavaScript.
-- Site owners are responsible for reviewing their DebugBundle configuration and privacy disclosures before enabling collection on production traffic.
-
 == Installation ==
 
 1. Upload the plugin ZIP to WordPress and activate it.
@@ -47,6 +34,18 @@ Privacy note:
 5. Use the test-event buttons on the settings page to verify backend and frontend delivery.
 
 For development validation, the repository includes a Docker-based WordPress smoke test that installs WordPress, activates the plugin, verifies backend and frontend delivery against a mock ingestion service, and proves relay spool recovery after a simulated ingestion outage.
+
+== External services ==
+
+This plugin connects to the DebugBundle service at `https://api.debugbundle.com` to send production incident telemetry and to fetch SDK capture configuration for the connected DebugBundle project.
+
+The plugin only sends data after a site administrator enters a DebugBundle project token in the plugin settings and saves it. Backend PHP/WordPress incidents may include sanitized exception, request, response, environment, service, log, and WordPress context needed for debugging. Browser incidents are posted to a same-origin WordPress REST route first and then forwarded server-side to DebugBundle, so the project token stays server-side and is never exposed to page JavaScript. Browser JavaScript is served from this plugin package, not from a third-party CDN.
+
+The service is provided by DebugBundle:
+
+- Service: https://debugbundle.com
+- Terms of Service: https://debugbundle.com/terms
+- Privacy Policy: https://debugbundle.com/privacy
 
 == Screenshots ==
 
@@ -69,6 +68,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 
 == Changelog ==
 
+
+= 1.2.5 =
+
+* Add the WordPress.org submitter to plugin contributors, document the DebugBundle external service with terms and privacy links, and tighten WordPress-native sanitization around request metadata, settings, and remote configuration fetches.
 
 = 1.2.4 =
 

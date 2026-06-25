@@ -130,7 +130,7 @@ final class SdkBootstrap
     /** @return array<string, mixed> */
     private function requestQuery(): array
     {
-        $query = filter_input_array(INPUT_GET, FILTER_UNSAFE_RAW);
+        $query = filter_input_array(INPUT_GET, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         if (!is_array($query)) {
             return [];
         }
@@ -141,10 +141,62 @@ final class SdkBootstrap
                 continue;
             }
 
-            $normalized[$name] = $value;
+            $sanitizedName = $this->sanitizeQueryKey($name);
+            if ($sanitizedName === '') {
+                continue;
+            }
+
+            $normalized[$sanitizedName] = $this->sanitizeQueryValue($value);
         }
 
         return $normalized;
+    }
+
+    private function sanitizeQueryKey(string $key): string
+    {
+        if (function_exists('sanitize_key')) {
+            return \sanitize_key($key);
+        }
+
+        return preg_replace('/[^a-z0-9_\-]/', '', strtolower($key)) ?? '';
+    }
+
+    /** @return string|array<string, mixed> */
+    private function sanitizeQueryValue(mixed $value): string|array
+    {
+        if (is_array($value)) {
+            $sanitized = [];
+            foreach ($value as $nestedKey => $nestedValue) {
+                if (!is_string($nestedKey) && !is_int($nestedKey)) {
+                    continue;
+                }
+
+                $sanitizedKey = is_int($nestedKey) ? (string) $nestedKey : $this->sanitizeQueryKey($nestedKey);
+                if ($sanitizedKey === '') {
+                    continue;
+                }
+
+                $sanitized[$sanitizedKey] = $this->sanitizeQueryValue($nestedValue);
+            }
+
+            return $sanitized;
+        }
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $text = (string) $value;
+        if (function_exists('wp_unslash')) {
+            $text = (string) \wp_unslash($text);
+        }
+
+        if (function_exists('sanitize_text_field')) {
+            return (string) \sanitize_text_field($text);
+        }
+
+        $withoutHtml = preg_replace('/<[^>]*>/', '', $text);
+        return trim(is_string($withoutHtml) ? $withoutHtml : $text);
     }
 
     /** @return array<string, mixed>|null */

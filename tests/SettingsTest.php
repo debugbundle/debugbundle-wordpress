@@ -26,7 +26,10 @@ final class SettingsTest extends TestCase
         $settings = new Settings();
 
         $sanitized = $settings->sanitize([
-            'project_token' => ' dbundle_proj_123 ',
+            'project_token' => ' <strong>dbundle_proj_123</strong> ',
+            'endpoint' => " https://api.debugbundle.com/v1/events\n",
+            'environment' => '<em>Production</em>',
+            'service' => ' checkout <script>alert(1)</script> ',
             'sample_rate' => 5,
             'browser_session_sample_rate' => -1,
             'browser_max_events_per_session' => 0,
@@ -36,6 +39,9 @@ final class SettingsTest extends TestCase
         ]);
 
         self::assertSame('dbundle_proj_123', $sanitized['project_token']);
+        self::assertSame('https://api.debugbundle.com/v1/events', $sanitized['endpoint']);
+        self::assertSame('Production', $sanitized['environment']);
+        self::assertSame('checkout alert(1)', $sanitized['service']);
         self::assertSame(1.0, $sanitized['sample_rate']);
         self::assertSame(0.0, $sanitized['browser_session_sample_rate']);
         self::assertSame(1, $sanitized['browser_max_events_per_session']);

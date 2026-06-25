@@ -9,7 +9,7 @@ final class Sanitization
     /** @return array<string, mixed> */
     public static function serverInputArray(): array
     {
-        $server = filter_input_array(INPUT_SERVER, FILTER_UNSAFE_RAW);
+        $server = filter_input_array(INPUT_SERVER, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         return is_array($server) ? $server : [];
     }
 
@@ -25,14 +25,19 @@ final class Sanitization
             }
 
             $headerName = null;
-            if (str_starts_with($name, 'HTTP_')) {
-                $headerName = str_replace('_', '-', strtolower(substr($name, 5)));
-            } elseif (in_array($name, ['CONTENT_TYPE', 'CONTENT_LENGTH'], true)) {
-                $headerName = str_replace('_', '-', strtolower($name));
+            $serverName = strtoupper($name);
+            if (!preg_match('/^[A-Z0-9_]+$/', $serverName)) {
+                continue;
             }
 
-            if ($headerName !== null) {
-                $headers[$headerName] = (string) $value;
+            if (str_starts_with($serverName, 'HTTP_')) {
+                $headerName = str_replace('_', '-', strtolower(substr($serverName, 5)));
+            } elseif (in_array($serverName, ['CONTENT_TYPE', 'CONTENT_LENGTH'], true)) {
+                $headerName = str_replace('_', '-', strtolower($serverName));
+            }
+
+            if ($headerName !== null && preg_match('/^[a-z0-9-]+$/', $headerName) === 1) {
+                $headers[$headerName] = self::sanitizeText((string) $value);
             }
         }
 
@@ -98,5 +103,19 @@ final class Sanitization
         }
 
         return $value;
+    }
+
+    private static function sanitizeText(string $value): string
+    {
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
+        }
+
+        if (function_exists('sanitize_text_field')) {
+            return (string) \sanitize_text_field($value);
+        }
+
+        $withoutHtml = preg_replace('/<[^>]*>/', '', $value);
+        return trim(is_string($withoutHtml) ? $withoutHtml : $value);
     }
 }

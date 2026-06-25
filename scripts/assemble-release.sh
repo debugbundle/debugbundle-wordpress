@@ -66,8 +66,8 @@ composer install \
   --no-progress \
   --prefer-dist
 
-find .dist/debugbundle/vendor -type d \( -name tests -o -name test -o -name examples -o -name .github \) -prune -exec rm -rf {} +
-find .dist/debugbundle/vendor -type f \( -name phpunit.xml.dist -o -name phpstan.neon -o -name coverage.xml -o -name composer.phar -o -name composer-setup.php \) -delete
+find .dist/debugbundle/vendor -type d \( -name tests -o -name test -o -name examples -o -name smoke -o -name scripts -o -name .github \) -prune -exec rm -rf {} +
+find .dist/debugbundle/vendor -type f \( -name Makefile -o -name phpunit.xml.dist -o -name phpstan.neon -o -name coverage.xml -o -name composer.phar -o -name composer-setup.php \) -delete
 
 (
   cd .dist

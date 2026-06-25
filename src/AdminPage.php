@@ -57,9 +57,15 @@ final class AdminPage
 
         \register_setting(Settings::OPTION_NAME, Settings::OPTION_NAME, [
             'type' => 'array',
-            'sanitize_callback' => fn (mixed $input): array => $this->settings->sanitize(is_array($input) ? $input : []),
+            'sanitize_callback' => [$this, 'sanitizeSettings'],
             'default' => $this->settings->all(),
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    public function sanitizeSettings(mixed $input): array
+    {
+        return $this->settings->sanitize(is_array($input) ? $input : []);
     }
 
     public function render(): void
@@ -251,9 +257,13 @@ final class AdminPage
 
     private function requestQueryText(string $key): ?string
     {
-        $value = filter_input(INPUT_GET, $key, FILTER_UNSAFE_RAW);
+        $value = filter_input(INPUT_GET, $key, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         if (!is_string($value) || $value === '') {
             return null;
+        }
+
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
         }
 
         return function_exists('sanitize_text_field') ? (string) \sanitize_text_field($value) : trim($value);

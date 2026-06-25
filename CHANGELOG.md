@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-06-25
+
+### Fixed
+
+- Added the WordPress.org submitter to plugin contributors and documented DebugBundle external service usage with service, terms, and privacy links for WordPress.org review.
+- Replaced raw WordPress input collection with typed sanitization for request headers, query metadata, admin notices, saved settings, and SDK remote configuration fetches.
+
 ## [1.2.4] - 2026-06-20
 
 ### Changed

@@ -10,6 +10,8 @@ if (!defined('ABSPATH')) {
 
 final class BrowserAssets
 {
+    private const FALLBACK_ASSET_VERSION = '1.2.5';
+
     public function __construct(
         private readonly Settings $settings,
         private readonly string $pluginFile,
@@ -43,7 +45,7 @@ final class BrowserAssets
         }
 
         $assetUrl = \plugins_url($relativeAssetPath, $this->pluginFile);
-        $version = is_file($filePath) ? (string) filemtime($filePath) : '1.2.4';
+        $version = is_file($filePath) ? (string) filemtime($filePath) : $this->pluginVersion();
 
         \wp_register_script($handle, $assetUrl, [], $version, !$this->settings->shouldLoadBrowserInHead());
         \wp_add_inline_script(
@@ -52,5 +54,11 @@ final class BrowserAssets
             'before'
         );
         \wp_enqueue_script($handle);
+    }
+
+    private function pluginVersion(): string
+    {
+        $version = defined('DEBUGBUNDLE_WORDPRESS_VERSION') ? constant('DEBUGBUNDLE_WORDPRESS_VERSION') : self::FALLBACK_ASSET_VERSION;
+        return is_string($version) ? $version : self::FALLBACK_ASSET_VERSION;
     }
 }

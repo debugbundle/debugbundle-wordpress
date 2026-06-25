@@ -3,7 +3,7 @@
 WordPress plugin for DebugBundle.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-1.2.4-blue)
+![Version](https://img.shields.io/badge/version-1.2.5-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
@@ -63,6 +63,8 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 - New installs load the browser SDK in the document head by default. Upgraded installs that predate this setting continue to load it in the footer until an administrator explicitly changes the option.
 - Browser incidents are posted to the same-origin REST route first, then forwarded server-side to DebugBundle.
 - A bounded relay spool retries delivery after transient ingestion failures.
+- DebugBundle service terms: <https://debugbundle.com/terms>
+- DebugBundle privacy policy: <https://debugbundle.com/privacy>
 
 ## Privacy Notes
 
@@ -101,7 +103,7 @@ make smoke-wordpress
 Build a local release ZIP:
 
 ```bash
-make release-artifact VERSION=1.2.4
+make release-artifact VERSION=1.2.5
 ```
 
 This writes `.dist/debugbundle-wordpress-<version>.zip` and a matching SHA-256 checksum. The packaged plugin directory inside the archive remains `debugbundle/` for WordPress compatibility.

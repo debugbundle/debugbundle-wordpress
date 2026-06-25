@@ -35,11 +35,11 @@ final class Settings
     {
         $defaults = $this->defaults();
 
-        $projectToken = trim((string) ($input['project_token'] ?? ''));
+        $projectToken = $this->sanitizeText((string) ($input['project_token'] ?? ''));
         $environment = $this->sanitizeText((string) ($input['environment'] ?? ''));
         $service = $this->sanitizeText((string) ($input['service'] ?? ''));
-        $endpoint = trim((string) ($input['endpoint'] ?? ''));
-        $logLevel = strtolower($this->sanitizeText((string) ($input['log_level'] ?? 'warning')));
+        $endpoint = $this->sanitizeUrl((string) ($input['endpoint'] ?? ''));
+        $logLevel = $this->sanitizeKey((string) ($input['log_level'] ?? 'warning'));
         $allowedLogLevels = ['debug', 'info', 'warning', 'error', 'critical'];
 
         $sanitized = [
@@ -53,7 +53,7 @@ final class Settings
             'browser_load_in_head' => (bool) ($input['browser_load_in_head'] ?? false),
             'sample_rate' => $this->sanitizeSampleRate($input['sample_rate'] ?? 1.0),
             'browser_session_sample_rate' => $this->sanitizeSampleRate($input['browser_session_sample_rate'] ?? 1.0),
-            'browser_max_events_per_session' => max(1, (int) ($input['browser_max_events_per_session'] ?? 100)),
+            'browser_max_events_per_session' => max(1, $this->sanitizePositiveInteger($input['browser_max_events_per_session'] ?? 100)),
             'browser_capture_console' => (bool) ($input['browser_capture_console'] ?? false),
             'log_level' => in_array($logLevel, $allowedLogLevels, true) ? $logLevel : 'warning',
             'delete_on_uninstall' => (bool) ($input['delete_on_uninstall'] ?? false),
@@ -256,16 +256,66 @@ final class Settings
 
     private function sanitizeText(string $value): string
     {
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
+        }
+
         if (function_exists('sanitize_text_field')) {
             return \sanitize_text_field($value);
         }
 
-        return trim($value);
+        return $this->stripHtmlFallback($value);
+    }
+
+    private function sanitizeKey(string $value): string
+    {
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
+        }
+
+        if (function_exists('sanitize_key')) {
+            return \sanitize_key($value);
+        }
+
+        return preg_replace('/[^a-z0-9_\-]/', '', strtolower($value)) ?? '';
+    }
+
+    private function sanitizeUrl(string $value): string
+    {
+        if (function_exists('wp_unslash')) {
+            $value = (string) \wp_unslash($value);
+        }
+
+        $sanitized = function_exists('esc_url_raw')
+            ? \esc_url_raw($value)
+            : filter_var(trim($value), FILTER_SANITIZE_URL);
+
+        if (!is_string($sanitized) || $sanitized === '') {
+            return '';
+        }
+
+        $scheme = \wp_parse_url($sanitized, PHP_URL_SCHEME);
+        return in_array($scheme, ['http', 'https'], true) ? $sanitized : '';
+    }
+
+    private function sanitizePositiveInteger(mixed $value): int
+    {
+        if (function_exists('absint')) {
+            return \absint($value);
+        }
+
+        return abs((int) $value);
     }
 
     private function sanitizeSampleRate(mixed $value): float
     {
         $rate = (float) $value;
         return min(1.0, max(0.0, $rate));
+    }
+
+    private function stripHtmlFallback(string $value): string
+    {
+        $withoutHtml = preg_replace('/<[^>]*>/', '', $value);
+        return trim(is_string($withoutHtml) ? $withoutHtml : $value);
     }
 }
