@@ -1,6 +1,6 @@
 === DebugBundle ===
 Contributors: owenfar, debugbundle
-Tags: debugging, monitoring, error-tracking, observability, javascript
+Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.0
 Stable tag: 1.2.5
@@ -8,32 +8,58 @@ Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
-Capture backend and frontend WordPress incidents into DebugBundle with a server-side relay for browser events.
+Turn WordPress PHP errors and browser exceptions into DebugBundle reports for developers and AI agents.
 
 == Description ==
 
-DebugBundle captures backend PHP/WordPress errors and user-facing browser incidents, then forwards them to DebugBundle without exposing your project token to page JavaScript.
+DebugBundle helps you understand what went wrong when a WordPress site breaks. Instead of piecing together PHP logs, browser errors, request details, and plugin or theme context by hand, the plugin sends the important debugging evidence to your DebugBundle project.
 
-Features include:
+Use it when you want a clearer answer than "something broke." DebugBundle gives the developer or AI agent fixing the site the backend and visitor-side context around an incident, so they can see what happened, where it happened, and what evidence is available.
 
-- backend PHP and request capture
-- frontend browser exception capture
-- same-origin WordPress REST relay for browser events
-- bounded spool and retry behavior for transient delivery failures
-- simple settings page under Settings -> DebugBundle
-- compact diagnostics for SDK versions, flush status, and spool size
-- backend and frontend test-event buttons for setup verification
-- document-head loading for the bundled browser SDK on new installs, with upgraded installs preserving footer loading until explicitly changed
+DebugBundle is built for agent-first debugging workflows. If you use an AI coding agent, DebugBundle reports give the agent structured incident evidence instead of a vague error message or copied log snippet. That helps the agent investigate plugin, theme, integration, and frontend failures with the same context a developer would need.
+
+Setup stays simple: install the plugin, paste your DebugBundle project token, and run the built-in test buttons. You do not need Composer, npm, shell access, CDN scripts, or a custom relay setup.
+
+Useful for:
+
+- production PHP errors, fatal errors, and uncaught exceptions
+- browser exceptions that visitors hit on public pages
+- failed or slow first-party requests seen by the browser
+- recent visitor actions and page changes that help explain a frontend error
+- WordPress, PHP, service, environment, and SDK version context for developers or AI coding agents
+- AI-assisted debugging workflows where an agent needs structured incident evidence instead of copied logs
+
+What gets captured:
+
+- PHP errors, uncaught exceptions, fatal shutdown errors, request metadata, and logs at or above the configured level
+- frontend browser exceptions from public pages
+- error-only browser breadcrumbs such as clicks, route changes, and first-party request failures
+- service, environment, WordPress, PHP, and SDK version context useful for debugging
+
+How delivery works:
+
+- backend events are sent server-side through `debugbundle/sdk-php`
+- browser events are posted to `/wp-json/debugbundle/v1/browser` and forwarded server-side
+- transient browser relay delivery failures are retried through a bounded local spool
+- the browser SDK is served from this plugin package, not from a third-party CDN
+
+What it does not do:
+
+- it does not contact DebugBundle until an administrator saves a project token or defines `DEBUGBUNDLE_PROJECT_TOKEN`
+- it does not expose the project token to page JavaScript
+- it does not capture `wp-admin` traffic by default
+- it does not add incident browsing, billing, account management, or dashboard features inside WordPress
+- it does not let an agent change WordPress settings, content, users, plugins, or themes
 
 == Installation ==
 
-1. Upload the plugin ZIP to WordPress and activate it.
-2. Go to Settings -> DebugBundle.
-3. Paste your DebugBundle project token.
-4. Save settings.
-5. Use the test-event buttons on the settings page to verify backend and frontend delivery.
+1. In WordPress, go to Plugins -> Add New.
+2. Search for DebugBundle, then install and activate the plugin.
+3. Open Settings -> DebugBundle.
+4. Paste your DebugBundle project token and save.
+5. Use the backend and frontend test-event buttons to verify delivery.
 
-For development validation, the repository includes a Docker-based WordPress smoke test that installs WordPress, activates the plugin, verifies backend and frontend delivery against a mock ingestion service, and proves relay spool recovery after a simulated ingestion outage.
+If you cannot install from the WordPress.org plugin directory, download the ZIP from the [DebugBundle WordPress plugin GitHub releases page](https://github.com/debugbundle/debugbundle-wordpress/releases) and upload it under Plugins -> Add New -> Upload Plugin.
 
 == External services ==
 
@@ -49,10 +75,14 @@ The service is provided by DebugBundle:
 
 == Screenshots ==
 
-1. The DebugBundle settings screen for connecting a WordPress site to a DebugBundle project.
-2. Frontend capture, relay, and privacy controls on the DebugBundle options page.
+1. The standard WordPress settings form for connecting a site to a DebugBundle project and choosing capture options.
+2. The status and test delivery section with SDK versions, relay details, spool size, and backend/frontend test buttons.
 
 == Frequently Asked Questions ==
+
+= Do I need a DebugBundle project? =
+
+Yes. The plugin needs a DebugBundle project token before it can send backend or browser incidents.
 
 = Does the browser SDK get my project token? =
 
@@ -65,6 +95,10 @@ No. The first release is focused on public-site capture.
 = Does the plugin contact DebugBundle before I configure it? =
 
 No. The plugin requires a saved project token before it can forward backend or browser incidents to DebugBundle.
+
+= Can I use this instead of installing the PHP or browser SDK manually? =
+
+Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
 

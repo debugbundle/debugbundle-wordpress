@@ -15,12 +15,13 @@ Use this plugin to capture backend PHP/WordPress incidents and user-facing brows
 
 ## Installation
 
-1. Download the plugin ZIP from the `debugbundle-wordpress` GitHub Release.
-2. In WordPress, open **Plugins -> Add New -> Upload Plugin**.
-3. Upload and activate the ZIP.
-4. Open **Settings -> DebugBundle**.
-5. Paste your DebugBundle project token and save.
-6. Use the backend and frontend test-event buttons to verify delivery.
+1. Install **DebugBundle** from the [WordPress.org plugin directory](https://wordpress.org/plugins/debugbundle/).
+2. Activate the plugin.
+3. Open **Settings -> DebugBundle**.
+4. Paste your DebugBundle project token and save.
+5. Use the backend and frontend test-event buttons to verify delivery.
+
+Manual ZIP installs are available from the [`debugbundle-wordpress` GitHub releases](https://github.com/debugbundle/debugbundle-wordpress/releases) page when a host or deployment process cannot install from WordPress.org.
 
 The plugin can also read the project token from `wp-config.php`:
 
@@ -127,6 +128,7 @@ Required WordPress.org workflow setup:
 
 ## Documentation
 
+- WordPress.org plugin directory: <https://wordpress.org/plugins/debugbundle/>
 - WordPress plugin docs: <https://debugbundle.com/docs/integrations/wordpress>
 - SDK overview: <https://debugbundle.com/docs/sdks>
 - Browser relay: <https://debugbundle.com/docs/sdks/browser-relay>

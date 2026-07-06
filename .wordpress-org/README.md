@@ -7,10 +7,10 @@ This directory contains the WordPress.org-ready marketing assets and submission 
 - `assets/icon.svg`
 - `assets/icon-128x128.png`
 - `assets/icon-256x256.png`
-- `assets/banner-772x250.png`
-- `assets/banner-1544x500.png`
-- `assets/screenshot-1.png`
-- `assets/screenshot-2.png`
+- `assets/banner-772x250.jpg`
+- `assets/banner-1544x500.jpg`
+- `assets/screenshot-1.jpg`
+- `assets/screenshot-2.jpg`
 
 ## Regenerating assets
 
@@ -20,11 +20,11 @@ Run:
 ./scripts/generate-wordpress-org-assets.sh
 ```
 
-The script rasterizes the SVG source files in `.wordpress-org/source/` with macOS Quick Look and writes the WordPress.org filenames into `.wordpress-org/assets/`.
+The script rasterizes the SVG icon source and center-crops the JPG banner/screenshot sources in `.wordpress-org/source/`, then writes the WordPress.org filenames into `.wordpress-org/assets/`.
 
 ## Suggested short description
 
-Capture WordPress backend and browser incidents with a same-origin relay that keeps your DebugBundle token out of page JavaScript.
+Turn WordPress PHP errors and browser exceptions into DebugBundle reports for developers and AI agents.
 
 ## Reviewer notes
 
