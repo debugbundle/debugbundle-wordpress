@@ -13,6 +13,22 @@ final class BrowserRelayRouteTest extends TestCase
     /** @var array{version:int,cases:list<array<string,mixed>>}|null */
     private static ?array $relayComplianceFixtures = null;
 
+    public function testHandleRequestAcceptsAnalyticsEventsThroughThePhpRelay(): void
+    {
+        $fixture = self::relayComplianceFixture('valid-analytics-event');
+        if (!defined(Settings::PROJECT_TOKEN_CONSTANT)) {
+            define(Settings::PROJECT_TOKEN_CONSTANT, 'dbundle_proj_test');
+        }
+
+        $route = new BrowserRelayRoute(new Settings(), 'debugbundle_test_cron');
+        $response = $route->handleRequest($this->createWordPressRelayRequestFromFixture($fixture['request']));
+
+        self::assertIsArray($response);
+        self::assertSame(202, $response['status']);
+        self::assertSame(1, $response['body']['accepted']);
+        self::assertSame(0, $response['body']['rejected']);
+    }
+
     public function testHandleRequestAcceptsWordPressRestUnderscoreContentTypeHeader(): void
     {
         $fixture = self::relayComplianceFixture('valid-browser-batch');
