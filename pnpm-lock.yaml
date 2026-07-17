@@ -9,21 +9,21 @@ importers:
   .:
     dependencies:
       '@debugbundle/sdk-browser':
-        specifier: 1.4.1
-        version: 1.4.1
+        specifier: 1.5.0
+        version: 1.5.0
       esbuild:
         specifier: ^0.25.5
         version: 0.25.12
 
 packages:
 
-  '@debugbundle/redaction@1.4.1':
+  '@debugbundle/redaction@1.5.0':
     resolution: {integrity: sha512-00BJHQdBDYANTk7aIbALVgRYa9qULuaCiBHt8RO0Fz7bM0bihtFU+KNMIs0ewyhpMIjhcibI0XxHmtf0cj2FYw==}
 
-  '@debugbundle/sdk-browser@1.4.1':
+  '@debugbundle/sdk-browser@1.5.0':
     resolution: {integrity: sha512-KU4uVMMNUeK8AAD0EPX26A6SHRpvwvVo6hUOsoAoOzyl9g5Mey16xrYls3TIjtWpHgoa7fo5P3XjznNn1IWgSQ==}
 
-  '@debugbundle/shared-types@1.4.1':
+  '@debugbundle/shared-types@1.5.0':
     resolution: {integrity: sha512-TYdOZLJCA0TrC89XvtGNom3K0srSqq/Bm2G4bQwjukuX7X6QQRbptDz9QRQH5njR/8SlFr0h5RtcZDPS52mhHA==}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -192,14 +192,14 @@ packages:
 
 snapshots:
 
-  '@debugbundle/redaction@1.4.1': {}
+  '@debugbundle/redaction@1.5.0': {}
 
-  '@debugbundle/sdk-browser@1.4.1':
+  '@debugbundle/sdk-browser@1.5.0':
     dependencies:
-      '@debugbundle/redaction': 1.4.1
-      '@debugbundle/shared-types': 1.4.1
+      '@debugbundle/redaction': 1.5.0
+      '@debugbundle/shared-types': 1.5.0
 
-  '@debugbundle/shared-types@1.4.1':
+  '@debugbundle/shared-types@1.5.0':
     dependencies:
       zod: 3.25.76
 

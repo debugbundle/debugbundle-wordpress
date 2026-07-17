@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-17
+
+### Added
+
+- Corrected the semantic release line for the AnalyticsBundle WordPress integration, including the credential-free REST relay and the shipped `@debugbundle/sdk-browser` `1.5.0` browser capability.
+
 ## [1.2.6] - 2026-07-17
 
 ### Added

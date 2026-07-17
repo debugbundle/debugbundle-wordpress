@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.2.6
+Stable tag: 1.3.0
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -103,10 +103,10 @@ Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the brow
 == Changelog ==
 
 
-= 1.2.6 =
+= 1.3.0 =
 
 * Add opt-in AnalyticsBundle browser events to the WordPress REST relay while keeping browser requests credential-free.
-* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.4.1` and raise the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.3`.
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.5.0` and raise the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.3`.
 
 
 = 1.2.5 =
