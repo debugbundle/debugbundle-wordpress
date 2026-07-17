@@ -18,13 +18,13 @@ importers:
 packages:
 
   '@debugbundle/redaction@1.5.0':
-    resolution: {integrity: sha512-00BJHQdBDYANTk7aIbALVgRYa9qULuaCiBHt8RO0Fz7bM0bihtFU+KNMIs0ewyhpMIjhcibI0XxHmtf0cj2FYw==}
+    resolution: {integrity: sha512-U3Wy+TPPie752e6M7t54HS9X/3O1tGamYu2/t0yRmI7cZ3WEbkiaz51yOyQdndddjv4W9fMnJ+VLeGQ1Cb6LMA==}
 
   '@debugbundle/sdk-browser@1.5.0':
-    resolution: {integrity: sha512-KU4uVMMNUeK8AAD0EPX26A6SHRpvwvVo6hUOsoAoOzyl9g5Mey16xrYls3TIjtWpHgoa7fo5P3XjznNn1IWgSQ==}
+    resolution: {integrity: sha512-sWavsfgHouzo2eji6wyoBP8m8sd9hYbeYVXtcRHJ9AjfZQ0DUc2Bx2F3TCS8eHPI7IT2qO1ETlB9mBFJc1rasA==}
 
   '@debugbundle/shared-types@1.5.0':
-    resolution: {integrity: sha512-TYdOZLJCA0TrC89XvtGNom3K0srSqq/Bm2G4bQwjukuX7X6QQRbptDz9QRQH5njR/8SlFr0h5RtcZDPS52mhHA==}
+    resolution: {integrity: sha512-0ulU8fJ+XnwQnfXlcLCGjCf/y+SeRM0wPRBmrL8vZnA0VdLOmYNq/dJKaXkMwpa7ZiEkDKzeJlL5vX2iY0LIiA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
