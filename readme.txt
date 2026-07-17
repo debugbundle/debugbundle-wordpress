@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.0
-Stable tag: 1.2.5
+Stable tag: 1.2.6
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -101,6 +101,12 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+
+= 1.2.6 =
+
+* Add opt-in AnalyticsBundle browser events to the WordPress REST relay while keeping browser requests credential-free.
+* Rebuild the bundled browser SDK on `@debugbundle/sdk-browser` `1.4.1` and raise the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.3`.
 
 
 = 1.2.5 =

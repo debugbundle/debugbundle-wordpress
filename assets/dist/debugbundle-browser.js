@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.4.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.4.1/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4299,7 +4299,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4673,7 +4673,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -4698,7 +4698,7 @@
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4724,7 +4724,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4747,7 +4747,794 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/analytics.js
+  var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
+  var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
+  var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
+  var AnalyticsEventKindValues = [
+    "session_start",
+    "page_view",
+    "route_change",
+    "action",
+    "funnel_step",
+    "conversion",
+    "journey_marker",
+    "session_summary"
+  ];
+  var AnalyticsEventKindSchema = external_exports.enum(AnalyticsEventKindValues);
+  var AnalyticsPrivacyModeValues = ["strict", "standard", "custom"];
+  var AnalyticsPrivacyModeSchema = external_exports.enum(AnalyticsPrivacyModeValues);
+  var AnalyticsAuthStateValues = ["anonymous", "authenticated", "unknown"];
+  var AnalyticsAuthStateSchema = external_exports.enum(AnalyticsAuthStateValues);
+  var AnalyticsDeviceTypeValues = ["desktop", "mobile", "tablet", "unknown"];
+  var AnalyticsDeviceTypeSchema = external_exports.enum(AnalyticsDeviceTypeValues);
+  var AnalyticsViewportBucketValues = ["small", "medium", "large", "unknown"];
+  var AnalyticsViewportBucketSchema = external_exports.enum(AnalyticsViewportBucketValues);
+  var AnalyticsBundleAnalysisKindValues = [
+    "usage_summary",
+    "route_health",
+    "funnel_dropoff",
+    "journey_friction",
+    "feature_usage",
+    "incident_impact",
+    "deploy_comparison",
+    "conversion_path"
+  ];
+  var AnalyticsBundleAnalysisKindSchema = external_exports.enum(AnalyticsBundleAnalysisKindValues);
+  var AnalyticsBundleConfidenceValues = ["low", "medium", "high"];
+  var AnalyticsBundleConfidenceSchema = external_exports.enum(AnalyticsBundleConfidenceValues);
+  var AnalyticsBundleSeverityValues = ["low", "medium", "high"];
+  var AnalyticsBundleSeveritySchema = external_exports.enum(AnalyticsBundleSeverityValues);
+  var AnalyticsBundleGranularityValues = ["hour", "day", "week", "month"];
+  var AnalyticsBundleGranularitySchema = external_exports.enum(AnalyticsBundleGranularityValues);
+  var AnalyticsMetricsGranularityValues = ["hour", "day"];
+  var AnalyticsMetricsGranularitySchema = external_exports.enum(AnalyticsMetricsGranularityValues);
+  var AnalyticsSafeHashSchema = external_exports.string().regex(/^sha256:[a-f0-9]{64}$/i);
+  var AnalyticsNullableHashSchema = AnalyticsSafeHashSchema.nullable();
+  var AnalyticsNullableTextSchema = (max) => external_exports.string().trim().min(1).max(max).nullable();
+  var AnalyticsRoutePathSchema = external_exports.string().trim().min(1).max(2048).refine((value) => !value.includes("?") && !value.includes("#"), {
+    message: "Analytics route paths must not include query strings or fragments."
+  }).nullable();
+  var AnalyticsDomainSchema = external_exports.string().trim().min(1).max(255).refine((value) => !/[/?#@]/.test(value), {
+    message: "Analytics referrer domains must be hostnames, not URLs."
+  }).nullable();
+  var AnalyticsLocaleSchema = external_exports.string().trim().min(2).max(35).regex(/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/).nullable();
+  var AnalyticsRegionCodeSchema = external_exports.string().trim().min(1).max(16).regex(/^[A-Za-z0-9-]+$/).nullable();
+  var AnalyticsSignalKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
+  var AnalyticsSignalSchema = external_exports.object({
+    action_key: AnalyticsSignalKeySchema.nullable().optional(),
+    funnel_key: AnalyticsSignalKeySchema.nullable().optional(),
+    step_key: AnalyticsSignalKeySchema.nullable().optional(),
+    conversion_key: AnalyticsSignalKeySchema.nullable().optional(),
+    marker_key: AnalyticsSignalKeySchema.nullable().optional()
+  }).strict().transform((value) => {
+    var _a, _b, _c, _d, _e;
+    return {
+      action_key: (_a = value.action_key) != null ? _a : null,
+      funnel_key: (_b = value.funnel_key) != null ? _b : null,
+      step_key: (_c = value.step_key) != null ? _c : null,
+      conversion_key: (_d = value.conversion_key) != null ? _d : null,
+      marker_key: (_e = value.marker_key) != null ? _e : null
+    };
+  });
+  var AnalyticsRouteSchema = external_exports.object({
+    path: AnalyticsRoutePathSchema,
+    normalized_path: AnalyticsRoutePathSchema,
+    title: AnalyticsNullableTextSchema(200)
+  }).strict().superRefine((value, context) => {
+    if (value.path === null && value.normalized_path === null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["path"],
+        message: "Analytics routes require path or normalized_path."
+      });
+    }
+  });
+  var AnalyticsDimensionsSchema = external_exports.object({
+    auth_state: AnalyticsAuthStateSchema,
+    device_type: AnalyticsDeviceTypeSchema,
+    browser_family: AnalyticsNullableTextSchema(80),
+    browser_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
+    os_family: AnalyticsNullableTextSchema(80),
+    os_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
+    language: AnalyticsLocaleSchema,
+    locale: AnalyticsLocaleSchema,
+    viewport_bucket: AnalyticsViewportBucketSchema,
+    referrer_domain: AnalyticsDomainSchema,
+    utm_source: AnalyticsNullableTextSchema(128),
+    utm_medium: AnalyticsNullableTextSchema(128),
+    utm_campaign: AnalyticsNullableTextSchema(128),
+    country_code: external_exports.string().trim().regex(/^[A-Z]{2}$/).nullable(),
+    region_code: AnalyticsRegionCodeSchema
+  }).strict();
+  var AnalyticsCustomDimensionKeySchema = external_exports.string().trim().min(1).max(64).regex(/^[A-Za-z][A-Za-z0-9_.-]*$/).refine((value) => !isSensitiveCustomDimensionKey(value), {
+    message: "Analytics custom dimension key is reserved for sensitive or high-cardinality data."
+  });
+  var AnalyticsCustomDimensionStringValueSchema = external_exports.string().trim().min(1).max(128).refine((value) => !looksSensitiveCustomDimensionValue(value), {
+    message: "Analytics custom dimension value appears sensitive or high-cardinality."
+  });
+  var AnalyticsCustomDimensionValueSchema = external_exports.union([
+    AnalyticsCustomDimensionStringValueSchema,
+    external_exports.number().finite().min(-1e6).max(1e6),
+    external_exports.boolean(),
+    external_exports.null()
+  ]);
+  var AnalyticsCustomDimensionsSchema = external_exports.record(AnalyticsCustomDimensionKeySchema, AnalyticsCustomDimensionValueSchema).superRefine((value, context) => {
+    if (Object.keys(value).length > MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        message: `Analytics events may include at most ${MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT} custom dimensions.`
+      });
+    }
+  });
+  var AnalyticsServiceSchema = external_exports.object({
+    name: external_exports.string().trim().min(1).max(120),
+    runtime: external_exports.literal("browser").nullable().optional(),
+    framework: external_exports.string().trim().min(1).max(80).nullable().optional(),
+    environment: external_exports.string().trim().min(1).max(120)
+  }).strict();
+  var AnalyticsCorrelationSchema = external_exports.object({
+    session_id: external_exports.string().trim().min(1).max(128),
+    visitor_id_hash: AnalyticsNullableHashSchema,
+    user_id_hash: AnalyticsNullableHashSchema,
+    trace_id: external_exports.string().trim().min(1).max(128).nullable(),
+    deploy_id: external_exports.string().trim().min(1).max(128).nullable()
+  }).strict();
+  var AnalyticsEventPrivacySchema = external_exports.object({
+    mode: AnalyticsPrivacyModeSchema,
+    consent_granted: external_exports.boolean()
+  }).strict();
+  var AnalyticsSessionMetricsSchema = external_exports.object({
+    duration_ms: external_exports.number().int().min(0).max(864e5),
+    pageviews: external_exports.number().int().min(0).max(1e5)
+  }).strict();
+  var AnalyticsPayloadSchema = external_exports.object({
+    kind: AnalyticsEventKindSchema,
+    privacy: AnalyticsEventPrivacySchema.optional().default({
+      mode: "strict",
+      consent_granted: false
+    }),
+    session: AnalyticsSessionMetricsSchema.optional(),
+    signal: AnalyticsSignalSchema.optional(),
+    route: AnalyticsRouteSchema.nullable().optional(),
+    previous_route: AnalyticsRouteSchema.nullable().optional(),
+    dimensions: AnalyticsDimensionsSchema,
+    custom_dimensions: AnalyticsCustomDimensionsSchema.optional().default({})
+  }).strict().superRefine((value, context) => {
+    var _a, _b, _c, _d, _e;
+    if ((value.kind === "page_view" || value.kind === "route_change") && value.route == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["route"],
+        message: "Page view and route change analytics events require route context."
+      });
+    }
+    if (value.previous_route != null && value.kind !== "route_change") {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["previous_route"],
+        message: "Analytics previous_route is only valid for route_change events."
+      });
+    }
+    if (value.kind === "action" && ((_a = value.signal) == null ? void 0 : _a.action_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "action_key"],
+        message: "Action analytics events require signal.action_key."
+      });
+    }
+    if (value.kind === "funnel_step") {
+      if (((_b = value.signal) == null ? void 0 : _b.funnel_key) == null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["signal", "funnel_key"],
+          message: "Funnel step analytics events require signal.funnel_key."
+        });
+      }
+      if (((_c = value.signal) == null ? void 0 : _c.step_key) == null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["signal", "step_key"],
+          message: "Funnel step analytics events require signal.step_key."
+        });
+      }
+    }
+    if (value.kind === "conversion" && ((_d = value.signal) == null ? void 0 : _d.conversion_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "conversion_key"],
+        message: "Conversion analytics events require signal.conversion_key."
+      });
+    }
+    if (value.kind === "journey_marker" && ((_e = value.signal) == null ? void 0 : _e.marker_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "marker_key"],
+        message: "Journey marker analytics events require signal.marker_key."
+      });
+    }
+    if (value.session !== void 0 && value.kind !== "session_summary") {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["session"],
+        message: "Analytics session metrics are only valid for session_summary events."
+      });
+    }
+  });
+  var AnalyticsEventEnvelopeSchema = external_exports.object({
+    schema_version: external_exports.literal(ANALYTICS_EVENT_SCHEMA_VERSION),
+    event_id: external_exports.string().uuid(),
+    event_type: external_exports.literal("analytics_event"),
+    project_token: external_exports.string().trim().min(1).max(256).optional(),
+    project_id: external_exports.string().uuid().nullable().optional(),
+    occurred_at: external_exports.string().datetime(),
+    sdk_name: external_exports.string().trim().min(1).max(120),
+    sdk_version: external_exports.string().trim().min(1).max(80),
+    service: AnalyticsServiceSchema,
+    correlation: AnalyticsCorrelationSchema,
+    payload: AnalyticsPayloadSchema
+  }).strict();
+  var AnalyticsMetricsSegmentSchema = external_exports.object({
+    value: external_exports.string().trim().min(1).max(255),
+    sessions: external_exports.number().int().nonnegative(),
+    pageviews: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsUsageSummarySchema = external_exports.object({
+    project_id: external_exports.string().uuid(),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    sessions: external_exports.number().int().nonnegative(),
+    pageviews: external_exports.number().int().nonnegative(),
+    active_visitors: external_exports.number().int().nonnegative(),
+    new_visitors: external_exports.number().int().nonnegative(),
+    returning_visitors: external_exports.number().int().nonnegative(),
+    exits: external_exports.number().int().nonnegative(),
+    conversions: external_exports.number().int().nonnegative()
+  }).strict().refine((value) => Date.parse(value.from) <= Date.parse(value.to), {
+    message: "Analytics summary from must be before or equal to to.",
+    path: ["from"]
+  });
+  var AnalyticsUsageBreakdownsSchema = external_exports.object({
+    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    auth_states: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsUsageSummaryResponseSchema = external_exports.object({
+    summary: AnalyticsUsageSummarySchema,
+    breakdowns: AnalyticsUsageBreakdownsSchema
+  }).strict();
+  var AnalyticsMetricsWindowSchema = external_exports.object({
+    project_id: external_exports.string().uuid(),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable()
+  }).strict();
+  var AnalyticsRouteMetricSchema = external_exports.object({
+    route_key: external_exports.string().trim().min(1).max(2048),
+    pageviews: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative(),
+    entrances: external_exports.number().int().nonnegative(),
+    exits: external_exports.number().int().nonnegative(),
+    bounces: external_exports.number().int().nonnegative(),
+    linked_incident_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsRouteMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    routes: external_exports.array(AnalyticsRouteMetricSchema).max(100)
+  }).strict();
+  var AnalyticsJourneyPatternSchema = external_exports.object({
+    from_route_key: external_exports.string().trim().min(1).max(2048),
+    to_route_key: external_exports.string().trim().min(1).max(2048),
+    transition_count: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative(),
+    transition_share: external_exports.number().min(0).max(1),
+    sample_ids: external_exports.array(external_exports.string().uuid()).max(3).default([])
+  }).strict();
+  var AnalyticsJourneyPatternsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    patterns: external_exports.array(AnalyticsJourneyPatternSchema).max(100)
+  }).strict();
+  var AnalyticsIncidentImpactSegmentSchema = external_exports.object({
+    value: external_exports.string().trim().min(1).max(255),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactRouteSchema = external_exports.object({
+    route_key: external_exports.string().trim().min(1).max(2048),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactFunnelSchema = external_exports.object({
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactJourneyPatternSchema = external_exports.object({
+    from_route_key: external_exports.string().trim().min(1).max(2048),
+    to_route_key: external_exports.string().trim().min(1).max(2048),
+    affected_sessions: external_exports.number().int().nonnegative(),
+    sample_ids: external_exports.array(external_exports.string().uuid()).max(3)
+  }).strict();
+  var AnalyticsIncidentImpactConversionDeltaSchema = external_exports.object({
+    availability: external_exports.enum(["available", "unavailable"]),
+    value: external_exports.number().finite().nullable(),
+    unit: external_exports.literal("percentage_points")
+  }).strict().superRefine((value, context) => {
+    if (value.availability === "unavailable" && value.value !== null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["value"],
+        message: "Unavailable conversion deltas must not include a value."
+      });
+    }
+  });
+  var AnalyticsIncidentImpactBundleStateSchema = external_exports.object({
+    status: external_exports.enum(["not_requested", "pending", "running", "completed", "failed"]),
+    generation_id: external_exports.string().uuid().nullable(),
+    failure_reason: external_exports.string().trim().min(1).max(240).nullable()
+  }).strict();
+  var AnalyticsIncidentImpactResponseSchema = external_exports.object({
+    incident_id: external_exports.string().uuid(),
+    window: AnalyticsMetricsWindowSchema,
+    affected_sessions: external_exports.number().int().nonnegative(),
+    affected_routes: external_exports.array(AnalyticsIncidentImpactRouteSchema).max(100),
+    affected_funnels: external_exports.array(AnalyticsIncidentImpactFunnelSchema).max(100),
+    top_device_types: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
+    top_browsers: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
+    journey_patterns: external_exports.array(AnalyticsIncidentImpactJourneyPatternSchema).max(100),
+    conversion_delta: AnalyticsIncidentImpactConversionDeltaSchema,
+    analytics_bundle: AnalyticsIncidentImpactBundleStateSchema
+  }).strict();
+  var AnalyticsDeviceBreakdownResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsReferrerMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_sources: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_mediums: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_campaigns: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsActionMetricSchema = external_exports.object({
+    action_key: external_exports.string().trim().min(1).max(160),
+    kind: external_exports.enum(["action", "conversion", "marker"]),
+    event_count: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsActionMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    actions: external_exports.array(AnalyticsActionMetricSchema).max(100)
+  }).strict();
+  var AnalyticsFunnelListItemSchema = external_exports.object({
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    funnels: external_exports.array(AnalyticsFunnelListItemSchema).max(100)
+  }).strict();
+  var AnalyticsFunnelStepMetricSchema = external_exports.object({
+    step_key: external_exports.string().trim().min(1).max(120),
+    step_order: external_exports.number().int().nonnegative(),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelSummarySchema = external_exports.object({
+    project_id: external_exports.string().uuid(),
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelAnalysisResponseSchema = external_exports.object({
+    funnel: AnalyticsFunnelSummarySchema,
+    steps: external_exports.array(AnalyticsFunnelStepMetricSchema).max(100)
+  }).strict();
+  function normalizeCustomDimensionKey(value) {
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+  function isSensitiveCustomDimensionKey(value) {
+    const normalized = normalizeCustomDimensionKey(value);
+    const sensitiveKeys = /* @__PURE__ */ new Set([
+      "auth_state",
+      "device_type",
+      "browser_family",
+      "browser_major",
+      "os_family",
+      "os_major",
+      "language",
+      "locale",
+      "viewport_bucket",
+      "referrer_domain",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "country_code",
+      "region_code",
+      "email",
+      "email_address",
+      "phone",
+      "phone_number",
+      "password",
+      "passcode",
+      "token",
+      "secret",
+      "api_key",
+      "apikey",
+      "authorization",
+      "auth_token",
+      "card",
+      "card_number",
+      "credit_card",
+      "ssn",
+      "ip",
+      "ip_address",
+      "user_id",
+      "userid",
+      "account_id",
+      "workspace_id",
+      "order_id",
+      "ticket_id",
+      "url",
+      "href",
+      "query",
+      "text",
+      "message",
+      "body",
+      "payload",
+      "session_id",
+      "visitor_id"
+    ]);
+    return sensitiveKeys.has(normalized) || normalized.endsWith("_id") || normalized.endsWith("_token") || normalized.endsWith("_secret") || normalized.endsWith("_password");
+  }
+  function looksSensitiveCustomDimensionValue(value) {
+    return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
+  }
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
+  var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
+  var AnalyticsOpportunityBundleStatusValues = [
+    "not_requested",
+    "pending",
+    "running",
+    "completed",
+    "failed"
+  ];
+  var AnalyticsOpportunityBundleStatusSchema = external_exports.enum(AnalyticsOpportunityBundleStatusValues);
+  var AnalyticsBundleGenerationStatusValues = [
+    "pending",
+    "running",
+    "completed",
+    "failed"
+  ];
+  var AnalyticsBundleGenerationStatusSchema = external_exports.enum(AnalyticsBundleGenerationStatusValues);
+  var AnalyticsOpportunityRecordSchema = external_exports.object({
+    opportunity_id: external_exports.string().uuid(),
+    project_id: external_exports.string().uuid(),
+    project_name: external_exports.string().trim().min(1).max(200),
+    project_color_tag: external_exports.string().trim().min(1).max(32).nullable(),
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    kind: AnalyticsBundleAnalysisKindSchema,
+    status: AnalyticsOpportunityStatusSchema,
+    severity: AnalyticsBundleSeveritySchema,
+    confidence: external_exports.number().min(0).max(1),
+    title: external_exports.string().trim().min(1).max(240),
+    summary: external_exports.string().trim().min(1).max(2e3),
+    evidence: external_exports.record(external_exports.string(), external_exports.unknown()),
+    related_incident_ids: external_exports.array(external_exports.string().uuid()).max(100),
+    related_deploy_ids: external_exports.array(external_exports.string().trim().min(1).max(128)).max(100),
+    first_detected_at: external_exports.string().datetime(),
+    last_detected_at: external_exports.string().datetime(),
+    resolved_at: external_exports.string().datetime().nullable(),
+    snoozed_until: external_exports.string().datetime().nullable(),
+    bundle_generation_id: external_exports.string().uuid().nullable(),
+    bundle_status: AnalyticsOpportunityBundleStatusSchema,
+    bundle_created_at: external_exports.string().datetime().nullable(),
+    bundle_updated_at: external_exports.string().datetime().nullable(),
+    bundle_failure_reason: external_exports.string().trim().min(1).max(240).nullable()
+  }).strict();
+  var AnalyticsOpportunitiesListResponseSchema = external_exports.object({
+    opportunities: external_exports.array(AnalyticsOpportunityRecordSchema).max(100),
+    next_cursor: external_exports.string().trim().min(1).nullable()
+  }).strict();
+  var AnalyticsOpportunityResponseSchema = external_exports.object({ opportunity: AnalyticsOpportunityRecordSchema }).strict();
+  var AnalyticsBundleGenerationRecordSchema = external_exports.object({
+    generation_id: external_exports.string().uuid(),
+    project_id: external_exports.string().uuid(),
+    project_name: external_exports.string().trim().min(1).max(200).optional(),
+    project_color_tag: external_exports.string().trim().min(1).max(32).nullable().optional(),
+    opportunity_id: external_exports.string().uuid().nullable(),
+    requested_by_user_id: external_exports.string().uuid().nullable(),
+    analysis_kind: AnalyticsBundleAnalysisKindSchema,
+    analysis_spec: external_exports.record(external_exports.string(), external_exports.unknown()),
+    input_fingerprint: AnalyticsSafeHashSchema,
+    status: AnalyticsBundleGenerationStatusSchema,
+    has_artifact: external_exports.boolean(),
+    failure_reason: external_exports.string().trim().min(1).max(240).nullable(),
+    created_at: external_exports.string().datetime(),
+    claimed_at: external_exports.string().datetime().nullable(),
+    completed_at: external_exports.string().datetime().nullable(),
+    updated_at: external_exports.string().datetime()
+  }).strict();
+  var AnalyticsBundleGenerationsListResponseSchema = external_exports.object({
+    bundles: external_exports.array(AnalyticsBundleGenerationRecordSchema).max(100),
+    next_cursor: external_exports.string().trim().min(1).nullable()
+  }).strict();
+  var AnalyticsBundleProjectSchema = external_exports.object({
+    project_id: external_exports.string().uuid(),
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable()
+  }).strict();
+  var AnalyticsBundleAnalysisWindowSchema = external_exports.object({
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsBundleGranularitySchema
+  }).strict().refine((value) => Date.parse(value.from) <= Date.parse(value.to), {
+    message: "AnalyticsBundle analysis_window.from must be before or equal to analysis_window.to.",
+    path: ["from"]
+  });
+  var AnalyticsBundleSummarySchema = external_exports.object({
+    title: external_exports.string().trim().min(1).max(240),
+    description: external_exports.string().trim().min(1).max(2e3),
+    confidence: AnalyticsBundleConfidenceSchema,
+    severity: AnalyticsBundleSeveritySchema
+  }).strict();
+  var AnalyticsBundleMetricsSchema = external_exports.object({
+    sessions_analyzed: external_exports.number().int().nonnegative(),
+    affected_sessions: external_exports.number().int().nonnegative().nullable(),
+    baseline: external_exports.record(external_exports.string(), external_exports.unknown()),
+    current: external_exports.record(external_exports.string(), external_exports.unknown())
+  }).strict();
+  var AnalyticsBundleRecordSchema = external_exports.record(external_exports.string(), external_exports.unknown());
+  var AnalyticsBundleRedactionSchema = external_exports.object({
+    rules_applied: external_exports.array(external_exports.string().trim().min(1).max(120)).max(50),
+    omitted_fields: external_exports.array(external_exports.string().trim().min(1).max(200)).max(100)
+  }).strict();
+  var AnalyticsBundleMetadataSchema = external_exports.object({ input_fingerprint: AnalyticsSafeHashSchema }).strict();
+  var AnalyticsBundleV1Schema = external_exports.object({
+    schema_version: external_exports.literal(ANALYTICS_BUNDLE_SCHEMA_VERSION),
+    bundle_type: external_exports.literal("analytics"),
+    analysis_kind: AnalyticsBundleAnalysisKindSchema,
+    project: AnalyticsBundleProjectSchema,
+    analysis_window: AnalyticsBundleAnalysisWindowSchema,
+    summary: AnalyticsBundleSummarySchema,
+    metrics: AnalyticsBundleMetricsSchema,
+    segments: external_exports.array(AnalyticsBundleRecordSchema).max(100),
+    journey_patterns: external_exports.array(AnalyticsBundleRecordSchema).max(100),
+    representative_journeys: external_exports.array(AnalyticsBundleRecordSchema).max(25),
+    linked_incidents: external_exports.array(AnalyticsBundleRecordSchema).max(100),
+    linked_deploys: external_exports.array(AnalyticsBundleRecordSchema).max(50),
+    recommendations: external_exports.array(AnalyticsBundleRecordSchema).max(50),
+    redaction: AnalyticsBundleRedactionSchema,
+    metadata: AnalyticsBundleMetadataSchema
+  }).strict();
+  var AnalyticsSettingsSchema = external_exports.object({
+    enabled: external_exports.boolean(),
+    privacy_mode: AnalyticsPrivacyModeSchema,
+    consent_required: external_exports.boolean(),
+    capture_page_views: external_exports.boolean(),
+    capture_route_changes: external_exports.boolean(),
+    capture_actions: external_exports.boolean(),
+    capture_friction_signals: external_exports.boolean(),
+    journey_sample_rate: external_exports.number().min(0).max(1),
+    raw_retention_days: external_exports.number().int().min(1).max(30),
+    sample_retention_days: external_exports.number().int().min(1).max(365),
+    hourly_retention_days: external_exports.number().int().min(1).max(365),
+    aggregate_retention_months: external_exports.number().int().min(1).max(120),
+    max_saved_funnels: external_exports.number().int().min(0).max(100),
+    max_custom_dimensions: external_exports.number().int().min(0).max(20),
+    approved_custom_dimensions: external_exports.array(AnalyticsCustomDimensionKeySchema).max(20)
+  }).strict().superRefine((value, context) => {
+    if (value.approved_custom_dimensions.length > value.max_custom_dimensions) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["approved_custom_dimensions"],
+        message: "Approved custom dimensions cannot exceed max_custom_dimensions."
+      });
+    }
+  });
+  var AnalyticsSdkConfigSchema = external_exports.object({
+    enabled: external_exports.boolean(),
+    privacy_mode: AnalyticsPrivacyModeSchema,
+    consent_required: external_exports.boolean(),
+    capture_page_views: external_exports.boolean(),
+    capture_route_changes: external_exports.boolean(),
+    capture_actions: external_exports.boolean(),
+    capture_friction_signals: external_exports.boolean()
+  }).strict();
+  var AnalyticsSettingsResponseSchema = external_exports.object({
+    access_mode: external_exports.enum(["manage", "preview"]),
+    analytics_available: external_exports.boolean(),
+    settings: AnalyticsSettingsSchema
+  }).strict();
+  var AnalyticsSettingsUpdateSchema = external_exports.object({
+    enabled: external_exports.boolean().optional(),
+    privacy_mode: AnalyticsPrivacyModeSchema.optional(),
+    consent_required: external_exports.boolean().optional(),
+    capture_page_views: external_exports.boolean().optional(),
+    capture_route_changes: external_exports.boolean().optional(),
+    capture_actions: external_exports.boolean().optional(),
+    capture_friction_signals: external_exports.boolean().optional(),
+    journey_sample_rate: external_exports.number().min(0).max(1).optional(),
+    raw_retention_days: external_exports.number().int().min(1).max(30).optional(),
+    sample_retention_days: external_exports.number().int().min(1).max(365).optional(),
+    hourly_retention_days: external_exports.number().int().min(1).max(365).optional(),
+    aggregate_retention_months: external_exports.number().int().min(1).max(120).optional(),
+    max_saved_funnels: external_exports.number().int().min(0).max(100).optional(),
+    max_custom_dimensions: external_exports.number().int().min(0).max(20).optional(),
+    approved_custom_dimensions: external_exports.array(AnalyticsCustomDimensionKeySchema).max(20).optional()
+  }).strict().superRefine((value, context) => {
+    if (value.max_custom_dimensions !== void 0 && value.approved_custom_dimensions !== void 0 && value.approved_custom_dimensions.length > value.max_custom_dimensions) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["approved_custom_dimensions"],
+        message: "Approved custom dimensions cannot exceed max_custom_dimensions."
+      });
+    }
+  }).refine((input) => Object.keys(input).length > 0, {
+    message: "At least one analytics settings field must be provided."
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
+  var AnalyticsJourneySafeScalarSchema = external_exports.union([
+    external_exports.string().max(256),
+    external_exports.number().finite(),
+    external_exports.boolean(),
+    external_exports.null()
+  ]);
+  var AnalyticsJourneyDimensionsSchema = external_exports.record(external_exports.string().trim().min(1).max(64), AnalyticsJourneySafeScalarSchema).refine((value) => Object.keys(value).length <= 32);
+  var AnalyticsJourneyDimensionsSummarySchema = external_exports.record(external_exports.string().trim().min(1).max(64), external_exports.union([AnalyticsJourneySafeScalarSchema, AnalyticsJourneyDimensionsSchema])).superRefine((value, context) => {
+    for (const [key, entry] of Object.entries(value)) {
+      if (typeof entry === "object" && entry !== null && key !== "custom_dimensions") {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: [key],
+          message: "Only controlled custom_dimensions may be nested in a journey summary."
+        });
+      }
+    }
+  });
+  var AnalyticsJourneyRouteSchema = external_exports.object({
+    path: external_exports.string().trim().min(1).max(2048).nullable().optional(),
+    normalized_path: external_exports.string().trim().min(1).max(2048).nullable().optional(),
+    title: external_exports.string().trim().min(1).max(200).nullable().optional()
+  }).strict().refine((value) => value.path != null || value.normalized_path != null);
+  var AnalyticsJourneySignalSchema = external_exports.object({
+    action_key: external_exports.string().trim().min(1).max(120).nullable().optional(),
+    funnel_key: external_exports.string().trim().min(1).max(120).nullable().optional(),
+    step_key: external_exports.string().trim().min(1).max(120).nullable().optional(),
+    conversion_key: external_exports.string().trim().min(1).max(120).nullable().optional(),
+    marker_key: external_exports.string().trim().min(1).max(120).nullable().optional()
+  }).strict();
+  var AnalyticsJourneySampleEventSchema = external_exports.object({
+    event_id: external_exports.string().trim().min(1).max(128),
+    occurred_at: external_exports.string().datetime(),
+    kind: external_exports.enum([
+      "session_start",
+      "page_view",
+      "route_change",
+      "action",
+      "funnel_step",
+      "conversion",
+      "journey_marker",
+      "session_summary"
+    ]),
+    route: AnalyticsJourneyRouteSchema.nullable(),
+    previous_route: AnalyticsJourneyRouteSchema.nullable(),
+    signal: AnalyticsJourneySignalSchema.nullable(),
+    trace_id: external_exports.string().trim().min(1).max(128).nullable(),
+    deploy_id: external_exports.string().trim().min(1).max(128).nullable(),
+    dimensions: AnalyticsJourneyDimensionsSchema,
+    custom_dimensions: AnalyticsJourneyDimensionsSchema
+  }).strict();
+  var AnalyticsJourneySampleMetadataSchema = external_exports.object({
+    sample_id: external_exports.string().uuid(),
+    project_id: external_exports.string().uuid(),
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    session_id_hash: AnalyticsHashLikeSchema,
+    visitor_id_hash: AnalyticsHashLikeSchema.nullable(),
+    analysis_tags: external_exports.array(external_exports.string().trim().min(1).max(120)).max(50),
+    first_seen_at: external_exports.string().datetime(),
+    last_seen_at: external_exports.string().datetime(),
+    dimensions_summary: external_exports.record(external_exports.string(), external_exports.unknown()),
+    has_artifact: external_exports.boolean(),
+    expires_at: external_exports.string().datetime(),
+    created_at: external_exports.string().datetime()
+  }).strict();
+  var AnalyticsJourneySamplesListResponseSchema = external_exports.object({
+    samples: external_exports.array(AnalyticsJourneySampleMetadataSchema).max(100),
+    next_cursor: external_exports.string().trim().min(1).nullable()
+  }).strict();
+  var AnalyticsJourneySampleArtifactSchema = external_exports.object({
+    schema_version: external_exports.literal("analytics_journey_sample.v1"),
+    sample_id: external_exports.string().uuid(),
+    project_id: external_exports.string().uuid(),
+    service: external_exports.string().trim().min(1).max(120),
+    environment: external_exports.string().trim().min(1).max(120),
+    session_id_hash: AnalyticsHashLikeSchema,
+    visitor_id_hash: AnalyticsHashLikeSchema.nullable(),
+    first_seen_at: external_exports.string().datetime(),
+    last_seen_at: external_exports.string().datetime(),
+    analysis_tags: external_exports.array(external_exports.string().trim().min(1).max(120)).max(50),
+    dimensions_summary: AnalyticsJourneyDimensionsSummarySchema,
+    events: external_exports.array(AnalyticsJourneySampleEventSchema).max(100)
+  }).strict().refine((value) => Date.parse(value.first_seen_at) <= Date.parse(value.last_seen_at), {
+    path: ["last_seen_at"],
+    message: "Journey sample last_seen_at must not precede first_seen_at."
+  });
+  var AnalyticsJourneySampleResponseSchema = external_exports.object({
+    sample: AnalyticsJourneySampleMetadataSchema,
+    journey: AnalyticsJourneySampleArtifactSchema
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
+  var AnalyticsSavedFunnelStepSchema = external_exports.object({
+    step_key: AnalyticsSavedFunnelKeySchema,
+    display_name: external_exports.string().trim().min(1).max(120)
+  }).strict();
+  var AnalyticsSavedFunnelStepsSchema = external_exports.array(AnalyticsSavedFunnelStepSchema).min(2).max(20).superRefine((steps, context) => {
+    const seen = /* @__PURE__ */ new Set();
+    for (const [index, step] of steps.entries()) {
+      if (seen.has(step.step_key)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: [index, "step_key"],
+          message: "Saved funnel step keys must be unique."
+        });
+      }
+      seen.add(step.step_key);
+    }
+  });
+  var AnalyticsSavedFunnelCreateSchema = external_exports.object({
+    funnel_key: AnalyticsSavedFunnelKeySchema,
+    display_name: external_exports.string().trim().min(1).max(120),
+    steps: AnalyticsSavedFunnelStepsSchema
+  }).strict();
+  var AnalyticsSavedFunnelUpdateSchema = external_exports.object({
+    display_name: external_exports.string().trim().min(1).max(120).optional(),
+    steps: AnalyticsSavedFunnelStepsSchema.optional()
+  }).strict().refine((value) => value.display_name !== void 0 || value.steps !== void 0, {
+    message: "Saved funnel updates require at least one mutable field."
+  });
+  var AnalyticsSavedFunnelSchema = AnalyticsSavedFunnelCreateSchema.extend({
+    project_id: external_exports.string().uuid(),
+    created_at: external_exports.string().datetime(),
+    updated_at: external_exports.string().datetime(),
+    archived_at: external_exports.string().datetime().nullable()
+  }).strict();
+  var AnalyticsSavedFunnelsResponseSchema = external_exports.object({
+    funnels: external_exports.array(AnalyticsSavedFunnelSchema).max(100)
+  }).strict();
+  var AnalyticsSavedFunnelResponseSchema = external_exports.object({
+    funnel: AnalyticsSavedFunnelSchema
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -4770,7 +5557,7 @@
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.4.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.4.1/node_modules/@debugbundle/shared-types/dist/index.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -5326,583 +6113,10 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
-  function cloneEvent(event) {
-    return JSON.parse(JSON.stringify(event));
-  }
-  function applyBrowserBeforeSend(event, beforeSend) {
-    if (beforeSend === void 0) {
-      return event;
-    }
-    try {
-      const result = beforeSend(cloneEvent(event));
-      if (result === null) {
-        return null;
-      }
-      if (result === void 0) {
-        return event;
-      }
-      const parsed = EventEnvelopeSchema.safeParse(result);
-      return parsed.success ? parsed.data : event;
-    } catch {
-      return event;
-    }
-  }
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
-  function asRecord(value) {
-    if (value === null || typeof value !== "object" || Array.isArray(value)) {
-      return null;
-    }
-    return value;
-  }
-  function asString(value) {
-    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-  }
-  function asBoolean(value) {
-    return typeof value === "boolean" ? value : null;
-  }
-  function asInteger(value) {
-    return typeof value === "number" && Number.isInteger(value) ? value : null;
-  }
-  function asNumber(value) {
-    return typeof value === "number" && Number.isFinite(value) ? value : null;
-  }
-  function normalizeRuntime(value) {
-    switch (value == null ? void 0 : value.trim().toLowerCase()) {
-      case "browser":
-        return "browser";
-      case "node":
-      case "nodejs":
-        return "node";
-      case "python":
-        return "python";
-      case "php":
-        return "php";
-      case "java":
-        return "java";
-      case "go":
-      case "golang":
-        return "go";
-      case "ruby":
-        return "ruby";
-      default:
-        return "unknown";
-    }
-  }
-  function normalizePath(value) {
-    var _a;
-    const path = (_a = value.split(/[?#]/, 1)[0]) != null ? _a : "";
-    if (path.length === 0) {
-      return "/";
-    }
-    return path.startsWith("/") ? path : `/${path}`;
-  }
-  function normalizeEvaluationUrl(value) {
-    const trimmed = value == null ? void 0 : value.trim();
-    if (trimmed === void 0 || trimmed.length === 0) {
-      return {};
-    }
-    if (trimmed.startsWith("/")) {
-      return {
-        url: { path: normalizePath(trimmed) },
-        first_party: true
-      };
-    }
-    try {
-      const parsed = new URL(trimmed);
-      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-        return {
-          url: {
-            ...parsed.hostname.length > 0 ? { host: parsed.hostname.toLowerCase() } : {},
-            path: normalizePath(parsed.pathname)
-          },
-          first_party: false
-        };
-      }
-    } catch {
-      return {};
-    }
-    return {};
-  }
-  function parseStringArray(value) {
-    if (!Array.isArray(value)) {
-      return void 0;
-    }
-    const values = value.map((entry) => asString(entry)).filter((entry) => entry !== null);
-    return values.length > 0 ? Array.from(new Set(values)) : void 0;
-  }
-  function parseNumberArray(value) {
-    if (!Array.isArray(value)) {
-      return void 0;
-    }
-    const values = value.map((entry) => asInteger(entry)).filter((entry) => entry !== null);
-    return values.length > 0 ? Array.from(new Set(values)).sort((left, right) => left - right) : void 0;
-  }
-  function parseStatusRanges(value) {
-    if (!Array.isArray(value)) {
-      return void 0;
-    }
-    const ranges = value.map((entry) => {
-      const record = asRecord(entry);
-      const start = asInteger(record == null ? void 0 : record["start"]);
-      const end = asInteger(record == null ? void 0 : record["end"]);
-      if (start === null || end === null || start > end) {
-        return null;
-      }
-      return { start, end };
-    }).filter((entry) => entry !== null);
-    return ranges.length > 0 ? ranges : void 0;
-  }
-  function parseUrlMatcher(value) {
-    var _a, _b;
-    const record = asRecord(value);
-    if (record === null) {
-      return void 0;
-    }
-    const host = (_a = asString(record["host"])) == null ? void 0 : _a.toLowerCase();
-    const hostSuffix = (_b = asString(record["host_suffix"])) == null ? void 0 : _b.toLowerCase();
-    const pathPrefix = asString(record["path_prefix"]);
-    const pathEquals = asString(record["path_equals"]);
-    if (host === void 0 && hostSuffix === void 0 && pathPrefix === void 0 && pathEquals === void 0) {
-      return void 0;
-    }
-    return {
-      ...host === void 0 ? {} : { host },
-      ...hostSuffix === void 0 ? {} : { host_suffix: hostSuffix },
-      ...pathPrefix === null ? {} : { path_prefix: normalizePath(pathPrefix) },
-      ...pathEquals === null ? {} : { path_equals: normalizePath(pathEquals) }
-    };
-  }
-  function parseMatcher(value) {
-    const record = asRecord(value);
-    if (record === null) {
-      return null;
-    }
-    const eventTypes = parseStringArray(record["event_types"]);
-    const services = parseStringArray(record["services"]);
-    const environments = parseStringArray(record["environments"]);
-    const runtimeValues = parseStringArray(record["runtime"]);
-    const firstParty = asBoolean(record["first_party"]);
-    const errorName = asString(record["error_name"]);
-    const messageContains = asString(record["message_contains"]);
-    const messageEquals = asString(record["message_equals"]);
-    const browserEventOpaque = asBoolean(record["browser_event_opaque"]);
-    const clientKind = record["client_kind"] === "human" || record["client_kind"] === "bot" || record["client_kind"] === "unknown" ? record["client_kind"] : null;
-    const botFamily = asString(record["bot_family"]);
-    const resourceUrl = parseUrlMatcher(record["resource_url"]);
-    const requestUrl = parseUrlMatcher(record["request_url"]);
-    const statusCodes = parseNumberArray(record["status_codes"]);
-    const statusRanges = parseStatusRanges(record["status_ranges"]);
-    const matcher = {
-      ...eventTypes === void 0 ? {} : { event_types: eventTypes },
-      ...services === void 0 ? {} : { services },
-      ...environments === void 0 ? {} : { environments },
-      ...runtimeValues === void 0 ? {} : { runtime: runtimeValues.map((entry) => normalizeRuntime(entry)) },
-      ...firstParty === null ? {} : { first_party: firstParty },
-      ...errorName === null ? {} : { error_name: errorName },
-      ...messageContains === null ? {} : { message_contains: messageContains },
-      ...messageEquals === null ? {} : { message_equals: messageEquals },
-      ...record["browser_event_kind"] === "window_error" || record["browser_event_kind"] === "resource_error" ? { browser_event_kind: record["browser_event_kind"] } : {},
-      ...browserEventOpaque === null ? {} : { browser_event_opaque: browserEventOpaque },
-      ...clientKind === null ? {} : { client_kind: clientKind },
-      ...botFamily === null ? {} : { bot_family: botFamily },
-      ...resourceUrl === void 0 ? {} : { resource_url: resourceUrl },
-      ...requestUrl === void 0 ? {} : { request_url: requestUrl },
-      ...statusCodes === void 0 ? {} : { status_codes: statusCodes },
-      ...statusRanges === void 0 ? {} : { status_ranges: statusRanges }
-    };
-    const fingerprintRecord = asRecord(record["fingerprint"]);
-    const fingerprintVersion = asString(fingerprintRecord == null ? void 0 : fingerprintRecord["version"]);
-    const fingerprintValue = asString(fingerprintRecord == null ? void 0 : fingerprintRecord["value"]);
-    if (fingerprintVersion !== null && fingerprintValue !== null) {
-      matcher.fingerprint = {
-        version: fingerprintVersion,
-        value: fingerprintValue
-      };
-    }
-    const narrowingKeys = [
-      matcher.services,
-      matcher.environments,
-      matcher.runtime,
-      matcher.first_party,
-      matcher.error_name,
-      matcher.message_contains,
-      matcher.message_equals,
-      matcher.browser_event_kind,
-      matcher.browser_event_opaque,
-      matcher.client_kind,
-      matcher.bot_family,
-      matcher.resource_url,
-      matcher.request_url,
-      matcher.status_codes,
-      matcher.status_ranges,
-      matcher.fingerprint
-    ];
-    if (!narrowingKeys.some((entry) => entry !== void 0)) {
-      return null;
-    }
-    if (matcher.browser_event_kind === "resource_error" && matcher.resource_url === void 0 && matcher.fingerprint === void 0) {
-      return null;
-    }
-    return matcher;
-  }
-  function classifyClientFromUserAgent(userAgent) {
-    if (userAgent === null) {
-      return { client_kind: "unknown" };
-    }
-    const lower = userAgent.toLowerCase();
-    const knownBots = [
-      { family: "Googlebot", markers: ["googlebot", "adsbot-google", "google-inspectiontool"] },
-      { family: "Bingbot", markers: ["bingbot", "msnbot"] },
-      { family: "DuckDuckBot", markers: ["duckduckbot"] },
-      { family: "Applebot", markers: ["applebot"] },
-      { family: "YandexBot", markers: ["yandexbot"] },
-      { family: "Baiduspider", markers: ["baiduspider"] },
-      { family: "FacebookBot", markers: ["facebookexternalhit", "facebot"] },
-      { family: "LinkedInBot", markers: ["linkedinbot"] },
-      { family: "TwitterBot", markers: ["twitterbot"] },
-      { family: "Slackbot", markers: ["slackbot"] }
-    ];
-    const knownBot = knownBots.find((entry) => entry.markers.some((marker) => lower.includes(marker)));
-    if (knownBot !== void 0) {
-      return { client_kind: "bot", bot_family: knownBot.family };
-    }
-    if (/\b(bot|crawler|spider|slurp)\b/.test(lower)) {
-      return { client_kind: "bot", bot_family: "OtherBot" };
-    }
-    return { client_kind: "human" };
-  }
-  function readDeviceUserAgent(payload) {
-    const record = asRecord(payload);
-    const device = asRecord(record == null ? void 0 : record["device"]);
-    return asString(device == null ? void 0 : device["user_agent"]);
-  }
-  function parseCaptureRule(value) {
-    var _a;
-    const record = asRecord(value);
-    if (record === null) {
-      return null;
-    }
-    const id = asString(record["id"]);
-    const projectId = asString(record["project_id"]);
-    const name = asString(record["name"]);
-    const actionValue = record["action"];
-    const matcher = parseMatcher(record["matcher"]);
-    const enabled = asBoolean(record["enabled"]);
-    const updatedAt = asString(record["updated_at"]);
-    const createdAt = asString(record["created_at"]);
-    const action = actionValue === "demote" || actionValue === "sample" || actionValue === "drop" ? actionValue : null;
-    if (id === null || projectId === null || name === null || action === null || matcher === null || enabled === null || updatedAt === null || createdAt === null) {
-      return null;
-    }
-    const sampleRate = record["sample_rate"] === null ? null : asNumber(record["sample_rate"]);
-    const sampleEventClass = record["sample_event_class"] === "preserve" || record["sample_event_class"] === "context" ? record["sample_event_class"] : record["sample_event_class"] === null || record["sample_event_class"] === void 0 ? null : null;
-    if (action === "sample" && (sampleRate === null || sampleEventClass === null)) {
-      return null;
-    }
-    if (action !== "sample" && (sampleRate !== null || sampleEventClass !== null)) {
-      return null;
-    }
-    return {
-      id,
-      project_id: projectId,
-      name,
-      description: record["description"] === null ? null : asString(record["description"]),
-      enabled,
-      action,
-      matcher,
-      sample_rate: sampleRate,
-      sample_event_class: sampleEventClass,
-      created_by_user_id: record["created_by_user_id"] === null ? null : asString(record["created_by_user_id"]),
-      created_from_incident_id: record["created_from_incident_id"] === null ? null : asString(record["created_from_incident_id"]),
-      created_from_event_id: record["created_from_event_id"] === null ? null : asString(record["created_from_event_id"]),
-      expires_at: record["expires_at"] === null ? null : asString(record["expires_at"]),
-      hit_count: (_a = asInteger(record["hit_count"])) != null ? _a : 0,
-      last_matched_at: record["last_matched_at"] === null ? null : asString(record["last_matched_at"]),
-      created_at: createdAt,
-      updated_at: updatedAt
-    };
-  }
-  function parseRemoteCaptureRulesPayload(payload) {
-    const record = asRecord(payload);
-    if (record === null || !Array.isArray(record["capture_rules"])) {
-      return [];
-    }
-    return record["capture_rules"].map((candidate) => parseCaptureRule(candidate)).filter((rule) => rule !== null);
-  }
-  function buildEvaluationContext(projectId, event) {
-    var _a;
-    const base = {
-      project_id: projectId,
-      event_id: event.event_id,
-      event_type: event.event_type,
-      service: event.service.name,
-      environment: event.service.environment,
-      runtime: normalizeRuntime(event.service.runtime)
-    };
-    const client = classifyClientFromUserAgent(readDeviceUserAgent(event.payload));
-    const baseWithClient = {
-      ...base,
-      ...client
-    };
-    if (event.event_type === "frontend_exception") {
-      const payload = event.payload;
-      const browserEvent = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
-      const target = typeof (browserEvent == null ? void 0 : browserEvent["target"]) === "object" && browserEvent["target"] !== null ? browserEvent["target"] : null;
-      const sourceUrl = typeof (target == null ? void 0 : target["source_url"]) === "string" ? target["source_url"] : typeof (browserEvent == null ? void 0 : browserEvent["file_name"]) === "string" ? browserEvent["file_name"] : null;
-      const browserEventKind = (browserEvent == null ? void 0 : browserEvent["kind"]) === "window_error" || (browserEvent == null ? void 0 : browserEvent["kind"]) === "resource_error" ? browserEvent["kind"] : void 0;
-      const resourceUrl = normalizeEvaluationUrl(sourceUrl);
-      return {
-        ...baseWithClient,
-        ...resourceUrl.first_party === void 0 ? {} : { first_party: resourceUrl.first_party },
-        error_name: event.payload.name,
-        message: event.payload.message,
-        ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
-        ...typeof (browserEvent == null ? void 0 : browserEvent["opaque"]) === "boolean" ? { browser_event_opaque: browserEvent["opaque"] } : {},
-        ...resourceUrl.url === void 0 ? {} : { resource_url: resourceUrl.url }
-      };
-    }
-    if (event.event_type === "request_event") {
-      const requestUrl = normalizeEvaluationUrl(event.payload.path);
-      return {
-        ...baseWithClient,
-        first_party: (_a = requestUrl.first_party) != null ? _a : true,
-        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
-        status_code: event.payload.response_status
-      };
-    }
-    if (event.event_type === "frontend_breadcrumb" && event.payload.breadcrumb_type === "network_request") {
-      const rawUrl = typeof event.payload.data["url"] === "string" ? event.payload.data["url"] : null;
-      const requestUrl = normalizeEvaluationUrl(rawUrl);
-      const statusCode = typeof event.payload.data["status_code"] === "number" ? event.payload.data["status_code"] : void 0;
-      return {
-        ...baseWithClient,
-        ...requestUrl.first_party === void 0 ? {} : { first_party: requestUrl.first_party },
-        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
-        ...statusCode === void 0 ? {} : { status_code: statusCode }
-      };
-    }
-    if (event.event_type === "log_event") {
-      return {
-        ...baseWithClient,
-        message: event.payload.message
-      };
-    }
-    return baseWithClient;
-  }
-  function matchesUrlMatcher(matcher, value) {
-    if (matcher === void 0) {
-      return true;
-    }
-    if (value === void 0) {
-      return false;
-    }
-    if (matcher.host !== void 0 && value.host !== matcher.host) {
-      return false;
-    }
-    if (matcher.host_suffix !== void 0 && (value.host === void 0 || !value.host.endsWith(matcher.host_suffix))) {
-      return false;
-    }
-    if (matcher.path_equals !== void 0 && value.path !== matcher.path_equals) {
-      return false;
-    }
-    if (matcher.path_prefix !== void 0 && !value.path.startsWith(matcher.path_prefix)) {
-      return false;
-    }
-    return true;
-  }
-  function matchesRule(rule, context) {
-    const matcher = rule.matcher;
-    if (matcher.event_types !== void 0 && !matcher.event_types.includes(context.event_type)) {
-      return false;
-    }
-    if (matcher.services !== void 0 && (context.service === void 0 || !matcher.services.includes(context.service))) {
-      return false;
-    }
-    if (matcher.environments !== void 0 && (context.environment === void 0 || !matcher.environments.includes(context.environment))) {
-      return false;
-    }
-    if (matcher.runtime !== void 0 && !matcher.runtime.includes(context.runtime)) {
-      return false;
-    }
-    if (matcher.first_party !== void 0 && matcher.first_party !== context.first_party) {
-      return false;
-    }
-    if (matcher.error_name !== void 0 && matcher.error_name !== context.error_name) {
-      return false;
-    }
-    if (matcher.message_equals !== void 0 && matcher.message_equals !== context.message) {
-      return false;
-    }
-    if (matcher.message_contains !== void 0 && (context.message === void 0 || !context.message.includes(matcher.message_contains))) {
-      return false;
-    }
-    if (matcher.browser_event_kind !== void 0 && matcher.browser_event_kind !== context.browser_event_kind) {
-      return false;
-    }
-    if (matcher.browser_event_opaque !== void 0 && matcher.browser_event_opaque !== context.browser_event_opaque) {
-      return false;
-    }
-    if (matcher.client_kind !== void 0 && matcher.client_kind !== context.client_kind) {
-      return false;
-    }
-    if (matcher.bot_family !== void 0 && matcher.bot_family !== context.bot_family) {
-      return false;
-    }
-    if (!matchesUrlMatcher(matcher.resource_url, context.resource_url)) {
-      return false;
-    }
-    if (!matchesUrlMatcher(matcher.request_url, context.request_url)) {
-      return false;
-    }
-    if (matcher.status_codes !== void 0 && (context.status_code === void 0 || !matcher.status_codes.includes(context.status_code))) {
-      return false;
-    }
-    if (matcher.status_ranges !== void 0 && (context.status_code === void 0 || !matcher.status_ranges.some((range) => {
-      const statusCode = context.status_code;
-      return statusCode !== void 0 && statusCode >= range.start && statusCode <= range.end;
-    }))) {
-      return false;
-    }
-    if (matcher.fingerprint !== void 0 && (context.fingerprint === void 0 || context.fingerprint.version !== matcher.fingerprint.version || context.fingerprint.value !== matcher.fingerprint.value)) {
-      return false;
-    }
-    return true;
-  }
-  function getSpecificityScore(rule) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    const matcher = rule.matcher;
-    let score = 0;
-    if (matcher.fingerprint !== void 0) {
-      score += 1e3;
-    }
-    if (((_a = matcher.resource_url) == null ? void 0 : _a.host) !== void 0) {
-      score += 250;
-    }
-    if (((_b = matcher.request_url) == null ? void 0 : _b.host) !== void 0) {
-      score += 250;
-    }
-    if (((_c = matcher.resource_url) == null ? void 0 : _c.path_equals) !== void 0 || ((_d = matcher.request_url) == null ? void 0 : _d.path_equals) !== void 0) {
-      score += 200;
-    }
-    if (matcher.status_codes !== void 0) {
-      score += 150;
-    }
-    if (matcher.browser_event_kind !== void 0) {
-      score += 100;
-    }
-    if (matcher.browser_event_opaque !== void 0) {
-      score += 100;
-    }
-    if (((_e = matcher.resource_url) == null ? void 0 : _e.host_suffix) !== void 0 || ((_f = matcher.request_url) == null ? void 0 : _f.host_suffix) !== void 0) {
-      score += 90;
-    }
-    if (((_g = matcher.resource_url) == null ? void 0 : _g.path_prefix) !== void 0 || ((_h = matcher.request_url) == null ? void 0 : _h.path_prefix) !== void 0) {
-      score += 80;
-    }
-    if (matcher.error_name !== void 0) {
-      score += 70;
-    }
-    if (matcher.message_equals !== void 0) {
-      score += 60;
-    }
-    if (matcher.message_contains !== void 0) {
-      score += 50;
-    }
-    if (matcher.bot_family !== void 0) {
-      score += 45;
-    }
-    if (matcher.first_party !== void 0) {
-      score += 40;
-    }
-    if (matcher.client_kind !== void 0) {
-      score += 35;
-    }
-    if (matcher.services !== void 0) {
-      score += 30;
-    }
-    if (matcher.environments !== void 0) {
-      score += 20;
-    }
-    if (matcher.runtime !== void 0) {
-      score += 10;
-    }
-    if (matcher.event_types !== void 0) {
-      score += 5;
-    }
-    return score;
-  }
-  function compareRules(left, right) {
-    const specificityDifference = getSpecificityScore(right) - getSpecificityScore(left);
-    if (specificityDifference !== 0) {
-      return specificityDifference;
-    }
-    const updatedDifference = Date.parse(right.updated_at) - Date.parse(left.updated_at);
-    if (updatedDifference !== 0) {
-      return updatedDifference;
-    }
-    return left.id.localeCompare(right.id);
-  }
-  function stableUnitFloat(seed) {
-    let hash = 2166136261;
-    for (let index = 0; index < seed.length; index += 1) {
-      hash ^= seed.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0) / 4294967296;
-  }
-  function shouldSample(projectId, ruleId, eventId, sampleRate) {
-    if (sampleRate <= 0) {
-      return false;
-    }
-    if (sampleRate >= 1) {
-      return true;
-    }
-    return stableUnitFloat(`${projectId}:${ruleId}:${eventId}`) < sampleRate;
-  }
-  function evaluateBrowserCaptureRulesForEvent(rules, projectId, event, now) {
-    var _a;
-    const context = buildEvaluationContext(projectId, event);
-    const activeRules = rules.filter((rule) => rule.enabled && (rule.expires_at === null || Date.parse(rule.expires_at) > Date.parse(now))).sort(compareRules);
-    for (const rule of activeRules) {
-      if (!matchesRule(rule, context)) {
-        continue;
-      }
-      if (rule.action === "demote") {
-        return {
-          rule_id: rule.id,
-          action: "demote",
-          outcome: "demote",
-          sample_rate: null,
-          sample_event_class: null
-        };
-      }
-      if (rule.action === "drop") {
-        return {
-          rule_id: rule.id,
-          action: "drop",
-          outcome: "drop",
-          sample_rate: null,
-          sample_event_class: null
-        };
-      }
-      const sampledIn = shouldSample(projectId, rule.id, event.event_id, (_a = rule.sample_rate) != null ? _a : 0);
-      return {
-        rule_id: rule.id,
-        action: "sample",
-        outcome: sampledIn ? "sampled_in" : "sampled_out",
-        sample_rate: rule.sample_rate,
-        sample_event_class: rule.sample_event_class
-      };
-    }
-    return null;
-  }
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.4.0",
+    version: "1.4.1",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -5933,12 +6147,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.4.0",
-      "@debugbundle/redaction": "1.4.0"
+      "@debugbundle/shared-types": "1.4.1",
+      "@debugbundle/redaction": "1.4.1"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -5962,7 +6176,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6030,6 +6244,17 @@
       return null;
     }
     return candidate;
+  }
+  function getLocalStorageSource() {
+    try {
+      const candidate = globalThis["localStorage"];
+      if (candidate === null || typeof candidate !== "object" || typeof candidate["getItem"] !== "function" || typeof candidate["setItem"] !== "function" || typeof candidate["removeItem"] !== "function") {
+        return null;
+      }
+      return candidate;
+    } catch {
+      return null;
+    }
   }
   function getXmlHttpRequestConstructor() {
     const candidate = globalThis["XMLHttpRequest"];
@@ -6399,26 +6624,29 @@
     }
     return endpoint;
   }
-  function asRecord2(value) {
+  function asRecord(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
     }
     return value;
   }
-  function asString2(value) {
+  function asString(value) {
     return typeof value === "string" && value.length > 0 ? value : null;
   }
+  function asBoolean(value) {
+    return typeof value === "boolean" ? value : null;
+  }
   function parseRemoteProbeDirective(value, nowMs) {
-    const record = asRecord2(value);
+    const record = asRecord(value);
     if (record === null) {
       return null;
     }
-    const activationId = asString2(record["activation_id"]);
-    const labelPattern = asString2(record["label_pattern"]);
-    const service = asString2(record["service"]);
-    const environment = asString2(record["environment"]);
-    const expiresAt = asString2(record["expires_at"]);
-    const triggerExpiresAt = asString2(record["trigger_expires_at"]);
+    const activationId = asString(record["activation_id"]);
+    const labelPattern = asString(record["label_pattern"]);
+    const service = asString(record["service"]);
+    const environment = asString(record["environment"]);
+    const expiresAt = asString(record["expires_at"]);
+    const triggerExpiresAt = asString(record["trigger_expires_at"]);
     if (activationId === null || labelPattern === null || service === null || environment === null || expiresAt === null || Number.isNaN(Date.parse(expiresAt))) {
       return null;
     }
@@ -6435,11 +6663,11 @@
     };
   }
   function parseRemoteProbeConfigPayload(payload, nowMs) {
-    const record = asRecord2(payload);
+    const record = asRecord(payload);
     if (record === null) {
       return null;
     }
-    const capturePolicy = asRecord2(record["capture_policy"]);
+    const capturePolicy = asRecord(record["capture_policy"]);
     const immediateClientErrorStatuses = capturePolicy !== null && Array.isArray(capturePolicy["immediate_client_error_statuses"]) ? capturePolicy["immediate_client_error_statuses"].filter((entry) => typeof entry === "number" && Number.isInteger(entry) && entry >= 400 && entry <= 499).sort((left, right) => left - right) : [];
     const immediateClientErrorPathRules = capturePolicy !== null ? parseImmediateClientErrorPathRules(capturePolicy["immediate_client_error_path_rules"]) : [];
     const requestFailurePreset = capturePolicy !== null && isBrowserCapturePreset(capturePolicy["preset"]) ? capturePolicy["preset"] : DEFAULT_REQUEST_FAILURE_PRESET;
@@ -6448,11 +6676,36 @@
       probesEnabled: record["probes_enabled"] === true,
       remoteProbesEnabled: record["remote_probes_enabled"] === true,
       directives: Array.isArray(record["active_probes"]) ? record["active_probes"].map((directive) => parseRemoteProbeDirective(directive, nowMs)).filter((directive) => directive !== null) : [],
-      triggerTokenKey: asString2(record["trigger_token_key"]),
+      triggerTokenKey: asString(record["trigger_token_key"]),
       requestFailurePreset,
       requestCaptureEvents,
       immediateClientErrorStatuses: immediateClientErrorStatuses.length === 0 ? [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES] : Array.from(new Set(immediateClientErrorStatuses)),
       immediateClientErrorPathRules
+    };
+  }
+  function parseRemoteAnalyticsConfigPayload(payload) {
+    const record = asRecord(payload);
+    const analytics = record === null ? null : asRecord(record["analytics"]);
+    if (analytics === null || !isBrowserAnalyticsPrivacyMode(analytics["privacy_mode"])) {
+      return null;
+    }
+    const enabled = asBoolean(analytics["enabled"]);
+    const consentRequired = asBoolean(analytics["consent_required"]);
+    const capturePageViews = asBoolean(analytics["capture_page_views"]);
+    const captureRouteChanges = asBoolean(analytics["capture_route_changes"]);
+    const captureActions = asBoolean(analytics["capture_actions"]);
+    const captureFrictionSignals = asBoolean(analytics["capture_friction_signals"]);
+    if (enabled === null || consentRequired === null || capturePageViews === null || captureRouteChanges === null || captureActions === null || captureFrictionSignals === null) {
+      return null;
+    }
+    return {
+      enabled,
+      privacyMode: analytics["privacy_mode"],
+      consentRequired,
+      capturePageViews,
+      captureRouteChanges,
+      captureActions,
+      captureFrictionSignals
     };
   }
   function parseImmediateClientErrorPathRules(value) {
@@ -6461,7 +6714,7 @@
     }
     const rules = [];
     for (const item of value) {
-      const record = asRecord2(item);
+      const record = asRecord(item);
       const statusCode = record == null ? void 0 : record["status_code"];
       const pathPattern = record == null ? void 0 : record["path_pattern"];
       const rawMethods = Array.isArray(record == null ? void 0 : record["methods"]) ? record["methods"] : [];
@@ -6495,9 +6748,12 @@
   function isBrowserCaptureRequestEvents(value) {
     return value === "off" || value === "failures_only" || value === "filtered" || value === "all";
   }
+  function isBrowserAnalyticsPrivacyMode(value) {
+    return value === "strict" || value === "standard" || value === "custom";
+  }
   function parseIngestionProbeDirectives(payload, nowMs) {
-    const record = asRecord2(payload);
-    const directivesRecord = record === null ? null : asRecord2(record["probe_directives"]);
+    const record = asRecord(payload);
+    const directivesRecord = record === null ? null : asRecord(record["probe_directives"]);
     if (directivesRecord === null || !Array.isArray(directivesRecord["active_probes"])) {
       return null;
     }
@@ -6639,7 +6895,1541 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  var FRICTION_CLICK_THRESHOLD = 3;
+  var FRICTION_CLICK_WINDOW_MS = 2e3;
+  var FRICTION_CLICK_COOLDOWN_MS = 1e4;
+  var FRICTION_BACKTRACK_WINDOW_MS = 1e4;
+  var BrowserAnalyticsFrictionTracker = class {
+    constructor() {
+      __publicField(this, "clickStates", /* @__PURE__ */ new WeakMap());
+      __publicField(this, "recentRouteTransition", null);
+    }
+    reset() {
+      this.clickStates = /* @__PURE__ */ new WeakMap();
+      this.recentRouteTransition = null;
+    }
+    recordClick(targetIdentity, isStructuralTarget, isDeadClickCandidate2, nowMs) {
+      if (targetIdentity === null || typeof targetIdentity !== "object") {
+        return null;
+      }
+      const prior = this.clickStates.get(targetIdentity);
+      if (prior !== void 0 && nowMs < prior.cooldownUntilMs) {
+        return null;
+      }
+      const count = prior !== void 0 && nowMs - prior.lastClickedAtMs <= FRICTION_CLICK_WINDOW_MS ? prior.count + 1 : 1;
+      const nextState = {
+        count,
+        lastClickedAtMs: nowMs,
+        cooldownUntilMs: 0
+      };
+      if (count < FRICTION_CLICK_THRESHOLD) {
+        this.clickStates.set(targetIdentity, nextState);
+        return null;
+      }
+      const markerKey = isStructuralTarget ? "friction.repeated_click" : isDeadClickCandidate2 ? "friction.dead_click" : null;
+      if (markerKey === null) {
+        this.clickStates.set(targetIdentity, nextState);
+        return null;
+      }
+      this.clickStates.set(targetIdentity, {
+        count: 0,
+        lastClickedAtMs: nowMs,
+        cooldownUntilMs: nowMs + FRICTION_CLICK_COOLDOWN_MS
+      });
+      return markerKey;
+    }
+    recordRouteTransition(fromPath, toPath, nowMs) {
+      if (fromPath === null || toPath === null || fromPath === toPath) {
+        return null;
+      }
+      const prior = this.recentRouteTransition;
+      const isBacktrack = prior !== null && nowMs - prior.occurredAtMs <= FRICTION_BACKTRACK_WINDOW_MS && prior.fromPath === toPath && prior.toPath === fromPath;
+      this.recentRouteTransition = { fromPath, toPath, occurredAtMs: nowMs };
+      return isBacktrack ? "friction.backtrack" : null;
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  var MAX_CUSTOM_DIMENSIONS = 8;
+  var MAX_CUSTOM_KEY_LENGTH = 64;
+  var MAX_CUSTOM_STRING_LENGTH = 128;
+  var SIGNAL_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.:-]*$/;
+  var CUSTOM_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
+  var SENSITIVE_KEY_PATTERN = /(password|passwd|secret|token|authorization|cookie|email|phone|address|card|credit|ssn|user.?id|order.?id|ticket.?id|workspace.?id)/i;
+  var STRUCTURAL_ACTION_KEYS_BY_TAG = {
+    a: "click.link",
+    button: "click.button",
+    input: "click.input",
+    select: "click.select",
+    summary: "click.summary"
+  };
+  var STRUCTURAL_ACTION_KEYS_BY_ROLE = {
+    button: "click.button",
+    checkbox: "click.checkbox",
+    link: "click.link",
+    menuitem: "click.menuitem",
+    radio: "click.radio",
+    switch: "click.switch",
+    tab: "click.tab"
+  };
+  var STRUCTURAL_INPUT_TYPES = /* @__PURE__ */ new Set(["button", "checkbox", "radio", "reset", "submit"]);
+  var NON_FRICTION_CONTROL_TAGS = /* @__PURE__ */ new Set(["input", "textarea", "select", "option", "label"]);
+  var STANDARD_VISITOR_STORAGE_PREFIX = "debugbundle.analytics.visitor.v1";
+  var BUILT_IN_DIMENSION_KEYS = /* @__PURE__ */ new Set([
+    "auth_state",
+    "device_type",
+    "browser_family",
+    "browser_major",
+    "os_family",
+    "os_major",
+    "language",
+    "locale",
+    "viewport_bucket",
+    "referrer_domain",
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "country_code",
+    "region_code"
+  ]);
+  async function resolveStandardAnalyticsVisitor(projectToken) {
+    const projectScopeHash = await hashAnalyticsValue(projectToken);
+    if (projectScopeHash === null) {
+      return null;
+    }
+    const storageKey = `${STANDARD_VISITOR_STORAGE_PREFIX}.${projectScopeHash.slice("sha256:".length)}`;
+    const visitorId = getOrCreateStoredVisitor(storageKey);
+    if (visitorId === null) {
+      return null;
+    }
+    const visitorIdHash = await hashAnalyticsValue(`${projectScopeHash}:${visitorId}`);
+    return visitorIdHash === null ? null : { storageKey, visitorIdHash };
+  }
+  function removeStoredAnalyticsVisitor(storageKey) {
+    var _a;
+    try {
+      (_a = getLocalStorageSource()) == null ? void 0 : _a.removeItem(storageKey);
+    } catch {
+    }
+  }
+  function normalizeAnalyticsPrivacyMode(value) {
+    return value === "standard" || value === "custom" ? value : "strict";
+  }
+  function getAnalyticsProjectTokenFields(config2) {
+    return config2.projectToken === null ? {} : { project_token: config2.projectToken };
+  }
+  function normalizeAnalyticsSignal(signal) {
+    return {
+      action_key: normalizeSignalKey(signal.action_key),
+      funnel_key: normalizeSignalKey(signal.funnel_key),
+      step_key: normalizeSignalKey(signal.step_key),
+      conversion_key: normalizeSignalKey(signal.conversion_key),
+      marker_key: normalizeSignalKey(signal.marker_key)
+    };
+  }
+  function getStructuralActionKey(target) {
+    var _a;
+    const role = normalizeStructuralActionValue(target["role"]);
+    if (role !== null && STRUCTURAL_ACTION_KEYS_BY_ROLE[role] !== void 0) {
+      return STRUCTURAL_ACTION_KEYS_BY_ROLE[role];
+    }
+    const tagName = normalizeStructuralActionValue(target["tagName"]);
+    if (tagName === null) {
+      return null;
+    }
+    if (tagName === "input") {
+      const inputType = normalizeStructuralActionValue(target["type"]);
+      if (inputType !== null && STRUCTURAL_INPUT_TYPES.has(inputType)) {
+        return `click.input.${inputType}`;
+      }
+    }
+    return (_a = STRUCTURAL_ACTION_KEYS_BY_TAG[tagName]) != null ? _a : null;
+  }
+  function isDeadClickCandidate(target) {
+    const tagName = normalizeStructuralActionValue(target["tagName"]);
+    return tagName !== null && !NON_FRICTION_CONTROL_TAGS.has(tagName);
+  }
+  function normalizeAnalyticsRoute(path, title) {
+    var _a, _b;
+    if (typeof path !== "string" || path.trim().length === 0) {
+      return null;
+    }
+    try {
+      const parsed = new URL(path, (_b = (_a = getLocationSource()) == null ? void 0 : _a.href) != null ? _b : "https://debugbundle.local");
+      return { path: parsed.pathname || "/", normalized_path: parsed.pathname || "/", title: normalizeTitle(title) };
+    } catch {
+      const queryIndex = path.indexOf("?");
+      const fragmentIndex = path.indexOf("#");
+      const end = queryIndex === -1 ? fragmentIndex === -1 ? path.length : fragmentIndex : fragmentIndex === -1 ? queryIndex : Math.min(queryIndex, fragmentIndex);
+      const normalized = path.slice(0, end).trim();
+      if (normalized.length === 0) {
+        return null;
+      }
+      const normalizedPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
+      return { path: normalizedPath, normalized_path: normalizedPath, title: normalizeTitle(title) };
+    }
+  }
+  function sanitizeAnalyticsCustomDimensions(input) {
+    const output = {};
+    for (const [rawKey, rawValue] of Object.entries(input)) {
+      if (Object.keys(output).length >= MAX_CUSTOM_DIMENSIONS) {
+        break;
+      }
+      const key = normalizeCustomDimensionKey2(rawKey);
+      if (key === null || BUILT_IN_DIMENSION_KEYS.has(key)) {
+        continue;
+      }
+      const value = normalizeCustomDimensionValue(key, rawValue);
+      if (value !== void 0) {
+        output[key] = value;
+      }
+    }
+    return output;
+  }
+  function omitBuiltInAnalyticsDimensions(dimensions) {
+    const output = { ...dimensions };
+    for (const key of BUILT_IN_DIMENSION_KEYS) {
+      delete output[key];
+    }
+    return output;
+  }
+  function buildAnalyticsDimensions(device, trackReferrers, customDimensions) {
+    var _a, _b, _c, _d, _e, _f;
+    const language = normalizeLocale((_a = device == null ? void 0 : device.language) != null ? _a : null);
+    const locationSource = getLocationSource();
+    const params = new URLSearchParams(typeof (locationSource == null ? void 0 : locationSource.search) === "string" ? locationSource.search.replace(/^\?/, "") : "");
+    return {
+      auth_state: normalizeAuthState(customDimensions["auth_state"]),
+      device_type: (_b = device == null ? void 0 : device.device_type) != null ? _b : "unknown",
+      browser_family: normalizeDimensionText((_c = device == null ? void 0 : device.browser.name) != null ? _c : null, 80),
+      browser_major: parseMajorVersion((_d = device == null ? void 0 : device.browser.version) != null ? _d : null),
+      os_family: normalizeDimensionText((_e = device == null ? void 0 : device.os.name) != null ? _e : null, 80),
+      os_major: parseMajorVersion((_f = device == null ? void 0 : device.os.version) != null ? _f : null),
+      language,
+      locale: language,
+      viewport_bucket: getViewportBucket(device),
+      referrer_domain: trackReferrers ? getReferrerDomain() : null,
+      utm_source: normalizeDimensionText(params.get("utm_source"), 128),
+      utm_medium: normalizeDimensionText(params.get("utm_medium"), 128),
+      utm_campaign: normalizeDimensionText(params.get("utm_campaign"), 128),
+      country_code: null,
+      region_code: null
+    };
+  }
+  function getOrCreateStoredVisitor(storageKey) {
+    const storage = getLocalStorageSource();
+    if (storage === null) {
+      return null;
+    }
+    try {
+      const existing = storage.getItem(storageKey);
+      if (typeof existing === "string" && /^[a-f0-9-]{16,128}$/i.test(existing)) {
+        return existing;
+      }
+      const visitorId = createBrowserTraceId();
+      if (!/^[a-f0-9-]{16,128}$/i.test(visitorId)) {
+        return null;
+      }
+      storage.setItem(storageKey, visitorId);
+      return visitorId;
+    } catch {
+      return null;
+    }
+  }
+  async function hashAnalyticsValue(value) {
+    var _a;
+    const cryptoSource = getCryptoSource();
+    const TextEncoderConstructor = globalThis["TextEncoder"];
+    if (typeof ((_a = cryptoSource == null ? void 0 : cryptoSource.subtle) == null ? void 0 : _a.digest) !== "function" || TextEncoderConstructor === void 0) {
+      return null;
+    }
+    const digest = await cryptoSource.subtle.digest("SHA-256", new TextEncoderConstructor().encode(value));
+    return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  }
+  function normalizeSignalKey(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    const trimmed = value.trim();
+    return SIGNAL_KEY_PATTERN.test(trimmed) && trimmed.length <= 120 ? trimmed : null;
+  }
+  function normalizeStructuralActionValue(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 && normalized.length <= 32 ? normalized : null;
+  }
+  function normalizeTitle(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed.slice(0, 200) : null;
+  }
+  function normalizeCustomDimensionKey2(value) {
+    const trimmed = value.trim();
+    return trimmed.length > 0 && trimmed.length <= MAX_CUSTOM_KEY_LENGTH && CUSTOM_KEY_PATTERN.test(trimmed) && !SENSITIVE_KEY_PATTERN.test(trimmed) ? trimmed : null;
+  }
+  function normalizeCustomDimensionValue(key, value) {
+    if (value === null || typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number" && Number.isFinite(value) && value >= -1e6 && value <= 1e6) {
+      return value;
+    }
+    if (typeof value !== "string") {
+      return void 0;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 && trimmed.length <= MAX_CUSTOM_STRING_LENGTH && !SENSITIVE_KEY_PATTERN.test(trimmed) && !SENSITIVE_KEY_PATTERN.test(key) ? trimmed : void 0;
+  }
+  function normalizeAuthState(value) {
+    return value === "authenticated" || value === "unknown" ? value : "anonymous";
+  }
+  function normalizeDimensionText(value, maxLength) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed.slice(0, maxLength) : null;
+  }
+  function normalizeLocale(value) {
+    const normalized = normalizeDimensionText(value, 35);
+    return normalized !== null && /^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(normalized) ? normalized : null;
+  }
+  function parseMajorVersion(value) {
+    var _a;
+    const major = typeof value === "string" ? Number.parseInt((_a = value.split(".")[0]) != null ? _a : "", 10) : Number.NaN;
+    return Number.isFinite(major) && major >= 0 ? major : null;
+  }
+  function getViewportBucket(device) {
+    var _a;
+    const width = (_a = device == null ? void 0 : device.viewport.width) != null ? _a : 0;
+    return width <= 0 ? "unknown" : width < 640 ? "small" : width < 1024 ? "medium" : "large";
+  }
+  function getReferrerDomain() {
+    var _a;
+    const referrer = (_a = getDocumentSource()) == null ? void 0 : _a.referrer;
+    if (typeof referrer !== "string" || referrer.trim().length === 0) {
+      return null;
+    }
+    try {
+      const hostname = new URL(referrer).hostname;
+      return hostname.length > 0 && hostname.length <= 255 ? hostname : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
+  var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
+  var MAX_PENDING_STANDARD_EVENTS = 16;
+  var BrowserAnalyticsController = class {
+    constructor(host) {
+      __publicField(this, "host");
+      __publicField(this, "active", null);
+      __publicField(this, "lastRoute", null);
+      __publicField(this, "sessionSummaryCaptured", false);
+      __publicField(this, "frictionTracker", new BrowserAnalyticsFrictionTracker());
+      __publicField(this, "api", {
+        setConsent: (value) => {
+          if (this.active !== null) {
+            this.active.consentGranted = value;
+            this.active.consentExplicitlySet = true;
+            if (!value) {
+              this.clearStandardVisitor(this.active);
+            } else if (this.active.captureReady) {
+              void this.initializeStandardVisitor(this.active);
+            }
+          }
+        },
+        pageView: (input = {}) => {
+          this.captureWhenReady(() => this.capturePageView(input, "page_view"));
+        },
+        track: (name, dimensions = {}) => {
+          this.captureWhenReady(() => this.captureSignal("action", { action_key: name }, dimensions));
+        },
+        funnel: (name, step, dimensions = {}) => {
+          this.captureWhenReady(() => this.captureSignal("funnel_step", { funnel_key: name, step_key: step }, dimensions));
+        },
+        convert: (name, dimensions = {}) => {
+          this.captureWhenReady(() => this.captureSignal("conversion", { conversion_key: name }, dimensions));
+        },
+        marker: (name, dimensions = {}) => {
+          this.captureWhenReady(() => this.captureSignal("journey_marker", { marker_key: name }, dimensions));
+        },
+        setContext: (dimensions) => {
+          this.captureWhenReady(() => this.setContext(dimensions));
+        },
+        setUserHash: (hash) => {
+          this.captureWhenReady(() => {
+            if (this.active === null) {
+              return;
+            }
+            this.active.userIdHash = this.active.privacyMode !== "strict" && typeof hash === "string" && HASH_PATTERN.test(hash) ? hash.toLowerCase() : null;
+          });
+        }
+      });
+      this.host = host;
+    }
+    configure(config2, options = {}) {
+      this.sessionSummaryCaptured = false;
+      const enabled = (config2 == null ? void 0 : config2.enabled) === true;
+      if (!enabled) {
+        this.active = null;
+        this.lastRoute = null;
+        return;
+      }
+      const sampleRate = normalizeSampleRate(config2 == null ? void 0 : config2.sampleRate, 1);
+      if (sampleRate <= 0 || Math.random() > sampleRate) {
+        this.active = null;
+        this.lastRoute = null;
+        return;
+      }
+      const privacyMode = normalizeAnalyticsPrivacyMode(config2 == null ? void 0 : config2.privacyMode);
+      const consentRequired = (config2 == null ? void 0 : config2.consentRequired) === true;
+      this.active = {
+        enabled,
+        privacyMode,
+        consentRequired,
+        consentGranted: !consentRequired,
+        consentExplicitlySet: false,
+        trackPageViews: (config2 == null ? void 0 : config2.trackPageViews) !== false,
+        trackRouteChanges: (config2 == null ? void 0 : config2.trackRouteChanges) !== false,
+        trackSessions: (config2 == null ? void 0 : config2.trackSessions) !== false,
+        trackReferrers: (config2 == null ? void 0 : config2.trackReferrers) !== false,
+        captureActions: true,
+        trackActions: (config2 == null ? void 0 : config2.trackActions) === true,
+        trackFrictionSignals: (config2 == null ? void 0 : config2.trackFrictionSignals) !== false,
+        sampleRate,
+        sessionId: this.host.getSessionId(),
+        sessionStartedAtMs: Date.now(),
+        sessionPageviews: 0,
+        captureReady: options.deferCapture !== true,
+        pendingCaptures: [],
+        visitorIdHash: null,
+        visitorStorageKey: null,
+        visitorInitializationPending: false,
+        pendingEvents: [],
+        userIdHash: null,
+        context: {}
+      };
+      this.lastRoute = null;
+      this.frictionTracker.reset();
+      if (this.active.captureReady) {
+        void this.initializeStandardVisitor(this.active);
+      }
+    }
+    markCaptureReady() {
+      const active = this.active;
+      if (active === null || active.captureReady) {
+        return;
+      }
+      active.captureReady = true;
+      void this.initializeStandardVisitor(active);
+      const pendingCaptures = active.pendingCaptures;
+      active.pendingCaptures = [];
+      this.captureSessionStart();
+      this.captureInitialPageView();
+      for (const capture of pendingCaptures) {
+        capture();
+      }
+    }
+    reset() {
+      this.active = null;
+      this.lastRoute = null;
+      this.sessionSummaryCaptured = false;
+      this.frictionTracker.reset();
+    }
+    captureSessionStart() {
+      var _a;
+      if (((_a = this.active) == null ? void 0 : _a.trackSessions) !== true) {
+        return;
+      }
+      this.enqueue("session_start", {}, null, {});
+    }
+    captureSessionSummary() {
+      var _a;
+      if (((_a = this.active) == null ? void 0 : _a.trackSessions) !== true || this.sessionSummaryCaptured) {
+        return;
+      }
+      if (this.enqueue("session_summary", {}, this.lastRoute, {})) {
+        this.sessionSummaryCaptured = true;
+      }
+    }
+    prepareForUnload() {
+      const active = this.active;
+      if ((active == null ? void 0 : active.visitorInitializationPending) === true) {
+        active.visitorInitializationPending = false;
+        this.flushPendingEvents(active);
+      }
+    }
+    captureInitialPageView() {
+      var _a;
+      if (((_a = this.active) == null ? void 0 : _a.trackPageViews) !== true) {
+        return;
+      }
+      this.capturePageView({}, "page_view");
+    }
+    captureRouteChange(path) {
+      this.captureWhenReady(() => {
+        var _a;
+        if (((_a = this.active) == null ? void 0 : _a.trackRouteChanges) === true) {
+          this.capturePageView({ path }, "route_change");
+        }
+      });
+    }
+    applyRemoteSettings(remote) {
+      const active = this.active;
+      if (active === null) {
+        return;
+      }
+      active.enabled = active.enabled && remote.enabled;
+      if (remote.privacyMode === "strict") {
+        active.privacyMode = "strict";
+        active.userIdHash = null;
+        this.clearStandardVisitor(active);
+      }
+      active.consentRequired = active.consentRequired || remote.consentRequired;
+      if (active.consentRequired && !active.consentExplicitlySet) {
+        active.consentGranted = false;
+        this.clearStandardVisitor(active);
+      }
+      active.trackPageViews = active.trackPageViews && remote.capturePageViews;
+      active.trackRouteChanges = active.trackRouteChanges && remote.captureRouteChanges;
+      active.captureActions = active.captureActions && remote.captureActions;
+      active.trackActions = active.trackActions && remote.captureActions;
+      active.trackFrictionSignals = active.trackFrictionSignals && remote.captureFrictionSignals;
+      if (!active.enabled) {
+        this.clearStandardVisitor(active);
+      }
+    }
+    shouldCaptureStructuralActions() {
+      var _a;
+      return ((_a = this.active) == null ? void 0 : _a.enabled) === true && this.active.trackActions && this.active.captureActions && this.active.consentGranted;
+    }
+    shouldCaptureFrictionSignals() {
+      var _a;
+      return ((_a = this.active) == null ? void 0 : _a.enabled) === true && this.active.trackFrictionSignals && this.active.consentGranted;
+    }
+    captureStructuralAction(target) {
+      if (!this.shouldCaptureStructuralActions()) {
+        return;
+      }
+      const actionKey = getStructuralActionKey(target);
+      if (actionKey === null) {
+        return;
+      }
+      this.captureWhenReady(() => {
+        if (this.shouldCaptureStructuralActions()) {
+          this.enqueue("action", { action_key: actionKey }, this.lastRoute, {});
+        }
+      });
+    }
+    captureFrictionClick(target, targetIdentity) {
+      if (!this.shouldCaptureFrictionSignals() || targetIdentity === null || typeof targetIdentity !== "object") {
+        return;
+      }
+      this.captureWhenReady(() => {
+        if (!this.shouldCaptureFrictionSignals()) {
+          return;
+        }
+        const markerKey = this.frictionTracker.recordClick(targetIdentity, getStructuralActionKey(target) !== null, isDeadClickCandidate(target), Date.now());
+        if (markerKey !== null) {
+          this.enqueue("journey_marker", { marker_key: markerKey }, this.lastRoute, {});
+        }
+      });
+    }
+    capturePageView(input, kind) {
+      var _a, _b;
+      const route = normalizeAnalyticsRoute((_a = input.path) != null ? _a : this.host.getCurrentRoute(), (_b = input.title) != null ? _b : null);
+      if (route === null) {
+        return;
+      }
+      const previousRoute = kind === "route_change" ? this.lastRoute : null;
+      if (this.enqueue(kind, {}, route, {}, previousRoute)) {
+        this.lastRoute = route;
+        if (this.active !== null) {
+          this.active.sessionPageviews += 1;
+        }
+        if (kind === "route_change") {
+          this.captureBacktrackFriction(previousRoute, route);
+        }
+      }
+    }
+    captureBacktrackFriction(previousRoute, route) {
+      if (!this.shouldCaptureFrictionSignals() || previousRoute === null || route === null) {
+        return;
+      }
+      const fromPath = previousRoute.normalized_path;
+      const toPath = route.normalized_path;
+      if (fromPath === null || toPath === null || fromPath === toPath) {
+        return;
+      }
+      const markerKey = this.frictionTracker.recordRouteTransition(fromPath, toPath, Date.now());
+      if (markerKey !== null) {
+        this.enqueue("journey_marker", { marker_key: markerKey }, route, {});
+      }
+    }
+    captureSignal(kind, signal, dimensions) {
+      var _a;
+      if (kind === "action" && ((_a = this.active) == null ? void 0 : _a.captureActions) !== true) {
+        return;
+      }
+      const normalizedSignal = normalizeAnalyticsSignal(signal);
+      if (kind === "action" && normalizedSignal.action_key === null || kind === "funnel_step" && (normalizedSignal.funnel_key === null || normalizedSignal.step_key === null) || kind === "conversion" && normalizedSignal.conversion_key === null || kind === "journey_marker" && normalizedSignal.marker_key === null) {
+        return;
+      }
+      this.enqueue(kind, normalizedSignal, kind === "journey_marker" ? this.lastRoute : null, sanitizeAnalyticsCustomDimensions(dimensions));
+    }
+    enqueue(kind, signal, route, dimensions, previousRoute = null) {
+      const sdkConfig = this.host.getConfig();
+      const active = this.active;
+      if (sdkConfig === null || active === null || !active.enabled || !active.consentGranted) {
+        return false;
+      }
+      const mergedDimensions = {
+        ...active.context,
+        ...dimensions
+      };
+      const event = {
+        schema_version: ANALYTICS_EVENT_SCHEMA_VERSION2,
+        event_id: createBrowserTraceId(),
+        event_type: "analytics_event",
+        ...getAnalyticsProjectTokenFields(sdkConfig),
+        sdk_name: SDK_NAME,
+        sdk_version: SDK_VERSION,
+        service: {
+          name: sdkConfig.service,
+          runtime: "browser",
+          framework: null,
+          environment: sdkConfig.environment
+        },
+        occurred_at: (/* @__PURE__ */ new Date()).toISOString(),
+        correlation: {
+          session_id: active.sessionId,
+          visitor_id_hash: active.visitorIdHash,
+          user_id_hash: active.userIdHash,
+          trace_id: null,
+          deploy_id: null
+        },
+        payload: {
+          kind,
+          privacy: {
+            mode: active.privacyMode,
+            consent_granted: active.consentGranted
+          },
+          ...kind === "session_summary" ? {
+            session: {
+              duration_ms: Math.min(864e5, Math.max(0, Date.now() - active.sessionStartedAtMs)),
+              pageviews: active.sessionPageviews
+            }
+          } : {},
+          signal: normalizeAnalyticsSignal(signal),
+          route,
+          ...previousRoute !== null ? { previous_route: previousRoute } : {},
+          dimensions: buildAnalyticsDimensions(this.host.getDeviceInfo(), active.trackReferrers, mergedDimensions),
+          custom_dimensions: omitBuiltInAnalyticsDimensions(mergedDimensions)
+        }
+      };
+      if (active.visitorInitializationPending) {
+        if (active.pendingEvents.length < MAX_PENDING_STANDARD_EVENTS) {
+          active.pendingEvents.push(event);
+        }
+        return true;
+      }
+      this.host.enqueue(event);
+      return true;
+    }
+    async initializeStandardVisitor(active) {
+      var _a;
+      if (active.privacyMode !== "standard" || !active.enabled || !active.consentGranted || active.visitorIdHash !== null || active.visitorInitializationPending) {
+        return;
+      }
+      const projectToken = (_a = this.host.getConfig()) == null ? void 0 : _a.projectToken;
+      if (projectToken === null || projectToken === void 0) {
+        return;
+      }
+      active.visitorInitializationPending = true;
+      try {
+        const visitor = await resolveStandardAnalyticsVisitor(projectToken);
+        if (visitor === null) {
+          return;
+        }
+        active.visitorStorageKey = visitor.storageKey;
+        if (this.active !== active || active.privacyMode !== "standard" || !active.consentGranted) {
+          removeStoredAnalyticsVisitor(visitor.storageKey);
+          return;
+        }
+        if (this.active === active && active.privacyMode === "standard" && active.consentGranted) {
+          active.visitorIdHash = visitor.visitorIdHash;
+        }
+      } catch {
+      } finally {
+        if (this.active === active) {
+          active.visitorInitializationPending = false;
+          this.flushPendingEvents(active);
+        }
+      }
+    }
+    clearStandardVisitor(active) {
+      if (active.visitorStorageKey !== null) {
+        removeStoredAnalyticsVisitor(active.visitorStorageKey);
+      }
+      active.visitorIdHash = null;
+      active.pendingEvents = [];
+    }
+    flushPendingEvents(active) {
+      const pendingEvents = active.pendingEvents;
+      active.pendingEvents = [];
+      if (!active.enabled || !active.consentGranted) {
+        return;
+      }
+      for (const event of pendingEvents) {
+        event.correlation.visitor_id_hash = active.visitorIdHash;
+        this.host.enqueue(event);
+      }
+    }
+    setContext(dimensions) {
+      const active = this.active;
+      if (active === null) {
+        return;
+      }
+      const authState = dimensions["auth_state"];
+      const sanitized = sanitizeAnalyticsCustomDimensions(dimensions);
+      if (authState === "anonymous" || authState === "authenticated" || authState === "unknown") {
+        sanitized["auth_state"] = authState;
+      }
+      active.context = {
+        ...active.context,
+        ...sanitized
+      };
+    }
+    captureWhenReady(capture) {
+      const active = this.active;
+      if (active === null) {
+        return;
+      }
+      if (active.captureReady) {
+        capture();
+        return;
+      }
+      if (active.pendingCaptures.length < MAX_PENDING_STANDARD_EVENTS) {
+        active.pendingCaptures.push(capture);
+      }
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  function cloneEvent(event) {
+    return JSON.parse(JSON.stringify(event));
+  }
+  function applyBrowserBeforeSend(event, beforeSend) {
+    if (beforeSend === void 0) {
+      return event;
+    }
+    try {
+      const result = beforeSend(cloneEvent(event));
+      if (result === null) {
+        return null;
+      }
+      if (result === void 0) {
+        return event;
+      }
+      const parsed = EventEnvelopeSchema.safeParse(result);
+      return parsed.success ? parsed.data : event;
+    } catch {
+      return event;
+    }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
+  var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
+  var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
+  var MAX_REJECTION_REASON_PREVIEW_LENGTH = 500;
+  var BALANCED_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
+  var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES2, 409]);
+  function createInitialRemoteProbeState() {
+    return {
+      probesEnabled: false,
+      remoteProbesEnabled: false,
+      directives: [],
+      triggerTokenKey: null,
+      requestFailurePreset: DEFAULT_REQUEST_FAILURE_PRESET2,
+      requestCaptureEvents: DEFAULT_REQUEST_CAPTURE_EVENTS2,
+      immediateClientErrorStatuses: [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2],
+      immediateClientErrorPathRules: []
+    };
+  }
+  function normalizeUnhandledRejectionReason(reason) {
+    var _a;
+    if (reason instanceof Error) {
+      return {
+        error: reason,
+        rejectionReason: {
+          kind: "error",
+          name: reason.name || "Error",
+          message: truncateRejectionReasonPreview(reason.message || "Unknown rejection error")
+        }
+      };
+    }
+    if (typeof reason === "string") {
+      const preview2 = truncateRejectionReasonPreview(reason.length > 0 ? reason : "[empty string]");
+      return {
+        error: new Error(reason.length > 0 ? reason : "Unhandled promise rejection"),
+        rejectionReason: { kind: "string", preview: preview2 }
+      };
+    }
+    if (reason === null) {
+      return {
+        error: new Error("Unhandled promise rejection: null"),
+        rejectionReason: { kind: "null", preview: "null" }
+      };
+    }
+    if (reason === void 0) {
+      return {
+        error: new Error("Unhandled promise rejection: undefined"),
+        rejectionReason: { kind: "undefined", preview: "undefined" }
+      };
+    }
+    const record = normalizeUnknownRecord(reason);
+    const name = readReasonStringField(record, "name");
+    const message = readReasonStringField(record, "message");
+    const constructorName = typeof reason === "object" && reason !== null && "constructor" in reason ? (_a = reason.constructor) == null ? void 0 : _a.name : void 0;
+    const preview = typeof constructorName === "string" && constructorName.length > 0 ? constructorName : "object";
+    return {
+      error: new Error(message != null ? message : "Unhandled promise rejection"),
+      rejectionReason: {
+        kind: "object",
+        ...name === void 0 ? {} : { name },
+        ...message === void 0 ? {} : { message },
+        preview
+      }
+    };
+  }
+  function isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
+    if (!Number.isFinite(statusCode)) {
+      return false;
+    }
+    if (statusCode >= 500 || immediateClientErrorStatuses.includes(statusCode)) {
+      return true;
+    }
+    if (matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, immediateClientErrorPathRules)) {
+      return true;
+    }
+    if (preset === "investigative") {
+      return INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES2.has(statusCode);
+    }
+    return preset === "balanced" && BALANCED_IMMEDIATE_REQUEST_STATUSES2.has(statusCode);
+  }
+  function shouldCaptureRequestStatus(statusCode, preset, policy, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
+    if (isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses, requestPath, httpMethod, immediateClientErrorPathRules)) {
+      return true;
+    }
+    if (policy === "all") {
+      return Number.isFinite(statusCode) && statusCode >= 400;
+    }
+    return policy === "failures_only" && statusCode >= 500;
+  }
+  function shouldCaptureBrowserNetworkRequest(config2, url, statusCode, durationMs) {
+    if (config2 === null || !matchesNetworkFilter(config2, url, durationMs)) {
+      return false;
+    }
+    return matchesStatusCodeFilter(statusCode, config2.networkFilter.statusCodes);
+  }
+  function shouldCaptureFailedBrowserNetworkRequest(config2, url, durationMs) {
+    return config2 !== null && matchesNetworkFilter(config2, url, durationMs);
+  }
+  function matchesNetworkFilter(config2, url, durationMs) {
+    const filter = config2.networkFilter;
+    if (filter.urlPatterns.length > 0 && !filter.urlPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
+      return false;
+    }
+    if (filter.urlDenyPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
+      return false;
+    }
+    return filter.minResponseTime === null || durationMs >= filter.minResponseTime;
+  }
+  function truncateRejectionReasonPreview(value) {
+    return value.length > MAX_REJECTION_REASON_PREVIEW_LENGTH ? `${value.slice(0, MAX_REJECTION_REASON_PREVIEW_LENGTH)}[truncated]` : value;
+  }
+  function readReasonStringField(record, key) {
+    const value = record[key];
+    return typeof value === "string" && value.trim().length > 0 ? truncateRejectionReasonPreview(value.trim()) : void 0;
+  }
+  function matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, rules) {
+    if (statusCode < 400 || statusCode > 499 || requestPath === void 0) {
+      return false;
+    }
+    const normalizedPath = normalizeRequestPath(requestPath);
+    const normalizedMethod = typeof httpMethod === "string" ? httpMethod.toUpperCase() : null;
+    return rules.some((rule) => {
+      if (rule.statusCode !== statusCode) {
+        return false;
+      }
+      if (rule.methods.length > 0 && (normalizedMethod === null || !rule.methods.includes(normalizedMethod))) {
+        return false;
+      }
+      if (rule.pathPattern.endsWith("*")) {
+        return normalizedPath.startsWith(rule.pathPattern.slice(0, -1));
+      }
+      return normalizedPath === rule.pathPattern;
+    });
+  }
+  function normalizeRequestPath(value) {
+    var _a, _b;
+    try {
+      return new URL(value, (_b = (_a = getLocationSource()) == null ? void 0 : _a.href) != null ? _b : "https://debugbundle.local").pathname || "/";
+    } catch {
+      const queryIndex = value.indexOf("?");
+      const fragmentIndex = value.indexOf("#");
+      const end = queryIndex === -1 ? fragmentIndex === -1 ? value.length : fragmentIndex : fragmentIndex === -1 ? queryIndex : Math.min(queryIndex, fragmentIndex);
+      const path = value.slice(0, end);
+      return path.startsWith("/") && path.length > 0 ? path : "/";
+    }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  function asRecord2(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      return null;
+    }
+    return value;
+  }
+  function asString2(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  }
+  function asBoolean2(value) {
+    return typeof value === "boolean" ? value : null;
+  }
+  function asInteger(value) {
+    return typeof value === "number" && Number.isInteger(value) ? value : null;
+  }
+  function asNumber(value) {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+  function normalizeRuntime(value) {
+    switch (value == null ? void 0 : value.trim().toLowerCase()) {
+      case "browser":
+        return "browser";
+      case "node":
+      case "nodejs":
+        return "node";
+      case "python":
+        return "python";
+      case "php":
+        return "php";
+      case "java":
+        return "java";
+      case "go":
+      case "golang":
+        return "go";
+      case "ruby":
+        return "ruby";
+      default:
+        return "unknown";
+    }
+  }
+  function normalizePath(value) {
+    var _a;
+    const path = (_a = value.split(/[?#]/, 1)[0]) != null ? _a : "";
+    if (path.length === 0) {
+      return "/";
+    }
+    return path.startsWith("/") ? path : `/${path}`;
+  }
+  function normalizeEvaluationUrl(value) {
+    const trimmed = value == null ? void 0 : value.trim();
+    if (trimmed === void 0 || trimmed.length === 0) {
+      return {};
+    }
+    if (trimmed.startsWith("/")) {
+      return {
+        url: { path: normalizePath(trimmed) },
+        first_party: true
+      };
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return {
+          url: {
+            ...parsed.hostname.length > 0 ? { host: parsed.hostname.toLowerCase() } : {},
+            path: normalizePath(parsed.pathname)
+          },
+          first_party: false
+        };
+      }
+    } catch {
+      return {};
+    }
+    return {};
+  }
+  function parseStringArray(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const values = value.map((entry) => asString2(entry)).filter((entry) => entry !== null);
+    return values.length > 0 ? Array.from(new Set(values)) : void 0;
+  }
+  function parseNumberArray(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const values = value.map((entry) => asInteger(entry)).filter((entry) => entry !== null);
+    return values.length > 0 ? Array.from(new Set(values)).sort((left, right) => left - right) : void 0;
+  }
+  function parseStatusRanges(value) {
+    if (!Array.isArray(value)) {
+      return void 0;
+    }
+    const ranges = value.map((entry) => {
+      const record = asRecord2(entry);
+      const start = asInteger(record == null ? void 0 : record["start"]);
+      const end = asInteger(record == null ? void 0 : record["end"]);
+      if (start === null || end === null || start > end) {
+        return null;
+      }
+      return { start, end };
+    }).filter((entry) => entry !== null);
+    return ranges.length > 0 ? ranges : void 0;
+  }
+  function parseUrlMatcher(value) {
+    var _a, _b;
+    const record = asRecord2(value);
+    if (record === null) {
+      return void 0;
+    }
+    const host = (_a = asString2(record["host"])) == null ? void 0 : _a.toLowerCase();
+    const hostSuffix = (_b = asString2(record["host_suffix"])) == null ? void 0 : _b.toLowerCase();
+    const pathPrefix = asString2(record["path_prefix"]);
+    const pathEquals = asString2(record["path_equals"]);
+    if (host === void 0 && hostSuffix === void 0 && pathPrefix === void 0 && pathEquals === void 0) {
+      return void 0;
+    }
+    return {
+      ...host === void 0 ? {} : { host },
+      ...hostSuffix === void 0 ? {} : { host_suffix: hostSuffix },
+      ...pathPrefix === null ? {} : { path_prefix: normalizePath(pathPrefix) },
+      ...pathEquals === null ? {} : { path_equals: normalizePath(pathEquals) }
+    };
+  }
+  function parseMatcher(value) {
+    const record = asRecord2(value);
+    if (record === null) {
+      return null;
+    }
+    const eventTypes = parseStringArray(record["event_types"]);
+    const services = parseStringArray(record["services"]);
+    const environments = parseStringArray(record["environments"]);
+    const runtimeValues = parseStringArray(record["runtime"]);
+    const firstParty = asBoolean2(record["first_party"]);
+    const errorName = asString2(record["error_name"]);
+    const messageContains = asString2(record["message_contains"]);
+    const messageEquals = asString2(record["message_equals"]);
+    const browserEventOpaque = asBoolean2(record["browser_event_opaque"]);
+    const clientKind = record["client_kind"] === "human" || record["client_kind"] === "bot" || record["client_kind"] === "unknown" ? record["client_kind"] : null;
+    const botFamily = asString2(record["bot_family"]);
+    const resourceUrl = parseUrlMatcher(record["resource_url"]);
+    const requestUrl = parseUrlMatcher(record["request_url"]);
+    const statusCodes = parseNumberArray(record["status_codes"]);
+    const statusRanges = parseStatusRanges(record["status_ranges"]);
+    const matcher = {
+      ...eventTypes === void 0 ? {} : { event_types: eventTypes },
+      ...services === void 0 ? {} : { services },
+      ...environments === void 0 ? {} : { environments },
+      ...runtimeValues === void 0 ? {} : { runtime: runtimeValues.map((entry) => normalizeRuntime(entry)) },
+      ...firstParty === null ? {} : { first_party: firstParty },
+      ...errorName === null ? {} : { error_name: errorName },
+      ...messageContains === null ? {} : { message_contains: messageContains },
+      ...messageEquals === null ? {} : { message_equals: messageEquals },
+      ...record["browser_event_kind"] === "window_error" || record["browser_event_kind"] === "resource_error" ? { browser_event_kind: record["browser_event_kind"] } : {},
+      ...browserEventOpaque === null ? {} : { browser_event_opaque: browserEventOpaque },
+      ...clientKind === null ? {} : { client_kind: clientKind },
+      ...botFamily === null ? {} : { bot_family: botFamily },
+      ...resourceUrl === void 0 ? {} : { resource_url: resourceUrl },
+      ...requestUrl === void 0 ? {} : { request_url: requestUrl },
+      ...statusCodes === void 0 ? {} : { status_codes: statusCodes },
+      ...statusRanges === void 0 ? {} : { status_ranges: statusRanges }
+    };
+    const fingerprintRecord = asRecord2(record["fingerprint"]);
+    const fingerprintVersion = asString2(fingerprintRecord == null ? void 0 : fingerprintRecord["version"]);
+    const fingerprintValue = asString2(fingerprintRecord == null ? void 0 : fingerprintRecord["value"]);
+    if (fingerprintVersion !== null && fingerprintValue !== null) {
+      matcher.fingerprint = {
+        version: fingerprintVersion,
+        value: fingerprintValue
+      };
+    }
+    const narrowingKeys = [
+      matcher.services,
+      matcher.environments,
+      matcher.runtime,
+      matcher.first_party,
+      matcher.error_name,
+      matcher.message_contains,
+      matcher.message_equals,
+      matcher.browser_event_kind,
+      matcher.browser_event_opaque,
+      matcher.client_kind,
+      matcher.bot_family,
+      matcher.resource_url,
+      matcher.request_url,
+      matcher.status_codes,
+      matcher.status_ranges,
+      matcher.fingerprint
+    ];
+    if (!narrowingKeys.some((entry) => entry !== void 0)) {
+      return null;
+    }
+    if (matcher.browser_event_kind === "resource_error" && matcher.resource_url === void 0 && matcher.fingerprint === void 0) {
+      return null;
+    }
+    return matcher;
+  }
+  function classifyClientFromUserAgent(userAgent) {
+    if (userAgent === null) {
+      return { client_kind: "unknown" };
+    }
+    const lower = userAgent.toLowerCase();
+    const knownBots = [
+      { family: "Googlebot", markers: ["googlebot", "adsbot-google", "google-inspectiontool"] },
+      { family: "Bingbot", markers: ["bingbot", "msnbot"] },
+      { family: "DuckDuckBot", markers: ["duckduckbot"] },
+      { family: "Applebot", markers: ["applebot"] },
+      { family: "YandexBot", markers: ["yandexbot"] },
+      { family: "Baiduspider", markers: ["baiduspider"] },
+      { family: "FacebookBot", markers: ["facebookexternalhit", "facebot"] },
+      { family: "LinkedInBot", markers: ["linkedinbot"] },
+      { family: "TwitterBot", markers: ["twitterbot"] },
+      { family: "Slackbot", markers: ["slackbot"] }
+    ];
+    const knownBot = knownBots.find((entry) => entry.markers.some((marker) => lower.includes(marker)));
+    if (knownBot !== void 0) {
+      return { client_kind: "bot", bot_family: knownBot.family };
+    }
+    if (/\b(bot|crawler|spider|slurp)\b/.test(lower)) {
+      return { client_kind: "bot", bot_family: "OtherBot" };
+    }
+    return { client_kind: "human" };
+  }
+  function readDeviceUserAgent(payload) {
+    const record = asRecord2(payload);
+    const device = asRecord2(record == null ? void 0 : record["device"]);
+    return asString2(device == null ? void 0 : device["user_agent"]);
+  }
+  function parseCaptureRule(value) {
+    var _a;
+    const record = asRecord2(value);
+    if (record === null) {
+      return null;
+    }
+    const id = asString2(record["id"]);
+    const projectId = asString2(record["project_id"]);
+    const name = asString2(record["name"]);
+    const actionValue = record["action"];
+    const matcher = parseMatcher(record["matcher"]);
+    const enabled = asBoolean2(record["enabled"]);
+    const updatedAt = asString2(record["updated_at"]);
+    const createdAt = asString2(record["created_at"]);
+    const action = actionValue === "demote" || actionValue === "sample" || actionValue === "drop" ? actionValue : null;
+    if (id === null || projectId === null || name === null || action === null || matcher === null || enabled === null || updatedAt === null || createdAt === null) {
+      return null;
+    }
+    const sampleRate = record["sample_rate"] === null ? null : asNumber(record["sample_rate"]);
+    const sampleEventClass = record["sample_event_class"] === "preserve" || record["sample_event_class"] === "context" ? record["sample_event_class"] : record["sample_event_class"] === null || record["sample_event_class"] === void 0 ? null : null;
+    if (action === "sample" && (sampleRate === null || sampleEventClass === null)) {
+      return null;
+    }
+    if (action !== "sample" && (sampleRate !== null || sampleEventClass !== null)) {
+      return null;
+    }
+    return {
+      id,
+      project_id: projectId,
+      name,
+      description: record["description"] === null ? null : asString2(record["description"]),
+      enabled,
+      action,
+      matcher,
+      sample_rate: sampleRate,
+      sample_event_class: sampleEventClass,
+      created_by_user_id: record["created_by_user_id"] === null ? null : asString2(record["created_by_user_id"]),
+      created_from_incident_id: record["created_from_incident_id"] === null ? null : asString2(record["created_from_incident_id"]),
+      created_from_event_id: record["created_from_event_id"] === null ? null : asString2(record["created_from_event_id"]),
+      expires_at: record["expires_at"] === null ? null : asString2(record["expires_at"]),
+      hit_count: (_a = asInteger(record["hit_count"])) != null ? _a : 0,
+      last_matched_at: record["last_matched_at"] === null ? null : asString2(record["last_matched_at"]),
+      created_at: createdAt,
+      updated_at: updatedAt
+    };
+  }
+  function parseRemoteCaptureRulesPayload(payload) {
+    const record = asRecord2(payload);
+    if (record === null || !Array.isArray(record["capture_rules"])) {
+      return [];
+    }
+    return record["capture_rules"].map((candidate) => parseCaptureRule(candidate)).filter((rule) => rule !== null);
+  }
+  function buildEvaluationContext(projectId, event) {
+    var _a;
+    const base = {
+      project_id: projectId,
+      event_id: event.event_id,
+      event_type: event.event_type,
+      service: event.service.name,
+      environment: event.service.environment,
+      runtime: normalizeRuntime(event.service.runtime)
+    };
+    const client = classifyClientFromUserAgent(readDeviceUserAgent(event.payload));
+    const baseWithClient = {
+      ...base,
+      ...client
+    };
+    if (event.event_type === "frontend_exception") {
+      const payload = event.payload;
+      const browserEvent = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
+      const target = typeof (browserEvent == null ? void 0 : browserEvent["target"]) === "object" && browserEvent["target"] !== null ? browserEvent["target"] : null;
+      const sourceUrl = typeof (target == null ? void 0 : target["source_url"]) === "string" ? target["source_url"] : typeof (browserEvent == null ? void 0 : browserEvent["file_name"]) === "string" ? browserEvent["file_name"] : null;
+      const browserEventKind = (browserEvent == null ? void 0 : browserEvent["kind"]) === "window_error" || (browserEvent == null ? void 0 : browserEvent["kind"]) === "resource_error" ? browserEvent["kind"] : void 0;
+      const resourceUrl = normalizeEvaluationUrl(sourceUrl);
+      return {
+        ...baseWithClient,
+        ...resourceUrl.first_party === void 0 ? {} : { first_party: resourceUrl.first_party },
+        error_name: event.payload.name,
+        message: event.payload.message,
+        ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
+        ...typeof (browserEvent == null ? void 0 : browserEvent["opaque"]) === "boolean" ? { browser_event_opaque: browserEvent["opaque"] } : {},
+        ...resourceUrl.url === void 0 ? {} : { resource_url: resourceUrl.url }
+      };
+    }
+    if (event.event_type === "request_event") {
+      const requestUrl = normalizeEvaluationUrl(event.payload.path);
+      return {
+        ...baseWithClient,
+        first_party: (_a = requestUrl.first_party) != null ? _a : true,
+        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
+        status_code: event.payload.response_status
+      };
+    }
+    if (event.event_type === "frontend_breadcrumb" && event.payload.breadcrumb_type === "network_request") {
+      const rawUrl = typeof event.payload.data["url"] === "string" ? event.payload.data["url"] : null;
+      const requestUrl = normalizeEvaluationUrl(rawUrl);
+      const statusCode = typeof event.payload.data["status_code"] === "number" ? event.payload.data["status_code"] : void 0;
+      return {
+        ...baseWithClient,
+        ...requestUrl.first_party === void 0 ? {} : { first_party: requestUrl.first_party },
+        ...requestUrl.url === void 0 ? {} : { request_url: requestUrl.url },
+        ...statusCode === void 0 ? {} : { status_code: statusCode }
+      };
+    }
+    if (event.event_type === "log_event") {
+      return {
+        ...baseWithClient,
+        message: event.payload.message
+      };
+    }
+    return baseWithClient;
+  }
+  function matchesUrlMatcher(matcher, value) {
+    if (matcher === void 0) {
+      return true;
+    }
+    if (value === void 0) {
+      return false;
+    }
+    if (matcher.host !== void 0 && value.host !== matcher.host) {
+      return false;
+    }
+    if (matcher.host_suffix !== void 0 && (value.host === void 0 || !value.host.endsWith(matcher.host_suffix))) {
+      return false;
+    }
+    if (matcher.path_equals !== void 0 && value.path !== matcher.path_equals) {
+      return false;
+    }
+    if (matcher.path_prefix !== void 0 && !value.path.startsWith(matcher.path_prefix)) {
+      return false;
+    }
+    return true;
+  }
+  function matchesRule(rule, context) {
+    const matcher = rule.matcher;
+    if (matcher.event_types !== void 0 && !matcher.event_types.includes(context.event_type)) {
+      return false;
+    }
+    if (matcher.services !== void 0 && (context.service === void 0 || !matcher.services.includes(context.service))) {
+      return false;
+    }
+    if (matcher.environments !== void 0 && (context.environment === void 0 || !matcher.environments.includes(context.environment))) {
+      return false;
+    }
+    if (matcher.runtime !== void 0 && !matcher.runtime.includes(context.runtime)) {
+      return false;
+    }
+    if (matcher.first_party !== void 0 && matcher.first_party !== context.first_party) {
+      return false;
+    }
+    if (matcher.error_name !== void 0 && matcher.error_name !== context.error_name) {
+      return false;
+    }
+    if (matcher.message_equals !== void 0 && matcher.message_equals !== context.message) {
+      return false;
+    }
+    if (matcher.message_contains !== void 0 && (context.message === void 0 || !context.message.includes(matcher.message_contains))) {
+      return false;
+    }
+    if (matcher.browser_event_kind !== void 0 && matcher.browser_event_kind !== context.browser_event_kind) {
+      return false;
+    }
+    if (matcher.browser_event_opaque !== void 0 && matcher.browser_event_opaque !== context.browser_event_opaque) {
+      return false;
+    }
+    if (matcher.client_kind !== void 0 && matcher.client_kind !== context.client_kind) {
+      return false;
+    }
+    if (matcher.bot_family !== void 0 && matcher.bot_family !== context.bot_family) {
+      return false;
+    }
+    if (!matchesUrlMatcher(matcher.resource_url, context.resource_url)) {
+      return false;
+    }
+    if (!matchesUrlMatcher(matcher.request_url, context.request_url)) {
+      return false;
+    }
+    if (matcher.status_codes !== void 0 && (context.status_code === void 0 || !matcher.status_codes.includes(context.status_code))) {
+      return false;
+    }
+    if (matcher.status_ranges !== void 0 && (context.status_code === void 0 || !matcher.status_ranges.some((range) => {
+      const statusCode = context.status_code;
+      return statusCode !== void 0 && statusCode >= range.start && statusCode <= range.end;
+    }))) {
+      return false;
+    }
+    if (matcher.fingerprint !== void 0 && (context.fingerprint === void 0 || context.fingerprint.version !== matcher.fingerprint.version || context.fingerprint.value !== matcher.fingerprint.value)) {
+      return false;
+    }
+    return true;
+  }
+  function getSpecificityScore(rule) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const matcher = rule.matcher;
+    let score = 0;
+    if (matcher.fingerprint !== void 0) {
+      score += 1e3;
+    }
+    if (((_a = matcher.resource_url) == null ? void 0 : _a.host) !== void 0) {
+      score += 250;
+    }
+    if (((_b = matcher.request_url) == null ? void 0 : _b.host) !== void 0) {
+      score += 250;
+    }
+    if (((_c = matcher.resource_url) == null ? void 0 : _c.path_equals) !== void 0 || ((_d = matcher.request_url) == null ? void 0 : _d.path_equals) !== void 0) {
+      score += 200;
+    }
+    if (matcher.status_codes !== void 0) {
+      score += 150;
+    }
+    if (matcher.browser_event_kind !== void 0) {
+      score += 100;
+    }
+    if (matcher.browser_event_opaque !== void 0) {
+      score += 100;
+    }
+    if (((_e = matcher.resource_url) == null ? void 0 : _e.host_suffix) !== void 0 || ((_f = matcher.request_url) == null ? void 0 : _f.host_suffix) !== void 0) {
+      score += 90;
+    }
+    if (((_g = matcher.resource_url) == null ? void 0 : _g.path_prefix) !== void 0 || ((_h = matcher.request_url) == null ? void 0 : _h.path_prefix) !== void 0) {
+      score += 80;
+    }
+    if (matcher.error_name !== void 0) {
+      score += 70;
+    }
+    if (matcher.message_equals !== void 0) {
+      score += 60;
+    }
+    if (matcher.message_contains !== void 0) {
+      score += 50;
+    }
+    if (matcher.bot_family !== void 0) {
+      score += 45;
+    }
+    if (matcher.first_party !== void 0) {
+      score += 40;
+    }
+    if (matcher.client_kind !== void 0) {
+      score += 35;
+    }
+    if (matcher.services !== void 0) {
+      score += 30;
+    }
+    if (matcher.environments !== void 0) {
+      score += 20;
+    }
+    if (matcher.runtime !== void 0) {
+      score += 10;
+    }
+    if (matcher.event_types !== void 0) {
+      score += 5;
+    }
+    return score;
+  }
+  function compareRules(left, right) {
+    const specificityDifference = getSpecificityScore(right) - getSpecificityScore(left);
+    if (specificityDifference !== 0) {
+      return specificityDifference;
+    }
+    const updatedDifference = Date.parse(right.updated_at) - Date.parse(left.updated_at);
+    if (updatedDifference !== 0) {
+      return updatedDifference;
+    }
+    return left.id.localeCompare(right.id);
+  }
+  function stableUnitFloat(seed) {
+    let hash = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+      hash ^= seed.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) / 4294967296;
+  }
+  function shouldSample(projectId, ruleId, eventId, sampleRate) {
+    if (sampleRate <= 0) {
+      return false;
+    }
+    if (sampleRate >= 1) {
+      return true;
+    }
+    return stableUnitFloat(`${projectId}:${ruleId}:${eventId}`) < sampleRate;
+  }
+  function evaluateBrowserCaptureRulesForEvent(rules, projectId, event, now) {
+    var _a;
+    const context = buildEvaluationContext(projectId, event);
+    const activeRules = rules.filter((rule) => rule.enabled && (rule.expires_at === null || Date.parse(rule.expires_at) > Date.parse(now))).sort(compareRules);
+    for (const rule of activeRules) {
+      if (!matchesRule(rule, context)) {
+        continue;
+      }
+      if (rule.action === "demote") {
+        return {
+          rule_id: rule.id,
+          action: "demote",
+          outcome: "demote",
+          sample_rate: null,
+          sample_event_class: null
+        };
+      }
+      if (rule.action === "drop") {
+        return {
+          rule_id: rule.id,
+          action: "drop",
+          outcome: "drop",
+          sample_rate: null,
+          sample_event_class: null
+        };
+      }
+      const sampledIn = shouldSample(projectId, rule.id, event.event_id, (_a = rule.sample_rate) != null ? _a : 0);
+      return {
+        rule_id: rule.id,
+        action: "sample",
+        outcome: sampledIn ? "sampled_in" : "sampled_out",
+        sample_rate: rule.sample_rate,
+        sample_event_class: rule.sample_event_class
+      };
+    }
+    return null;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  function applyBrowserCaptureRules(input) {
+    var _a;
+    const { config: config2, event } = input;
+    if (config2 === null || config2.captureRules.length === 0) {
+      return { event, breadcrumb: null };
+    }
+    const projectId = (_a = config2.captureRules[0]) == null ? void 0 : _a.project_id;
+    if (typeof projectId !== "string" || projectId.length === 0) {
+      return { event, breadcrumb: null };
+    }
+    try {
+      const captureRule = evaluateBrowserCaptureRulesForEvent(config2.captureRules, projectId, event, input.now);
+      if (captureRule === null) {
+        return { event, breadcrumb: null };
+      }
+      if (captureRule.outcome === "drop" || captureRule.outcome === "sampled_out") {
+        return { event: null, breadcrumb: null };
+      }
+      if (event.event_type === "frontend_exception" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
+        return {
+          event: null,
+          breadcrumb: createDemotedExceptionBreadcrumb(event, captureRule, input.currentRoute)
+        };
+      }
+      if (event.event_type === "request_event" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
+        return { event: null, breadcrumb: null };
+      }
+    } catch {
+      return { event, breadcrumb: null };
+    }
+    return { event, breadcrumb: null };
+  }
+  function buildBrowserSuppressionKey(event) {
+    var _a, _b;
+    if (event.event_type === "frontend_exception") {
+      const stackFrame = (_b = (_a = event.payload.stack.split("\n")[1]) == null ? void 0 : _a.trim()) != null ? _b : null;
+      return JSON.stringify({
+        event_type: event.event_type,
+        name: event.payload.name,
+        message: event.payload.message,
+        stack_frame: stackFrame,
+        route: event.payload.route
+      });
+    }
+    if (event.event_type === "log_event") {
+      return JSON.stringify({
+        event_type: event.event_type,
+        level: event.payload.level,
+        message: event.payload.message,
+        attributes: event.payload.attributes
+      });
+    }
+    if (event.event_type === "request_event") {
+      return JSON.stringify({
+        event_type: event.event_type,
+        method: event.payload.method,
+        path: event.payload.path,
+        response_status: event.payload.response_status
+      });
+    }
+    return null;
+  }
+  function createDemotedExceptionBreadcrumb(event, captureRule, currentRoute) {
+    var _a;
+    const payload = event.payload;
+    const browserEventRecord = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
+    const targetRecord = typeof (browserEventRecord == null ? void 0 : browserEventRecord["target"]) === "object" && browserEventRecord["target"] !== null ? browserEventRecord["target"] : null;
+    const browserEventKind = (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "window_error" || (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "resource_error" ? browserEventRecord["kind"] : void 0;
+    const sourceUrl = typeof (targetRecord == null ? void 0 : targetRecord["source_url"]) === "string" ? targetRecord["source_url"] : typeof (browserEventRecord == null ? void 0 : browserEventRecord["file_name"]) === "string" ? browserEventRecord["file_name"] : null;
+    return {
+      ts: event.occurred_at,
+      breadcrumb_type: "console_log",
+      route: (_a = event.payload.route) != null ? _a : currentRoute,
+      data: {
+        level: "error",
+        message: `${event.payload.name}: ${event.payload.message}`,
+        source: "capture_rule_demoted_exception",
+        capture_rule_action: captureRule.action,
+        capture_rule_outcome: captureRule.outcome,
+        ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
+        ...sourceUrl === null ? {} : { source_url: sourceUrl }
+      }
+    };
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -7024,7 +8814,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -7129,7 +8919,219 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  function createLane() {
+    return {
+      events: [],
+      flushPromise: null,
+      timer: null,
+      nextRetryAt: null,
+      consecutiveFailures: 0,
+      rejected: false,
+      lastEventAt: null
+    };
+  }
+  var BrowserEventTransport = class {
+    constructor(callbacks) {
+      __publicField(this, "callbacks");
+      __publicField(this, "config", null);
+      __publicField(this, "debug", createLane());
+      __publicField(this, "analytics", createLane());
+      this.callbacks = callbacks;
+    }
+    configure(config2) {
+      this.reset();
+      this.config = config2;
+    }
+    get debugRejected() {
+      return this.debug.rejected;
+    }
+    get status() {
+      if (this.config === null || this.debug.rejected || this.debug.consecutiveFailures >= 3) {
+        return "disconnected";
+      }
+      return this.debug.nextRetryAt === null ? "healthy" : "degraded";
+    }
+    get lastEventAt() {
+      const values = [this.debug.lastEventAt, this.analytics.lastEventAt].filter((value) => value !== null);
+      return values.length === 0 ? null : Math.max(...values);
+    }
+    enqueueDebug(event) {
+      this.enqueue("debug", event);
+    }
+    enqueueAnalytics(event) {
+      this.enqueue("analytics", event);
+    }
+    async flush() {
+      await Promise.all([
+        this.flushLane("debug"),
+        this.flushLane("analytics")
+      ]);
+    }
+    scheduleDebug(delayMs) {
+      this.schedule("debug", delayMs);
+    }
+    flushViaBeacon() {
+      this.flushLaneViaBeacon("debug");
+      this.flushLaneViaBeacon("analytics");
+    }
+    reset() {
+      this.clearLaneTimer(this.debug);
+      this.clearLaneTimer(this.analytics);
+      this.debug = createLane();
+      this.analytics = createLane();
+      this.config = null;
+    }
+    enqueue(laneName, event) {
+      const config2 = this.config;
+      const lane = this.getLane(laneName);
+      if (config2 === null || lane.rejected) {
+        return;
+      }
+      lane.events.push(event);
+      if (lane.events.length >= config2.batchSize) {
+        queueMicrotask(() => {
+          void this.flushLane(laneName);
+        });
+        return;
+      }
+      this.schedule(laneName);
+    }
+    async flushLane(laneName) {
+      const config2 = this.config;
+      const lane = this.getLane(laneName);
+      if (config2 === null || lane.events.length === 0 || lane.rejected) {
+        return;
+      }
+      if (lane.flushPromise !== null) {
+        return lane.flushPromise;
+      }
+      if (lane.nextRetryAt !== null && Date.now() < lane.nextRetryAt) {
+        return;
+      }
+      this.clearLaneTimer(lane);
+      const events = [...lane.events];
+      lane.flushPromise = (async () => {
+        var _a;
+        try {
+          const response = await config2.transport({
+            endpoint: config2.endpoint,
+            headers: getTransportHeaders(config2),
+            events,
+            transportMode: config2.transportMode,
+            timeout_ms: config2.requestTimeoutMs
+          });
+          if (response.status >= 200 && response.status < 300) {
+            if (laneName === "debug") {
+              this.callbacks.onDebugResponse(response.body);
+            }
+            lane.nextRetryAt = null;
+            lane.lastEventAt = Date.now();
+            lane.consecutiveFailures = 0;
+            removeLeadingEvents(lane, events);
+            return;
+          }
+          lane.consecutiveFailures += 1;
+          if (response.status === 401 || response.status === 403) {
+            lane.rejected = true;
+            lane.nextRetryAt = null;
+            lane.events = [];
+            this.callbacks.onUnauthorized(laneName, response.status, config2.endpoint, response.body);
+            return;
+          }
+          if (response.status === 429) {
+            lane.nextRetryAt = Date.now() + ((_a = response.retry_after_ms) != null ? _a : 1e3);
+          }
+        } catch {
+          lane.consecutiveFailures += 1;
+        } finally {
+          lane.flushPromise = null;
+          if (lane.events.length > 0 && !lane.rejected) {
+            const retryDelay = lane.nextRetryAt === null ? void 0 : Math.max(0, lane.nextRetryAt - Date.now());
+            this.schedule(laneName, retryDelay);
+          }
+        }
+      })();
+      return lane.flushPromise;
+    }
+    schedule(laneName, delayMs) {
+      const config2 = this.config;
+      const lane = this.getLane(laneName);
+      if (config2 === null || lane.rejected) {
+        return;
+      }
+      this.clearLaneTimer(lane);
+      lane.timer = setTimeout(() => {
+        lane.timer = null;
+        void this.flushLane(laneName);
+      }, delayMs != null ? delayMs : config2.flushInterval);
+    }
+    flushLaneViaBeacon(laneName) {
+      const config2 = this.config;
+      const lane = this.getLane(laneName);
+      const navigatorSource = getNavigatorSource();
+      if (config2 === null || lane.events.length === 0 || lane.rejected || navigatorSource === null) {
+        return;
+      }
+      const pendingEvents = [...lane.events];
+      const body = buildBrowserTransportRequestBody(config2.transportMode, pendingEvents);
+      const flushViaKeepalive = () => {
+        if (config2.fetchImpl === null) {
+          void this.flushLane(laneName);
+          return;
+        }
+        void config2.fetchImpl(config2.endpoint, {
+          method: "POST",
+          headers: getTransportHeaders(config2),
+          body,
+          keepalive: true
+        }).then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            removeLeadingEvents(lane, pendingEvents);
+            lane.nextRetryAt = null;
+            this.clearLaneTimer(lane);
+          }
+        }).catch(() => void 0);
+      };
+      if (typeof navigatorSource.sendBeacon !== "function") {
+        flushViaKeepalive();
+        return;
+      }
+      const beaconBody = typeof Blob === "function" ? new Blob([body], { type: "application/json" }) : body;
+      if (navigatorSource.sendBeacon(config2.endpoint, beaconBody)) {
+        lane.events = [];
+        lane.nextRetryAt = null;
+        this.clearLaneTimer(lane);
+        return;
+      }
+      flushViaKeepalive();
+    }
+    getLane(name) {
+      return name === "debug" ? this.debug : this.analytics;
+    }
+    clearLaneTimer(lane) {
+      if (lane.timer !== null) {
+        clearTimeout(lane.timer);
+        lane.timer = null;
+      }
+    }
+  };
+  function removeLeadingEvents(lane, events) {
+    if (lane.events.length >= events.length && events.every((event, index) => {
+      var _a;
+      return ((_a = lane.events[index]) == null ? void 0 : _a.event_id) === event.event_id;
+    })) {
+      lane.events.splice(0, events.length);
+    }
+  }
+  function getTransportHeaders(config2) {
+    return config2.projectToken === null ? { "content-type": "application/json" } : {
+      "content-type": "application/json",
+      authorization: `Bearer ${config2.projectToken}`
+    };
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -7218,155 +9220,199 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.0/node_modules/@debugbundle/sdk-browser/dist/index.js
-  var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
-  var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
-  var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
-  var MAX_REJECTION_REASON_PREVIEW_LENGTH = 500;
-  function createInitialRemoteProbeState() {
-    return {
-      probesEnabled: false,
-      remoteProbesEnabled: false,
-      directives: [],
-      triggerTokenKey: null,
-      requestFailurePreset: DEFAULT_REQUEST_FAILURE_PRESET2,
-      requestCaptureEvents: DEFAULT_REQUEST_CAPTURE_EVENTS2,
-      immediateClientErrorStatuses: [...DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2],
-      immediateClientErrorPathRules: []
-    };
-  }
-  function truncateRejectionReasonPreview(value) {
-    return value.length > MAX_REJECTION_REASON_PREVIEW_LENGTH ? `${value.slice(0, MAX_REJECTION_REASON_PREVIEW_LENGTH)}[truncated]` : value;
-  }
-  function readReasonStringField(record, key) {
-    const value = record[key];
-    return typeof value === "string" && value.trim().length > 0 ? truncateRejectionReasonPreview(value.trim()) : void 0;
-  }
-  function normalizeUnhandledRejectionReason(reason) {
-    var _a;
-    if (reason instanceof Error) {
-      return {
-        error: reason,
-        rejectionReason: {
-          kind: "error",
-          name: reason.name || "Error",
-          message: truncateRejectionReasonPreview(reason.message || "Unknown rejection error")
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  var BrowserProbeController = class {
+    constructor(host) {
+      __publicField(this, "host");
+      __publicField(this, "buffers", /* @__PURE__ */ new Map());
+      __publicField(this, "remoteState", createInitialRemoteProbeState());
+      __publicField(this, "pendingTriggerToken", null);
+      __publicField(this, "activeTriggerDirective", null);
+      this.host = host;
+    }
+    get state() {
+      return this.remoteState;
+    }
+    initialize() {
+      this.pendingTriggerToken = consumeTriggerTokenFromLocation();
+      return this.refreshRemoteConfig();
+    }
+    reset() {
+      this.buffers = /* @__PURE__ */ new Map();
+      this.remoteState = createInitialRemoteProbeState();
+      this.pendingTriggerToken = null;
+      this.activeTriggerDirective = null;
+    }
+    capture(label, data) {
+      const config2 = this.host.getConfig();
+      const normalizedLabel = label.trim();
+      if (config2 === null || normalizedLabel.length === 0) {
+        return;
+      }
+      try {
+        const redacted = redact(normalizeProbeInput(data), {
+          sensitiveKeys: config2.redactFields
+        }).redacted;
+        const probeData = normalizeUnknownRecord(redacted);
+        this.buffer(normalizedLabel, probeData);
+        const matchingDirectives = this.getMatchingDirectives(normalizedLabel, Date.now());
+        if (!this.host.isSessionSampledIn()) {
+          return;
         }
-      };
-    }
-    if (typeof reason === "string") {
-      const preview2 = truncateRejectionReasonPreview(reason.length > 0 ? reason : "[empty string]");
-      return {
-        error: new Error(reason.length > 0 ? reason : "Unhandled promise rejection"),
-        rejectionReason: { kind: "string", preview: preview2 }
-      };
-    }
-    if (reason === null) {
-      return {
-        error: new Error("Unhandled promise rejection: null"),
-        rejectionReason: { kind: "null", preview: "null" }
-      };
-    }
-    if (reason === void 0) {
-      return {
-        error: new Error("Unhandled promise rejection: undefined"),
-        rejectionReason: { kind: "undefined", preview: "undefined" }
-      };
-    }
-    const record = normalizeUnknownRecord(reason);
-    const name = readReasonStringField(record, "name");
-    const message = readReasonStringField(record, "message");
-    const constructorName = typeof reason === "object" && reason !== null && "constructor" in reason ? (_a = reason.constructor) == null ? void 0 : _a.name : void 0;
-    const preview = typeof constructorName === "string" && constructorName.length > 0 ? constructorName : "object";
-    return {
-      error: new Error(message != null ? message : "Unhandled promise rejection"),
-      rejectionReason: {
-        kind: "object",
-        ...name === void 0 ? {} : { name },
-        ...message === void 0 ? {} : { message },
-        preview
+        for (const directive of matchingDirectives) {
+          this.host.emitProbeEvent({ label: normalizedLabel, data: probeData, directive });
+        }
+      } catch {
+        return;
       }
-    };
-  }
-  var BALANCED_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
-  var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES2 = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES2, 409]);
-  function isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
-    if (!Number.isFinite(statusCode)) {
-      return false;
     }
-    if (statusCode >= 500) {
-      return true;
+    consumeBufferedData() {
+      const items = Array.from(this.buffers.values()).flatMap((buffer) => buffer);
+      this.buffers.clear();
+      return { version: 1, items };
     }
-    if (immediateClientErrorStatuses.includes(statusCode)) {
-      return true;
-    }
-    if (matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, immediateClientErrorPathRules)) {
-      return true;
-    }
-    if (preset === "investigative") {
-      return INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES2.has(statusCode);
-    }
-    if (preset === "balanced") {
-      return BALANCED_IMMEDIATE_REQUEST_STATUSES2.has(statusCode);
-    }
-    return false;
-  }
-  function matchesImmediateClientErrorPathRule2(statusCode, requestPath, httpMethod, rules) {
-    if (statusCode < 400 || statusCode > 499 || requestPath === void 0) {
-      return false;
-    }
-    const normalizedPath = normalizeRequestPath(requestPath);
-    const normalizedMethod = typeof httpMethod === "string" ? httpMethod.toUpperCase() : null;
-    return rules.some((rule) => {
-      if (rule.statusCode !== statusCode) {
-        return false;
+    updateFromIngestionResponse(payload) {
+      const directives = parseIngestionProbeDirectives(payload, Date.now());
+      if (directives !== null) {
+        this.remoteState = { ...this.remoteState, directives };
       }
-      if (rule.methods.length > 0 && (normalizedMethod === null || !rule.methods.includes(normalizedMethod))) {
-        return false;
+      this.pruneExpiredDirectives(Date.now());
+    }
+    buffer(label, data) {
+      var _a;
+      const config2 = this.host.getConfig();
+      if (config2 === null || this.host.isDebugRejected()) {
+        return;
       }
-      if (rule.pathPattern.endsWith("*")) {
-        return normalizedPath.startsWith(rule.pathPattern.slice(0, -1));
+      if (!this.buffers.has(label) && this.buffers.size >= config2.maxProbeLabels) {
+        return;
       }
-      return normalizedPath === rule.pathPattern;
-    });
-  }
-  function normalizeRequestPath(value) {
+      const buffer = (_a = this.buffers.get(label)) != null ? _a : [];
+      buffer.push({
+        label,
+        data,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        activation_id: null
+      });
+      while (buffer.length > config2.maxProbeEntriesPerLabel) {
+        buffer.shift();
+      }
+      this.buffers.set(label, buffer);
+    }
+    async refreshRemoteConfig() {
+      const config2 = this.host.getConfig();
+      if (config2 === null || config2.fetchImpl === null || config2.transportMode !== "direct" || config2.projectToken === null) {
+        return;
+      }
+      try {
+        const response = await config2.fetchImpl(deriveSdkConfigEndpoint(config2.endpoint), {
+          method: "GET",
+          headers: {
+            authorization: `Bearer ${config2.projectToken}`,
+            ...config2.requestsAnalyticsConfig ? { "x-debugbundle-analytics-config": "1" } : {}
+          }
+        });
+        if (response.status === 304 || typeof response.json !== "function") {
+          return;
+        }
+        const payload = await response.json();
+        const analyticsConfig = parseRemoteAnalyticsConfigPayload(payload);
+        if (analyticsConfig !== null) {
+          this.host.applyRemoteAnalytics(analyticsConfig);
+        }
+        const parsed = parseRemoteProbeConfigPayload(payload, Date.now());
+        if (parsed !== null) {
+          this.remoteState = parsed;
+          this.pruneExpiredDirectives(Date.now());
+          await this.activatePendingTriggerToken();
+        }
+        config2.captureRules = parseRemoteCaptureRulesPayload(payload);
+      } catch {
+        return;
+      }
+    }
+    pruneExpiredDirectives(nowMs) {
+      const directives = this.remoteState.directives.filter((directive) => Date.parse(directive.expiresAt) > nowMs);
+      if (this.activeTriggerDirective !== null && Date.parse(this.activeTriggerDirective.expiresAt) <= nowMs) {
+        this.activeTriggerDirective = null;
+      }
+      if (directives.length !== this.remoteState.directives.length) {
+        this.remoteState = { ...this.remoteState, directives };
+      }
+    }
+    async activatePendingTriggerToken() {
+      if (this.pendingTriggerToken === null) {
+        return;
+      }
+      const directive = await validateBrowserTriggerToken({
+        token: this.pendingTriggerToken,
+        triggerTokenKey: this.remoteState.triggerTokenKey,
+        nowMs: Date.now()
+      });
+      this.pendingTriggerToken = null;
+      this.activeTriggerDirective = directive;
+    }
+    getMatchingDirectives(label, nowMs) {
+      const config2 = this.host.getConfig();
+      if (config2 === null || !this.remoteState.probesEnabled || !this.remoteState.remoteProbesEnabled) {
+        return [];
+      }
+      this.pruneExpiredDirectives(nowMs);
+      const activeDirectives = this.activeTriggerDirective === null ? this.remoteState.directives : [...this.remoteState.directives, this.activeTriggerDirective];
+      return activeDirectives.filter((directive) => {
+        if (directive.service !== "*" && directive.service !== config2.service) {
+          return false;
+        }
+        if (directive.environment !== "*" && directive.environment !== config2.environment) {
+          return false;
+        }
+        return matchesProbeLabelPattern(directive.labelPattern, label);
+      });
+    }
+  };
+  function consumeTriggerTokenFromLocation() {
     var _a, _b;
-    try {
-      return new URL(value, (_b = (_a = getLocationSource()) == null ? void 0 : _a.href) != null ? _b : "https://debugbundle.local").pathname || "/";
-    } catch {
-      const queryIndex = value.indexOf("?");
-      const fragmentIndex = value.indexOf("#");
-      const end = queryIndex === -1 ? fragmentIndex === -1 ? value.length : fragmentIndex : fragmentIndex === -1 ? queryIndex : Math.min(queryIndex, fragmentIndex);
-      const path = value.slice(0, end);
-      return path.startsWith("/") && path.length > 0 ? path : "/";
+    const locationSource = getLocationSource();
+    const search = typeof (locationSource == null ? void 0 : locationSource.search) === "string" ? locationSource.search : "";
+    if (search.length === 0) {
+      return null;
     }
+    const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+    const token = params.get("_debug_probe");
+    if (token === null || token.length === 0) {
+      return null;
+    }
+    params.delete("_debug_probe");
+    const cleanedPath = `${(_a = locationSource == null ? void 0 : locationSource.pathname) != null ? _a : ""}${params.toString().length > 0 ? `?${params.toString()}` : ""}`;
+    (_b = getHistorySource()) == null ? void 0 : _b.replaceState({}, "", cleanedPath);
+    return token;
   }
-  function shouldCaptureRequestStatus(statusCode, preset, policy, immediateClientErrorStatuses = [], requestPath, httpMethod, immediateClientErrorPathRules = []) {
-    if (isImmediateRequestIncidentStatus(statusCode, preset, immediateClientErrorStatuses, requestPath, httpMethod, immediateClientErrorPathRules)) {
+  function normalizeProbeInput(data) {
+    if (data === null || typeof data !== "object" || Array.isArray(data)) {
+      return { value: data };
+    }
+    return data;
+  }
+  function matchesProbeLabelPattern(pattern, label) {
+    if (pattern === "*") {
       return true;
     }
-    if (policy === "all") {
-      return Number.isFinite(statusCode) && statusCode >= 400;
+    if (pattern.endsWith(".*")) {
+      const prefix = pattern.slice(0, -2);
+      return label === prefix || label.startsWith(`${prefix}.`);
     }
-    if (policy === "failures_only") {
-      return statusCode >= 500;
-    }
-    return false;
+    return pattern === label;
   }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.4.1/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
-      __publicField(this, "bufferedEvents", []);
       __publicField(this, "breadcrumbs", []);
       __publicField(this, "persistentContext", {});
       __publicField(this, "deviceInfo", null);
-      __publicField(this, "flushPromise", null);
-      __publicField(this, "flushTimer", null);
-      __publicField(this, "nextRetryAt", null);
-      __publicField(this, "_lastEventAt", null);
-      __publicField(this, "_consecutiveFailures", 0);
-      __publicField(this, "authRejected", false);
+      __publicField(this, "browserSessionId", null);
+      __publicField(this, "analyticsInitialization", null);
       __publicField(this, "registeredListeners", []);
       __publicField(this, "originalPushState", null);
       __publicField(this, "originalReplaceState", null);
@@ -7376,32 +9422,43 @@
       __publicField(this, "originalConsoleWarn", null);
       __publicField(this, "sessionSampledIn", true);
       __publicField(this, "sessionEventCount", 0);
-      __publicField(this, "probeBuffers", /* @__PURE__ */ new Map());
       __publicField(this, "suppressionTracker", new EventSuppressionTracker());
-      __publicField(this, "remoteProbeState", createInitialRemoteProbeState());
-      __publicField(this, "pendingTriggerToken", null);
-      __publicField(this, "activeTriggerDirective", null);
+      __publicField(this, "probeController", new BrowserProbeController({
+        getConfig: () => this.config,
+        isDebugRejected: () => this.eventTransport.debugRejected,
+        isSessionSampledIn: () => this.sessionSampledIn,
+        emitProbeEvent: ({ label, data, directive }) => this.emitProbeEvent(label, data, directive),
+        applyRemoteAnalytics: (config2) => this.analyticsController.applyRemoteSettings(config2)
+      }));
+      __publicField(this, "eventTransport", new BrowserEventTransport({
+        onDebugResponse: (payload) => this.probeController.updateFromIngestionResponse(payload),
+        onUnauthorized: (lane, statusCode, endpoint, body) => {
+          this.reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body);
+        }
+      }));
+      __publicField(this, "analyticsController", new BrowserAnalyticsController({
+        getConfig: () => this.config,
+        getDeviceInfo: () => this.deviceInfo,
+        getCurrentRoute: () => this.getCurrentRoute(),
+        getSessionId: () => {
+          var _a;
+          return (_a = this.browserSessionId) != null ? _a : createBrowserTraceId();
+        },
+        enqueue: (event) => this.enqueueAnalyticsEvent(event)
+      }));
+      __publicField(this, "analytics", this.analyticsController.api);
+    }
+    get remoteProbeState() {
+      return this.probeController.state;
     }
     get status() {
-      if (this.config === null) {
-        return "disconnected";
-      }
-      if (this.authRejected) {
-        return "disconnected";
-      }
-      if (this._consecutiveFailures >= 3) {
-        return "disconnected";
-      }
-      if (this.nextRetryAt !== null) {
-        return "degraded";
-      }
-      return "healthy";
+      return this.eventTransport.status;
     }
     get lastEventAt() {
-      return this._lastEventAt;
+      return this.eventTransport.lastEventAt;
     }
     init(config2) {
-      var _a, _b, _c, _d, _e, _f;
+      var _a, _b, _c, _d, _e, _f, _g;
       this.dispose();
       const enabled = (_a = config2.enabled) != null ? _a : true;
       const resolvedTransport = resolveBrowserTransport({
@@ -7437,19 +9494,34 @@
         maxProbeEntriesPerLabel: normalizePositiveNumber(config2.maxProbeEntriesPerLabel, 10),
         probeFlushOnError: normalizeBoolean(config2.probeFlushOnError, true),
         requestTimeoutMs: normalizePositiveNumber(config2.requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS),
+        requestsAnalyticsConfig: ((_f = config2.analytics) == null ? void 0 : _f.enabled) === true,
         captureRules: [],
         fetchImpl: getFetchSource(),
-        transport: (_f = config2.transport) != null ? _f : createFetchTransport(),
+        transport: (_g = config2.transport) != null ? _g : createFetchTransport(),
         transportMode: resolvedTransport.mode,
         ...config2.beforeSend === void 0 ? {} : { beforeSend: config2.beforeSend }
       };
-      this.authRejected = false;
+      this.eventTransport.configure(this.config);
       this.sessionSampledIn = this.config.sessionSampleRate >= 1 || Math.random() < this.config.sessionSampleRate;
       this.sessionEventCount = 0;
+      this.browserSessionId = createBrowserTraceId();
       this.deviceInfo = collectDeviceInfo();
-      this.pendingTriggerToken = this.consumeTriggerTokenFromLocation();
-      void this.refreshRemoteProbeConfig();
+      const deferAnalyticsCapture = this.config.requestsAnalyticsConfig && this.config.transportMode === "direct" && this.config.projectToken !== null && this.config.fetchImpl !== null;
+      this.analyticsController.configure(config2.analytics, { deferCapture: deferAnalyticsCapture });
+      const remoteInitialization = this.probeController.initialize();
       this.installBrowserHooks();
+      if (deferAnalyticsCapture) {
+        const activeConfig = this.config;
+        this.analyticsInitialization = remoteInitialization.finally(() => {
+          if (this.config !== activeConfig) {
+            return;
+          }
+          this.analyticsController.markCaptureReady();
+        });
+      } else {
+        this.analyticsController.captureSessionStart();
+        this.analyticsController.captureInitialPageView();
+      }
     }
     captureException(error, context = {}) {
       var _a, _b, _c;
@@ -7462,7 +9534,7 @@
         const device = this.deviceInfo;
         const browser = (_a = device == null ? void 0 : device.browser) != null ? _a : { name: "Unknown", version: "0" };
         const breadcrumbs = this.consumeBreadcrumbs();
-        const probeData = config2.probeFlushOnError ? this.consumeProbeData() : { version: 1, items: [] };
+        const probeData = config2.probeFlushOnError ? this.probeController.consumeBufferedData() : { version: 1, items: [] };
         const domContext = typeof ((_b = context.target) == null ? void 0 : _b.outerHTML) === "string" && context.target.outerHTML.length > 0 ? {
           mode: "lightweight",
           html_excerpt: context.target.outerHTML
@@ -7580,132 +9652,27 @@
       this.persistentContext[key] = (_a = redacted[key]) != null ? _a : null;
     }
     probe(label, data) {
-      const config2 = this.config;
-      const normalizedLabel = label.trim();
-      if (config2 === null || normalizedLabel.length === 0) {
-        return;
-      }
-      try {
-        const redacted = redact(this.normalizeProbeInput(data), {
-          sensitiveKeys: config2.redactFields
-        }).redacted;
-        const probeData = normalizeUnknownRecord(redacted);
-        this.bufferProbe(normalizedLabel, probeData);
-        const matchingDirectives = this.getMatchingRemoteProbeDirectives(normalizedLabel, Date.now());
-        if (!this.sessionSampledIn || matchingDirectives.length === 0) {
-          return;
-        }
-        for (const directive of matchingDirectives) {
-          this.enqueueEvent(this.createSdkEventEnvelope(config2, {
-            schema_version: SDK_SCHEMA_VERSION,
-            event_type: "probe_event",
-            ...this.getProjectTokenFields(config2),
-            sdk_name: SDK_NAME,
-            sdk_version: SDK_VERSION,
-            service: {
-              name: config2.service,
-              runtime: "browser",
-              framework: null,
-              environment: config2.environment
-            },
-            occurred_at: (/* @__PURE__ */ new Date()).toISOString(),
-            correlation: this.createCorrelation(),
-            payload: {
-              label: normalizedLabel,
-              data: probeData,
-              activation_id: directive.activationId,
-              probe_label_pattern: directive.labelPattern
-            }
-          }), false);
-        }
-      } catch {
-        return;
-      }
+      this.probeController.capture(label, data);
     }
     async flush() {
-      const config2 = this.config;
-      if (config2 === null) {
-        return;
-      }
+      await this.analyticsInitialization;
       this.enqueueSuppressionAggregates();
-      if (this.bufferedEvents.length === 0) {
-        return;
-      }
-      if (this.flushPromise !== null) {
-        return this.flushPromise;
-      }
-      if (this.nextRetryAt !== null && Date.now() < this.nextRetryAt) {
-        return;
-      }
-      if (this.authRejected) {
-        return;
-      }
-      this.clearFlushTimer();
-      const events = [...this.bufferedEvents];
-      this.flushPromise = (async () => {
-        var _a;
-        try {
-          const response = await config2.transport({
-            endpoint: config2.endpoint,
-            headers: this.getTransportHeaders(config2),
-            events,
-            transportMode: config2.transportMode,
-            timeout_ms: config2.requestTimeoutMs
-          });
-          if (response.status >= 200 && response.status < 300) {
-            this.updateRemoteProbeStateFromIngestionResponse(response.body);
-            this.nextRetryAt = null;
-            this._lastEventAt = Date.now();
-            this._consecutiveFailures = 0;
-            if (this.bufferedEvents === events || this.sameLeadingEvents(events)) {
-              this.bufferedEvents.splice(0, events.length);
-            }
-            return;
-          }
-          this._consecutiveFailures++;
-          if (response.status === 401 || response.status === 403) {
-            this.authRejected = true;
-            this.nextRetryAt = null;
-            this.reportUnauthorizedTransportFailure(response.status, config2.endpoint, response.body);
-            this.bufferedEvents = [];
-            return;
-          }
-          if (response.status === 429) {
-            this.nextRetryAt = Date.now() + ((_a = response.retry_after_ms) != null ? _a : 1e3);
-          }
-        } catch {
-          this._consecutiveFailures++;
-          return;
-        } finally {
-          this.flushPromise = null;
-          if (this.bufferedEvents.length > 0) {
-            const retryDelay = this.nextRetryAt === null ? void 0 : Math.max(0, this.nextRetryAt - Date.now());
-            this.scheduleFlush(retryDelay);
-          }
-        }
-      })();
-      return this.flushPromise;
+      await this.eventTransport.flush();
     }
     dispose() {
       var _a;
-      this.clearFlushTimer();
-      this.flushPromise = null;
-      this.bufferedEvents = [];
+      this.eventTransport.reset();
       this.breadcrumbs = [];
-      this.probeBuffers = /* @__PURE__ */ new Map();
       this.persistentContext = {};
       this.deviceInfo = null;
+      this.browserSessionId = null;
+      this.analyticsInitialization = null;
       this.config = null;
       this.sessionSampledIn = true;
       this.sessionEventCount = 0;
-      this.nextRetryAt = null;
-      this._lastEventAt = null;
-      this._consecutiveFailures = 0;
-      this.authRejected = false;
       this.suppressionTracker.reset();
-      this.remoteProbeState = createInitialRemoteProbeState();
-      this.pendingTriggerToken = null;
-      this.activeTriggerDirective = null;
+      this.probeController.reset();
+      this.analyticsController.reset();
       while (this.registeredListeners.length > 0) {
         (_a = this.registeredListeners.pop()) == null ? void 0 : _a();
       }
@@ -7736,7 +9703,7 @@
         this.originalXmlHttpRequest = null;
       }
     }
-    reportUnauthorizedTransportFailure(statusCode, endpoint, body) {
+    reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body) {
       var _a;
       const consoleSource = getConsoleSource();
       if (consoleSource === null) {
@@ -7745,7 +9712,8 @@
       const bodyRecord = normalizeUnknownRecord(body);
       const errorCode = typeof bodyRecord["error"] === "string" && bodyRecord["error"].length > 0 ? bodyRecord["error"] : null;
       const detail = errorCode === null ? "" : ` (${errorCode})`;
-      const message = `DebugBundle browser SDK disabled after ingestion returned ${statusCode} for ${endpoint}. Check the project token or relay configuration${detail}.`;
+      const laneLabel = lane === "debug" ? "browser SDK" : "browser analytics";
+      const message = `DebugBundle ${laneLabel} disabled after ingestion returned ${statusCode} for ${endpoint}. Check the project token or relay configuration${detail}.`;
       if (typeof consoleSource.error === "function") {
         consoleSource.error(message);
         return;
@@ -7755,7 +9723,10 @@
     installBrowserHooks() {
       const windowSource = getWindowSource();
       if (windowSource !== null) {
-        const onPageHide = () => {
+        const onPageHide = (event) => {
+          if (normalizeUnknownRecord(event)["persisted"] !== true) {
+            this.analyticsController.captureSessionSummary();
+          }
           this.flushViaBeacon();
         };
         const onError = (event) => {
@@ -7785,21 +9756,32 @@
       if (documentSource !== null) {
         const onClick = (event) => {
           var _a;
-          if (((_a = this.config) == null ? void 0 : _a.captureClicks) !== true) {
+          const captureDebugClick = ((_a = this.config) == null ? void 0 : _a.captureClicks) === true;
+          const captureAnalyticsAction = this.analyticsController.shouldCaptureStructuralActions();
+          const captureAnalyticsFriction = this.analyticsController.shouldCaptureFrictionSignals();
+          if (!captureDebugClick && !captureAnalyticsAction && !captureAnalyticsFriction) {
             return;
           }
-          const target = normalizeUnknownRecord(normalizeUnknownRecord(event)["target"]);
-          const selector = buildSelector(target);
-          if (selector === null) {
-            return;
-          }
-          this.addBreadcrumb({
-            ts: (/* @__PURE__ */ new Date()).toISOString(),
-            breadcrumb_type: "click",
-            data: {
-              selector
+          const targetIdentity = normalizeUnknownRecord(event)["target"];
+          const target = normalizeUnknownRecord(targetIdentity);
+          if (captureDebugClick) {
+            const selector = buildSelector(target);
+            if (selector !== null) {
+              this.addBreadcrumb({
+                ts: (/* @__PURE__ */ new Date()).toISOString(),
+                breadcrumb_type: "click",
+                data: {
+                  selector
+                }
+              });
             }
-          });
+          }
+          if (captureAnalyticsAction) {
+            this.analyticsController.captureStructuralAction(target);
+          }
+          if (captureAnalyticsFriction) {
+            this.analyticsController.captureFrictionClick(target, targetIdentity);
+          }
         };
         const onSubmit = (event) => {
           var _a;
@@ -7852,7 +9834,7 @@
         this.addBreadcrumb(breadcrumb);
       }, (breadcrumb) => {
         this.captureNetworkRequestFailure(breadcrumb);
-      }, (url, statusCode, durationMs) => this.shouldCaptureNetworkRequest(url, statusCode, durationMs), (url, durationMs) => this.shouldCaptureFailedNetworkRequest(url, durationMs), () => this.getCurrentRoute());
+      }, (url, statusCode, durationMs) => shouldCaptureBrowserNetworkRequest(this.config, url, statusCode, durationMs), (url, durationMs) => shouldCaptureFailedBrowserNetworkRequest(this.config, url, durationMs), () => this.getCurrentRoute());
       this.originalFetch = networkHooks.originalFetch;
       this.originalXmlHttpRequest = networkHooks.originalXmlHttpRequest;
     }
@@ -7860,13 +9842,13 @@
       return {
         request_id: null,
         trace_id: null,
-        session_id: null,
+        session_id: this.browserSessionId,
         user_id_hash: null
       };
     }
     addBreadcrumb(breadcrumb) {
       const config2 = this.config;
-      if (config2 === null || this.authRejected || !this.shouldCaptureBreadcrumb()) {
+      if (config2 === null || this.eventTransport.debugRejected || !this.shouldCaptureBreadcrumb()) {
         return;
       }
       if (config2.breadcrumbsOnErrorOnly !== true) {
@@ -7878,35 +9860,6 @@
       while (this.breadcrumbs.length > config2.maxBreadcrumbs) {
         this.breadcrumbs.shift();
       }
-    }
-    bufferProbe(label, data) {
-      var _a;
-      const config2 = this.config;
-      if (config2 === null || this.authRejected) {
-        return;
-      }
-      if (!this.probeBuffers.has(label) && this.probeBuffers.size >= config2.maxProbeLabels) {
-        return;
-      }
-      const buffer = (_a = this.probeBuffers.get(label)) != null ? _a : [];
-      buffer.push({
-        label,
-        data,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        activation_id: null
-      });
-      while (buffer.length > config2.maxProbeEntriesPerLabel) {
-        buffer.shift();
-      }
-      this.probeBuffers.set(label, buffer);
-    }
-    consumeProbeData() {
-      const items = Array.from(this.probeBuffers.values()).flatMap((buffer) => buffer);
-      this.probeBuffers.clear();
-      return {
-        version: 1,
-        items
-      };
     }
     consumeBreadcrumbs() {
       const breadcrumbs = [...this.breadcrumbs];
@@ -7930,6 +9883,7 @@
           route
         }
       });
+      this.analyticsController.captureRouteChange(route);
     }
     createBreadcrumbEvent(breadcrumb) {
       var _a;
@@ -7957,6 +9911,33 @@
           data: breadcrumb.data
         }
       });
+    }
+    emitProbeEvent(label, data, directive) {
+      const config2 = this.config;
+      if (config2 === null) {
+        return;
+      }
+      this.enqueueEvent(this.createSdkEventEnvelope(config2, {
+        schema_version: SDK_SCHEMA_VERSION,
+        event_type: "probe_event",
+        ...this.getProjectTokenFields(config2),
+        sdk_name: SDK_NAME,
+        sdk_version: SDK_VERSION,
+        service: {
+          name: config2.service,
+          runtime: "browser",
+          framework: null,
+          environment: config2.environment
+        },
+        occurred_at: (/* @__PURE__ */ new Date()).toISOString(),
+        correlation: this.createCorrelation(),
+        payload: {
+          label,
+          data,
+          activation_id: directive.activationId,
+          probe_label_pattern: directive.labelPattern
+        }
+      }), false);
     }
     captureNetworkRequestFailure(breadcrumb) {
       const config2 = this.config;
@@ -8025,125 +10006,48 @@
       if (beforeSendEvent === null) {
         return;
       }
-      const resolvedEvent = this.applyCaptureRulesToEvent(beforeSendEvent);
+      const captureRuleResult = applyBrowserCaptureRules({
+        config: this.config,
+        event: beforeSendEvent,
+        currentRoute: this.getCurrentRoute(),
+        now: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      if (captureRuleResult.breadcrumb !== null) {
+        this.addBreadcrumb(captureRuleResult.breadcrumb);
+      }
+      const resolvedEvent = captureRuleResult.event;
       if (resolvedEvent === null) {
         return;
       }
       if (!this.shouldCaptureBySampleRate(resolvedEvent)) {
         return;
       }
-      const suppressionKey = this.buildSuppressionKey(resolvedEvent);
+      const suppressionKey = buildBrowserSuppressionKey(resolvedEvent);
       if (suppressionKey !== null && !this.suppressionTracker.shouldCapture(suppressionKey, Date.now())) {
-        this.scheduleFlush();
+        this.eventTransport.scheduleDebug();
         return;
       }
       this.enqueueInternalEvent(resolvedEvent, countTowardSession, false);
     }
-    applyCaptureRulesToEvent(event) {
-      var _a;
-      const config2 = this.config;
-      if (config2 === null || config2.captureRules.length === 0) {
-        return event;
-      }
-      const projectId = (_a = config2.captureRules[0]) == null ? void 0 : _a.project_id;
-      if (typeof projectId !== "string" || projectId.length === 0) {
-        return event;
-      }
-      try {
-        const captureRule = evaluateBrowserCaptureRulesForEvent(config2.captureRules, projectId, event, (/* @__PURE__ */ new Date()).toISOString());
-        if (captureRule === null) {
-          return event;
-        }
-        if (captureRule.outcome === "drop" || captureRule.outcome === "sampled_out") {
-          return null;
-        }
-        if (event.event_type === "frontend_exception" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
-          this.addBreadcrumb(this.createDemotedExceptionBreadcrumb(event, captureRule));
-          return null;
-        }
-        if (event.event_type === "request_event" && (captureRule.outcome === "demote" || captureRule.sample_event_class === "context")) {
-          return null;
-        }
-      } catch {
-        return event;
-      }
-      return event;
-    }
-    createDemotedExceptionBreadcrumb(event, captureRule) {
-      var _a;
-      const payload = event.payload;
-      const browserEventRecord = typeof payload["browser_event"] === "object" && payload["browser_event"] !== null ? payload["browser_event"] : null;
-      const targetRecord = typeof (browserEventRecord == null ? void 0 : browserEventRecord["target"]) === "object" && browserEventRecord["target"] !== null ? browserEventRecord["target"] : null;
-      const browserEventKind = (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "window_error" || (browserEventRecord == null ? void 0 : browserEventRecord["kind"]) === "resource_error" ? browserEventRecord["kind"] : void 0;
-      const sourceUrl = typeof (targetRecord == null ? void 0 : targetRecord["source_url"]) === "string" ? targetRecord["source_url"] : typeof (browserEventRecord == null ? void 0 : browserEventRecord["file_name"]) === "string" ? browserEventRecord["file_name"] : null;
-      return {
-        ts: event.occurred_at,
-        breadcrumb_type: "console_log",
-        route: (_a = event.payload.route) != null ? _a : this.getCurrentRoute(),
-        data: {
-          level: "error",
-          message: `${event.payload.name}: ${event.payload.message}`,
-          source: "capture_rule_demoted_exception",
-          capture_rule_action: captureRule.action,
-          capture_rule_outcome: captureRule.outcome,
-          ...browserEventKind === void 0 ? {} : { browser_event_kind: browserEventKind },
-          ...sourceUrl === null ? {} : { source_url: sourceUrl }
-        }
-      };
+    enqueueAnalyticsEvent(event) {
+      this.eventTransport.enqueueAnalytics(event);
     }
     enqueueInternalEvent(event, countTowardSession = true, applyBeforeSend = true) {
       const config2 = this.config;
-      if (config2 === null || this.authRejected) {
+      if (config2 === null || this.eventTransport.debugRejected) {
         return;
       }
-      if (applyBeforeSend) {
+      if (applyBeforeSend && event.event_type !== "analytics_event") {
         const beforeSendEvent = applyBrowserBeforeSend(event, config2.beforeSend);
         if (beforeSendEvent === null) {
           return;
         }
         event = beforeSendEvent;
       }
-      this.bufferedEvents.push(event);
+      this.eventTransport.enqueueDebug(event);
       if (countTowardSession && event.event_type !== "frontend_exception") {
         this.sessionEventCount += 1;
       }
-      if (this.bufferedEvents.length >= config2.batchSize) {
-        queueMicrotask(() => {
-          void this.flush();
-        });
-        return;
-      }
-      this.scheduleFlush();
-    }
-    buildSuppressionKey(event) {
-      var _a, _b;
-      if (event.event_type === "frontend_exception") {
-        const stackFrame = (_b = (_a = event.payload.stack.split("\n")[1]) == null ? void 0 : _a.trim()) != null ? _b : null;
-        return JSON.stringify({
-          event_type: event.event_type,
-          name: event.payload.name,
-          message: event.payload.message,
-          stack_frame: stackFrame,
-          route: event.payload.route
-        });
-      }
-      if (event.event_type === "log_event") {
-        return JSON.stringify({
-          event_type: event.event_type,
-          level: event.payload.level,
-          message: event.payload.message,
-          attributes: event.payload.attributes
-        });
-      }
-      if (event.event_type === "request_event") {
-        return JSON.stringify({
-          event_type: event.event_type,
-          method: event.payload.method,
-          path: event.payload.path,
-          response_status: event.payload.response_status
-        });
-      }
-      return null;
     }
     shouldCaptureBySampleRate(event) {
       const config2 = this.config;
@@ -8155,76 +10059,9 @@
       }
       return config2.sampleRate >= 1 || Math.random() <= config2.sampleRate;
     }
-    scheduleFlush(delayMs) {
-      const config2 = this.config;
-      if (config2 === null) {
-        return;
-      }
-      if (this.flushTimer !== null) {
-        clearTimeout(this.flushTimer);
-        this.flushTimer = null;
-      }
-      this.flushTimer = setTimeout(() => {
-        this.flushTimer = null;
-        void this.flush();
-      }, delayMs != null ? delayMs : config2.flushInterval);
-    }
-    clearFlushTimer() {
-      if (this.flushTimer !== null) {
-        clearTimeout(this.flushTimer);
-        this.flushTimer = null;
-      }
-    }
     flushViaBeacon() {
-      const config2 = this.config;
-      const navigatorSource = getNavigatorSource();
-      if (config2 === null || this.bufferedEvents.length === 0 || navigatorSource === null) {
-        return;
-      }
-      const pendingEvents = [...this.bufferedEvents];
-      const body = buildBrowserTransportRequestBody(config2.transportMode, pendingEvents);
-      const flushViaKeepalive = () => {
-        if (config2.fetchImpl === null) {
-          void this.flush();
-          return;
-        }
-        void config2.fetchImpl(config2.endpoint, {
-          method: "POST",
-          headers: this.getTransportHeaders(config2),
-          body,
-          keepalive: true
-        }).then(() => {
-          if (this.bufferedEvents === pendingEvents || this.sameLeadingEvents(pendingEvents)) {
-            this.bufferedEvents.splice(0, pendingEvents.length);
-          }
-          this.nextRetryAt = null;
-          this.clearFlushTimer();
-        }).catch(() => {
-          return;
-        });
-      };
-      if (typeof navigatorSource.sendBeacon !== "function") {
-        flushViaKeepalive();
-        return;
-      }
-      const beaconBody = typeof Blob === "function" ? new Blob([body], { type: "application/json" }) : body;
-      const accepted = navigatorSource.sendBeacon(config2.endpoint, beaconBody);
-      if (accepted) {
-        this.bufferedEvents = [];
-        this.nextRetryAt = null;
-        this.clearFlushTimer();
-        return;
-      }
-      flushViaKeepalive();
-    }
-    sameLeadingEvents(events) {
-      if (this.bufferedEvents.length < events.length) {
-        return false;
-      }
-      return events.every((event, index) => {
-        var _a;
-        return ((_a = this.bufferedEvents[index]) == null ? void 0 : _a.event_id) === event.event_id;
-      });
+      this.analyticsController.prepareForUnload();
+      this.eventTransport.flushViaBeacon();
     }
     shouldCaptureNonExceptionEvent() {
       const config2 = this.config;
@@ -8242,17 +10079,6 @@
       }
       return {
         project_token: config2.projectToken
-      };
-    }
-    getTransportHeaders(config2) {
-      if (config2.projectToken === null) {
-        return {
-          "content-type": "application/json"
-        };
-      }
-      return {
-        "content-type": "application/json",
-        authorization: `Bearer ${config2.projectToken}`
       };
     }
     createSdkEventEnvelope(config2, input) {
@@ -8294,155 +10120,6 @@
           }
         }), false);
       }
-    }
-    shouldCaptureNetworkRequest(url, statusCode, durationMs) {
-      const config2 = this.config;
-      if (config2 === null) {
-        return false;
-      }
-      const filter = config2.networkFilter;
-      if (filter.urlPatterns.length > 0 && !filter.urlPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
-        return false;
-      }
-      if (filter.urlDenyPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
-        return false;
-      }
-      if (filter.minResponseTime !== null && durationMs < filter.minResponseTime) {
-        return false;
-      }
-      return matchesStatusCodeFilter(statusCode, filter.statusCodes);
-    }
-    shouldCaptureFailedNetworkRequest(url, durationMs) {
-      const config2 = this.config;
-      if (config2 === null) {
-        return false;
-      }
-      const filter = config2.networkFilter;
-      if (filter.urlPatterns.length > 0 && !filter.urlPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
-        return false;
-      }
-      if (filter.urlDenyPatterns.some((pattern) => matchesBrowserPattern(url, pattern))) {
-        return false;
-      }
-      if (filter.minResponseTime !== null && durationMs < filter.minResponseTime) {
-        return false;
-      }
-      return true;
-    }
-    pruneExpiredRemoteProbeDirectives(nowMs) {
-      const directives = this.remoteProbeState.directives.filter((directive) => Date.parse(directive.expiresAt) > nowMs);
-      if (this.activeTriggerDirective !== null && Date.parse(this.activeTriggerDirective.expiresAt) <= nowMs) {
-        this.activeTriggerDirective = null;
-      }
-      if (directives.length === this.remoteProbeState.directives.length) {
-        return;
-      }
-      this.remoteProbeState = {
-        ...this.remoteProbeState,
-        directives
-      };
-    }
-    async refreshRemoteProbeConfig() {
-      const config2 = this.config;
-      if (config2 === null || config2.fetchImpl === null || config2.transportMode !== "direct" || config2.projectToken === null) {
-        return;
-      }
-      try {
-        const response = await config2.fetchImpl(deriveSdkConfigEndpoint(config2.endpoint), {
-          method: "GET",
-          headers: {
-            authorization: `Bearer ${config2.projectToken}`
-          }
-        });
-        if (response.status === 304 || typeof response.json !== "function") {
-          return;
-        }
-        const payload = await response.json();
-        const parsed = parseRemoteProbeConfigPayload(payload, Date.now());
-        if (parsed !== null) {
-          this.remoteProbeState = parsed;
-          this.pruneExpiredRemoteProbeDirectives(Date.now());
-          await this.activatePendingTriggerTokenIfPossible();
-        }
-        config2.captureRules = parseRemoteCaptureRulesPayload(payload);
-      } catch {
-        return;
-      }
-    }
-    updateRemoteProbeStateFromIngestionResponse(payload) {
-      const directives = parseIngestionProbeDirectives(payload, Date.now());
-      if (directives === null) {
-        this.pruneExpiredRemoteProbeDirectives(Date.now());
-        return;
-      }
-      this.remoteProbeState = {
-        ...this.remoteProbeState,
-        directives
-      };
-      this.pruneExpiredRemoteProbeDirectives(Date.now());
-    }
-    consumeTriggerTokenFromLocation() {
-      var _a;
-      const locationSource = getLocationSource();
-      const historySource = getHistorySource();
-      const search = typeof (locationSource == null ? void 0 : locationSource.search) === "string" ? locationSource.search : "";
-      if (search.length === 0) {
-        return null;
-      }
-      const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
-      const token = params.get("_debug_probe");
-      if (token === null || token.length === 0) {
-        return null;
-      }
-      params.delete("_debug_probe");
-      const cleanedPath = `${(_a = locationSource == null ? void 0 : locationSource.pathname) != null ? _a : ""}${params.toString().length > 0 ? `?${params.toString()}` : ""}`;
-      historySource == null ? void 0 : historySource.replaceState({}, "", cleanedPath);
-      return token;
-    }
-    async activatePendingTriggerTokenIfPossible() {
-      if (this.pendingTriggerToken === null) {
-        return;
-      }
-      const directive = await validateBrowserTriggerToken({
-        token: this.pendingTriggerToken,
-        triggerTokenKey: this.remoteProbeState.triggerTokenKey,
-        nowMs: Date.now()
-      });
-      this.pendingTriggerToken = null;
-      this.activeTriggerDirective = directive;
-    }
-    normalizeProbeInput(data) {
-      if (data === null || typeof data !== "object" || Array.isArray(data)) {
-        return { value: data };
-      }
-      return data;
-    }
-    getMatchingRemoteProbeDirectives(label, nowMs) {
-      const config2 = this.config;
-      if (config2 === null || this.remoteProbeState.probesEnabled !== true || this.remoteProbeState.remoteProbesEnabled !== true) {
-        return [];
-      }
-      this.pruneExpiredRemoteProbeDirectives(nowMs);
-      const activeDirectives = this.activeTriggerDirective === null ? this.remoteProbeState.directives : [...this.remoteProbeState.directives, this.activeTriggerDirective];
-      return activeDirectives.filter((directive) => {
-        if (directive.service !== "*" && directive.service !== config2.service) {
-          return false;
-        }
-        if (directive.environment !== "*" && directive.environment !== config2.environment) {
-          return false;
-        }
-        return this.matchesProbeLabelPattern(directive.labelPattern, label);
-      });
-    }
-    matchesProbeLabelPattern(pattern, label) {
-      if (pattern === "*") {
-        return true;
-      }
-      if (pattern.endsWith(".*")) {
-        const prefix = pattern.slice(0, -2);
-        return label === prefix || label.startsWith(`${prefix}.`);
-      }
-      return pattern === label;
     }
   };
   function createDebugBundleBrowserSdk() {

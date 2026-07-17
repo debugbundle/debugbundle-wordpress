@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-07-17
+
+### Added
+
+- Accepted opt-in AnalyticsBundle browser events through the credential-free WordPress REST relay, with the configured server-side project token attached only for forwarding.
+
+### Changed
+
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.4.1` and raised the PHP SDK requirement to `debugbundle/sdk-php` `^1.1.3`.
+
 ## [1.2.5] - 2026-06-25
 
 ### Fixed
