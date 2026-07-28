@@ -63,14 +63,41 @@ jobs:
       - name: Build browser asset
         run: pnpm build
 
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up PHP with coverage support
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Enforce per-file production coverage
+        run: make coverage
+
   smoke:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Check out coordinated PHP SDK
+        uses: actions/checkout@v5
+        with:
+          repository: debugbundle/debugbundle-php
+          path: debugbundle-php
+
       - name: Make smoke script executable
         run: chmod +x scripts/smoke-wordpress.sh
 
       - name: WordPress smoke test
         run: make smoke-wordpress
+        env:
+          DEBUGBUNDLE_PHP_SDK_CHECKOUT: ${{ github.workspace }}/debugbundle-php

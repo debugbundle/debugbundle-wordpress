@@ -129,5 +129,29 @@ final class BrowserAssetsTest extends TestCase
         self::assertSame('before', $GLOBALS['debugbundle_wp_inline_script_calls'][0][2] ?? null);
         self::assertSame('debugbundle-browser', $GLOBALS['debugbundle_wp_enqueue_script_calls'][0][0] ?? null);
     }
+
+    public function testRegisterAddsWordPressEnqueueHook(): void
+    {
+        $GLOBALS['debugbundle_wp_test_actions'] = [];
+        $assets = new BrowserAssets(new Settings(), $this->pluginFile);
+
+        $assets->register();
+
+        /** @var array<string, array<int, list<callable>>> $actions */
+        $actions = $GLOBALS['debugbundle_wp_test_actions'];
+        self::assertNotEmpty($actions['wp_enqueue_scripts'][10] ?? []);
+    }
+
+    public function testEnqueueSkipsDisabledCaptureAndMissingAsset(): void
+    {
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['frontend_capture_enabled'] = false;
+        (new BrowserAssets(new Settings(), $this->pluginFile))->enqueue();
+        self::assertSame([], $GLOBALS['debugbundle_wp_register_script_calls']);
+
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['frontend_capture_enabled'] = true;
+        unlink($this->pluginDir . '/assets/dist/debugbundle-browser.js');
+        (new BrowserAssets(new Settings(), $this->pluginFile))->enqueue();
+        self::assertSame([], $GLOBALS['debugbundle_wp_register_script_calls']);
+    }
 }
 }

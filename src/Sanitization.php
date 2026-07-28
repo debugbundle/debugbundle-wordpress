@@ -44,9 +44,10 @@ final class Sanitization
         return $headers;
     }
 
-    public static function requestMethod(string $default): string
+    /** @param array<string, mixed>|null $server */
+    public static function requestMethod(string $default, ?array $server = null): string
     {
-        $method = self::serverValue('REQUEST_METHOD');
+        $method = self::serverValue('REQUEST_METHOD', $server);
         if ($method === null || $method === '') {
             return $default;
         }
@@ -54,9 +55,10 @@ final class Sanitization
         return strtoupper($method);
     }
 
-    public static function requestUri(string $default): string
+    /** @param array<string, mixed>|null $server */
+    public static function requestUri(string $default, ?array $server = null): string
     {
-        $requestUri = self::serverValue('REQUEST_URI');
+        $requestUri = self::serverValue('REQUEST_URI', $server);
         if ($requestUri === null || $requestUri === '') {
             return $default;
         }
@@ -64,10 +66,11 @@ final class Sanitization
         return $requestUri;
     }
 
-    public static function ipAddress(): ?string
+    /** @param array<string, mixed>|null $server */
+    public static function ipAddress(?array $server = null): ?string
     {
         $candidates = [
-            self::serverValue('REMOTE_ADDR'),
+            self::serverValue('REMOTE_ADDR', $server),
         ];
 
         foreach ($candidates as $candidate) {
@@ -89,9 +92,10 @@ final class Sanitization
         return hash('sha256', $ipAddress ?? 'unknown');
     }
 
-    private static function serverValue(string $key): ?string
+    /** @param array<string, mixed>|null $server */
+    private static function serverValue(string $key, ?array $server = null): ?string
     {
-        $server = self::serverInputArray();
+        $server ??= self::serverInputArray();
         $candidate = $server[$key] ?? null;
         if (!is_scalar($candidate)) {
             return null;

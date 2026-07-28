@@ -38,22 +38,38 @@ final class RelayForwarder
             : 500;
 
         if ($statusCode >= 200 && $statusCode < 300) {
-            $ingestionResult = $this->ingestionResult($response);
-            if ($ingestionResult !== null) {
-                $formattedErrors = $this->formatIngestionErrors($ingestionResult['errors']);
-                Diagnostics::recordRelayIngestionResult($ingestionResult['accepted'], $ingestionResult['rejected'], $formattedErrors);
-                $expected = count($events);
-                if ($ingestionResult['accepted'] < $expected || $ingestionResult['rejected'] > 0 || $ingestionResult['errors'] !== []) {
-                    $message = sprintf(
-                        'ingestion_rejected accepted=%d expected=%d rejected=%d errors=%s',
-                        $ingestionResult['accepted'],
-                        $expected,
-                        $ingestionResult['rejected'],
-                        $formattedErrors
-                    );
-                    Diagnostics::recordRelayError($message);
-                    return new RelayForwardResult(false, true, $message);
+            $ingestionResult = $this->ingestionResult($response, count($events));
+            if ($ingestionResult === null) {
+                Diagnostics::recordRelayError('acknowledgement_protocol_failure');
+                return new RelayForwardResult(false, false, 'acknowledgement_protocol_failure');
+            }
+
+            $formattedErrors = $this->formatIngestionErrors($ingestionResult['errors']);
+            Diagnostics::recordRelayIngestionResult(
+                $ingestionResult['accepted'],
+                $ingestionResult['rejected'],
+                $formattedErrors
+            );
+            if ($ingestionResult['rejected'] > 0) {
+                $retryEvents = [];
+                foreach ($ingestionResult['errors'] as $error) {
+                    if ($this->isRetryableReason($error['reason'])) {
+                        $retryEvents[] = $events[$error['index']];
+                    }
                 }
+
+                $message = sprintf(
+                    'ingestion_rejected accepted=%d expected=%d rejected=%d errors=%s',
+                    $ingestionResult['accepted'],
+                    count($events),
+                    $ingestionResult['rejected'],
+                    $formattedErrors
+                );
+                Diagnostics::recordRelayError($message);
+                if ($retryEvents !== []) {
+                    return new RelayForwardResult(false, false, $message, $retryEvents);
+                }
+                return new RelayForwardResult(false, true, $message, []);
             }
 
             Diagnostics::recordRelayFlush();
@@ -69,8 +85,14 @@ final class RelayForwarder
         return new RelayForwardResult(false, true, 'non_retryable_http_' . $statusCode);
     }
 
-    /** @return array{accepted:int,rejected:int,errors:list<string>}|null */
-    private function ingestionResult(mixed $response): ?array
+    /**
+     * @return array{
+     *   accepted:int,
+     *   rejected:int,
+     *   errors:list<array{index:int,reason:string}>
+     * }|null
+     */
+    private function ingestionResult(mixed $response, int $eventCount): ?array
     {
         if (!function_exists('wp_remote_retrieve_body')) {
             return null;
@@ -82,46 +104,80 @@ final class RelayForwarder
         }
 
         $decoded = json_decode($body, true);
-        if (!is_array($decoded) || !array_key_exists('accepted', $decoded) || !array_key_exists('rejected', $decoded)) {
+        if (
+            !is_array($decoded)
+            || !isset($decoded['accepted'], $decoded['rejected'])
+            || !is_int($decoded['accepted'])
+            || !is_int($decoded['rejected'])
+            || $decoded['accepted'] < 0
+            || $decoded['rejected'] < 0
+            || $decoded['accepted'] + $decoded['rejected'] !== $eventCount
+            || !isset($decoded['errors'])
+            || !is_array($decoded['errors'])
+        ) {
+            return null;
+        }
+
+        $errors = $this->normalizeIngestionErrors($decoded['errors'], $eventCount);
+        if ($errors === null || count($errors) !== $decoded['rejected']) {
             return null;
         }
 
         return [
-            'accepted' => max(0, (int) $decoded['accepted']),
-            'rejected' => max(0, (int) $decoded['rejected']),
-            'errors' => $this->normalizeIngestionErrors($decoded['errors'] ?? []),
+            'accepted' => $decoded['accepted'],
+            'rejected' => $decoded['rejected'],
+            'errors' => $errors,
         ];
     }
 
-    /** @return list<string> */
-    private function normalizeIngestionErrors(mixed $errors): array
+    /** @return list<array{index:int,reason:string}>|null */
+    private function normalizeIngestionErrors(array $errors, int $eventCount): ?array
     {
-        if (!is_array($errors)) {
-            return [];
-        }
-
         $normalized = [];
+        $indexes = [];
         foreach ($errors as $error) {
-            if (is_string($error)) {
-                $normalized[] = $error;
-                continue;
+            if (
+                !is_array($error)
+                || !isset($error['index'], $error['reason'])
+                || !is_int($error['index'])
+                || $error['index'] < 0
+                || $error['index'] >= $eventCount
+                || isset($indexes[$error['index']])
+                || !is_string($error['reason'])
+                || $error['reason'] === ''
+            ) {
+                return null;
             }
 
-            if (is_array($error)) {
-                $index = $error['index'] ?? null;
-                $reason = $error['reason'] ?? null;
-                if (is_string($reason) && $reason !== '') {
-                    $normalized[] = is_int($index) ? sprintf('event[%d]: %s', $index, $reason) : $reason;
-                }
-            }
+            $indexes[$error['index']] = true;
+            $normalized[] = [
+                'index' => $error['index'],
+                'reason' => $error['reason'],
+            ];
         }
 
         return $normalized;
     }
 
-    /** @param list<string> $errors */
+    /** @param list<array{index:int,reason:string}> $errors */
     private function formatIngestionErrors(array $errors): string
     {
-        return $errors === [] ? 'none' : implode('; ', array_slice($errors, 0, 5));
+        if ($errors === []) {
+            return 'none';
+        }
+
+        return implode('; ', array_map(
+            static fn (array $error): string => sprintf('event[%d]: %s', $error['index'], $error['reason']),
+            array_slice($errors, 0, 5)
+        ));
+    }
+
+    private function isRetryableReason(string $reason): bool
+    {
+        return in_array($reason, [
+            'rate_limited',
+            'monthly_quota_exceeded',
+            'analytics_quota_exceeded',
+        ], true);
     }
 }

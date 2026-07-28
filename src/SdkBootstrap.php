@@ -37,6 +37,11 @@ final class SdkBootstrap
                 'logLevel' => $this->settings->getLogLevel(),
                 'configFetcher' => new ConfigFetcher(),
                 'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
+                'beforeSend' => static function (array $event): mixed {
+                    return function_exists('apply_filters')
+                        ? \apply_filters('debugbundle_before_send', $event)
+                        : $event;
+                },
             ]);
         } catch (\Throwable $throwable) {
             $this->sdk = null;

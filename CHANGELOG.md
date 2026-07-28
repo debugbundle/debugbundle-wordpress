@@ -6,6 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-28
+
+### Added
+
+- Added a WordPress backend `debugbundle_before_send` surface backed by the PHP SDK universal hook.
+
+### Changed
+
+- Release smoke now installs the assembled plugin ZIP and exercises backend/frontend delivery, credential isolation, outage spooling, and retry flush against the packaged artifact.
+- Release assembly fails closed if the coordinated PHP SDK does not expose the required backend hook.
+- CI now enforces at least 80% line coverage for every production plugin PHP source file.
+- Rebuilt the shipped browser bundle on `@debugbundle/sdk-browser` `1.6.0` and raised the PHP SDK requirement to `debugbundle/sdk-php` `^1.3.0`.
+
 ## [1.3.0] - 2026-07-17
 
 ### Added

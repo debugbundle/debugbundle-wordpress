@@ -179,6 +179,10 @@ final class AdminPageAndTestEventsTest extends TestCase
             'body' => json_encode(['accepted' => 1, 'rejected' => 0, 'errors' => []]),
         ];
         $GLOBALS['debugbundle_wp_test_last_remote_post'] = null;
+        $GLOBALS['debugbundle_wp_test_current_user_can'] = true;
+        $GLOBALS['debugbundle_wp_test_options_pages'] = [];
+        $GLOBALS['debugbundle_wp_test_registered_settings'] = [];
+        $GLOBALS['debugbundle_wp_test_actions'] = [];
         $this->uploadBaseDir = sys_get_temp_dir() . '/debugbundle-wp-tests-' . bin2hex(random_bytes(6));
         $GLOBALS['debugbundle_wp_test_upload_basedir'] = $this->uploadBaseDir;
         $GLOBALS['debugbundle_wp_test_options'] = [
@@ -204,7 +208,67 @@ final class AdminPageAndTestEventsTest extends TestCase
 
     protected function tearDown(): void
     {
+        unset($GLOBALS['debugbundle_wp_test_current_user_can']);
         $this->removeDirectory($this->uploadBaseDir);
+    }
+
+    public function testAdminPageRegistersHooksPageAndSanitizedSetting(): void
+    {
+        $page = new AdminPage(new Settings());
+
+        $page->register();
+        $page->addOptionsPage();
+        $page->registerSettings();
+
+        self::assertNotEmpty($GLOBALS['debugbundle_wp_test_actions']['admin_menu'][10] ?? []);
+        self::assertNotEmpty($GLOBALS['debugbundle_wp_test_actions']['admin_post_debugbundle_backend_test'][10] ?? []);
+        self::assertSame('debugbundle', $GLOBALS['debugbundle_wp_test_options_pages'][0][3] ?? null);
+        self::assertSame(Settings::OPTION_NAME, $GLOBALS['debugbundle_wp_test_registered_settings'][0][0] ?? null);
+        self::assertSame(
+            Settings::DEFAULT_ENDPOINT,
+            $page->sanitizeSettings('invalid')['endpoint']
+        );
+    }
+
+    public function testAdminPageRendersDiagnosticsAndPrivateFormattingBranches(): void
+    {
+        $GLOBALS['debugbundle_wp_test_transients'] = [
+            'debugbundle_last_backend_flush_at' => '2026-07-27T10:00:00Z',
+            'debugbundle_last_relay_flush_at' => '2026-07-27T10:01:00Z',
+            'debugbundle_last_relay_ingestion_result' => 'accepted=1 rejected=0 errors=none',
+            'debugbundle_last_backend_error' => 'backend failed',
+            'debugbundle_last_relay_error' => 'relay failed',
+        ];
+        $page = new AdminPage(new Settings());
+
+        ob_start();
+        $page->render();
+        $output = (string) ob_get_clean();
+
+        self::assertStringContainsString('Last successful backend flush', $output);
+        self::assertStringContainsString('Last successful relay flush', $output);
+        self::assertStringContainsString('Last relay ingestion result', $output);
+        self::assertStringContainsString('Last backend SDK error', $output);
+        self::assertStringContainsString('Last relay error', $output);
+
+        $renderTextRow = new \ReflectionMethod($page, 'renderTextRow');
+        ob_start();
+        $renderTextRow->invoke($page, 'Label', 'name', 'value', ['', 123, 'visible']);
+        $row = (string) ob_get_clean();
+        self::assertStringContainsString('visible', $row);
+        self::assertStringNotContainsString('123', $row);
+
+        $verifyNonce = new \ReflectionMethod($page, 'verifyNoticeNonce');
+        self::assertFalse($verifyNonce->invoke($page, null));
+        self::assertTrue($verifyNonce->invoke($page, 'nonce-for-debugbundle_notice'));
+    }
+
+    public function testAdminPageSkipsRenderingForUnauthorizedUser(): void
+    {
+        $GLOBALS['debugbundle_wp_test_current_user_can'] = false;
+        ob_start();
+        (new AdminPage(new Settings()))->render();
+        self::assertSame('', ob_get_clean());
     }
 
     public function testRenderUsesPasswordFieldForStoredProjectTokenAndExpandedDescriptions(): void
@@ -255,6 +319,82 @@ final class AdminPageAndTestEventsTest extends TestCase
         self::assertSame('WordPress admin relay test', $event['payload']['browser']['name']);
         self::assertSame('/wp-admin/options-general.php?page=debugbundle', $event['payload']['route']);
         self::assertArrayNotHasKey('url', $event['payload']);
+    }
+
+    public function testBackendAndFrontendTestsRequireConfigurationAndEnabledCapture(): void
+    {
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['project_token'] = '';
+        $events = new AdminTestEvents(new Settings());
+        self::assertStringContainsString('Add a project token', $events->sendBackend()->message);
+        self::assertStringContainsString('Add a project token', $events->sendFrontend()->message);
+
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['project_token'] = 'dbundle_proj_test';
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['backend_capture_enabled'] = false;
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['frontend_capture_enabled'] = false;
+        self::assertStringContainsString('Enable backend capture', $events->sendBackend()->message);
+        self::assertStringContainsString('Enable frontend capture', $events->sendFrontend()->message);
+    }
+
+    public function testBackendTestContainsTransportFailureAndRecordsDiagnostic(): void
+    {
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['endpoint'] =
+            'http://127.0.0.1:1/v1/events';
+
+        $result = (new AdminTestEvents(new Settings()))->sendBackend();
+
+        self::assertFalse($result->success);
+        self::assertStringContainsString('could not be delivered', $result->message);
+        self::assertSame(
+            'Backend test event could not be delivered.',
+            $GLOBALS['debugbundle_wp_test_transients']['debugbundle_last_backend_error'] ?? null
+        );
+    }
+
+    public function testFrontendTestReportsRouteRejectionEmptyAcceptanceAndPartialAcceptance(): void
+    {
+        $settings = new Settings();
+        $spool = new RelaySpool();
+        $cases = [
+            [
+                ['status' => 403, 'body' => ['accepted' => 0, 'rejected' => 0, 'errors' => []]],
+                'rejected with status 403',
+            ],
+            [
+                ['status' => 202, 'body' => ['accepted' => 0, 'rejected' => 0, 'errors' => []]],
+                'no browser event passed validation',
+            ],
+            [
+                ['status' => 202, 'body' => ['accepted' => 1, 'rejected' => 1, 'errors' => ['invalid event']]],
+                'partially accepted: invalid event',
+            ],
+        ];
+
+        foreach ($cases as [$response, $expected]) {
+            $events = new AdminTestEvents(
+                $settings,
+                new Diagnostics($spool),
+                $spool,
+                static fn (): object => new FakeRelayRoute($response),
+            );
+            $result = $events->sendFrontend();
+            self::assertFalse($result->success);
+            self::assertStringContainsString($expected, $result->message);
+        }
+    }
+
+    public function testFrontendTestContainsRelayFactoryFailures(): void
+    {
+        $events = new AdminTestEvents(
+            new Settings(),
+            relayRouteFactory: static function (): object {
+                throw new \RuntimeException('relay factory failed');
+            },
+        );
+
+        $result = $events->sendFrontend();
+
+        self::assertFalse($result->success);
+        self::assertStringContainsString('relay factory failed', $result->message);
     }
 
     public function testSendFrontendReportsQueuedRetryWhenRelaySpoolsInsteadOfForwarding(): void
@@ -313,6 +453,70 @@ final class AdminPageAndTestEventsTest extends TestCase
         self::assertNull($result->error);
         self::assertArrayHasKey('debugbundle_last_relay_flush_at', $GLOBALS['debugbundle_wp_test_transients']);
         self::assertSame('accepted=1 rejected=0 errors=none', $GLOBALS['debugbundle_wp_test_transients']['debugbundle_last_relay_ingestion_result'] ?? null);
+    }
+
+    public function testRelayForwarderRetainsWholeBatchForMissingAcknowledgement(): void
+    {
+        $GLOBALS['debugbundle_wp_test_remote_response'] = [
+            'response' => ['code' => 202],
+            'body' => '{}',
+        ];
+
+        $result = (new RelayForwarder(new Settings()))->forward([$this->frontendEvent()]);
+
+        self::assertFalse($result->success);
+        self::assertFalse($result->drop);
+        self::assertNull($result->retryEvents);
+        self::assertSame('acknowledgement_protocol_failure', $result->error);
+    }
+
+    public function testRelayForwarderReturnsOnlyIndexedRetryableRejections(): void
+    {
+        $GLOBALS['debugbundle_wp_test_remote_response'] = [
+            'response' => ['code' => 202],
+            'body' => json_encode([
+                'accepted' => 1,
+                'rejected' => 1,
+                'errors' => [
+                    ['index' => 1, 'reason' => 'rate_limited'],
+                ],
+            ]),
+        ];
+        $first = $this->frontendEvent();
+        $second = $this->frontendEvent();
+        $second['event_id'] = '00000000-0000-4000-8000-000000000002';
+
+        $result = (new RelayForwarder(new Settings()))->forward([$first, $second]);
+
+        self::assertFalse($result->success);
+        self::assertFalse($result->drop);
+        self::assertSame([$second], $result->retryEvents);
+        self::assertStringContainsString('event[1]: rate_limited', (string) $result->error);
+    }
+
+    public function testRelayForwarderRejectsDuplicateOrOutOfRangeAcknowledgementIndexes(): void
+    {
+        $GLOBALS['debugbundle_wp_test_remote_response'] = [
+            'response' => ['code' => 202],
+            'body' => json_encode([
+                'accepted' => 0,
+                'rejected' => 2,
+                'errors' => [
+                    ['index' => 0, 'reason' => 'rate_limited'],
+                    ['index' => 0, 'reason' => 'invalid_event'],
+                ],
+            ]),
+        ];
+
+        $result = (new RelayForwarder(new Settings()))->forward([
+            $this->frontendEvent(),
+            $this->frontendEvent(),
+        ]);
+
+        self::assertFalse($result->success);
+        self::assertFalse($result->drop);
+        self::assertNull($result->retryEvents);
+        self::assertSame('acknowledgement_protocol_failure', $result->error);
     }
 
     public function testBrowserRelayRouteCompletesCorrelationBeforeForwarding(): void

@@ -9,18 +9,18 @@ PROJECT_NAME="debugbundle-wordpress-smoke"
 WP_URL="http://127.0.0.1:18080"
 RELAY_URL="$WP_URL/?rest_route=/debugbundle/v1/browser"
 MOCK_EVENTS_FILE="$REPO_DIR/.smoke/ingestion-events.ndjson"
+PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
+PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-"$REPO_DIR/../debugbundle-php"}
+VERSION=${VERSION:-1.4.0}
 
 compose() {
   docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
 prepare_plugin() {
-  if [ ! -r "$REPO_DIR/vendor/autoload.php" ]; then
-    docker run --rm -t \
-      -v "$REPO_DIR:/workspace" \
-      -w /workspace \
-      composer:2 \
-      composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+  if [ ! -r "$PHP_SDK_DIR/composer.json" ]; then
+    echo "The coordinated PHP SDK checkout is required at $PHP_SDK_DIR" >&2
+    exit 1
   fi
 
   if [ ! -r "$REPO_DIR/assets/dist/debugbundle-browser.js" ]; then
@@ -29,6 +29,26 @@ prepare_plugin() {
       -w /workspace \
       node:24-alpine \
       sh -lc "corepack enable && corepack pnpm install --frozen-lockfile=false && corepack pnpm build"
+  fi
+
+  docker run --rm -t \
+    -v "$REPO_DIR:/workspace" \
+    -v "$PHP_SDK_DIR:/sdk-php:ro" \
+    -w /workspace \
+    -e DEBUGBUNDLE_PHP_SDK_SOURCE=/sdk-php \
+    composer:2 \
+    ./scripts/assemble-release.sh "$VERSION"
+
+  mkdir -p "$PLUGIN_STAGE_DIR"
+  docker run --rm -t \
+    -v "$REPO_DIR:/workspace" \
+    -w /workspace \
+    composer:2 \
+    unzip -q ".dist/debugbundle-wordpress-${VERSION}.zip" -d .smoke/plugin
+
+  if [ ! -r "$PLUGIN_STAGE_DIR/debugbundle/vendor/debugbundle/sdk-php/src/BeforeSend.php" ]; then
+    echo "Assembled WordPress ZIP does not contain the coordinated PHP beforeSend implementation" >&2
+    exit 1
   fi
 }
 
@@ -42,6 +62,8 @@ rm -rf "$REPO_DIR/.smoke"
 mkdir -p "$REPO_DIR/.smoke"
 
 prepare_plugin
+DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR="$PLUGIN_STAGE_DIR/debugbundle"
+export DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR
 
 compose up -d --wait db mock-ingestion wordpress
 
@@ -81,6 +103,13 @@ settings_json='{"enabled":true,"project_token":"dbundle_proj_smoke","environment
 compose run --rm wpcli wp option update debugbundle_settings "$settings_json" --format=json --allow-root
 
 compose run --rm wpcli wp eval '
+$GLOBALS["debugbundle_smoke_filter_message"] = "DebugBundle WordPress backend filtered smoke event";
+add_filter("debugbundle_before_send", static function (array $event): array {
+    if (($event["event_type"] ?? null) === "backend_exception") {
+        $event["payload"]["message"] = $GLOBALS["debugbundle_smoke_filter_message"];
+    }
+    return $event;
+});
 $result = (new \DebugBundleWp\AdminTestEvents(new \DebugBundleWp\Settings()))->sendBackend();
 if (!$result->success) {
     fwrite(STDERR, $result->message . PHP_EOL);
@@ -96,7 +125,7 @@ if (!$result->success) {
 }
 ' --allow-root
 
-browser_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000001","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.5.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000002"},"payload":{"name":"DebugBundleWordPressSmokeFrontendError","message":"DebugBundle WordPress smoke frontend event","stack":"DebugBundleWordPressSmokeFrontendError: DebugBundle WordPress smoke frontend event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
+browser_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000001","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.6.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000002"},"payload":{"name":"DebugBundleWordPressSmokeFrontendError","message":"DebugBundle WordPress smoke frontend event","stack":"DebugBundleWordPressSmokeFrontendError: DebugBundle WordPress smoke frontend event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
   -X POST "$RELAY_URL" \
@@ -118,6 +147,12 @@ if ! grep -q '"event_type":"backend_exception"' "$MOCK_EVENTS_FILE"; then
   exit 1
 fi
 
+if ! grep -q 'DebugBundle WordPress backend filtered smoke event' "$MOCK_EVENTS_FILE"; then
+  echo "Expected assembled ZIP backend beforeSend filter mutation to reach mock ingestion" >&2
+  cat "$MOCK_EVENTS_FILE" >&2
+  exit 1
+fi
+
 if ! grep -q '"event_type":"frontend_exception"' "$MOCK_EVENTS_FILE"; then
   echo "Expected mock ingestion to receive a frontend_exception event" >&2
   cat "$MOCK_EVENTS_FILE" >&2
@@ -131,7 +166,7 @@ if ! grep -q 'Bearer dbundle_proj_smoke' "$MOCK_EVENTS_FILE"; then
 fi
 
 touch "$REPO_DIR/.smoke/fail-ingestion"
-spool_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000101","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.5.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000102"},"payload":{"name":"DebugBundleWordPressSpoolSmokeError","message":"DebugBundle WordPress spool smoke event","stack":"DebugBundleWordPressSpoolSmokeError: DebugBundle WordPress spool smoke event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
+spool_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000101","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"1.6.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000102"},"payload":{"name":"DebugBundleWordPressSpoolSmokeError","message":"DebugBundle WordPress spool smoke event","stack":"DebugBundleWordPressSpoolSmokeError: DebugBundle WordPress spool smoke event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
   -X POST "$RELAY_URL" \

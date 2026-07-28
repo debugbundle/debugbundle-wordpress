@@ -25,4 +25,34 @@ final class SanitizationTest extends TestCase
         self::assertArrayNotHasKey('bad-header!', $headers);
         self::assertArrayNotHasKey('remote-addr', $headers);
     }
+
+    public function testRequestFallbacksAndIpHashingRemainDeterministicOutsideHttpRuntime(): void
+    {
+        self::assertIsArray(Sanitization::serverInputArray());
+        self::assertSame('PATCH', Sanitization::requestMethod('PATCH'));
+        self::assertSame('/fallback', Sanitization::requestUri('/fallback'));
+        self::assertNull(Sanitization::ipAddress());
+        self::assertSame('POST', Sanitization::requestMethod('GET', ['REQUEST_METHOD' => 'post']));
+        self::assertSame('/orders?status=open', Sanitization::requestUri('/', [
+            'REQUEST_URI' => '/orders?status=open',
+        ]));
+        self::assertSame('203.0.113.10', Sanitization::ipAddress([
+            'REMOTE_ADDR' => '203.0.113.10',
+        ]));
+        self::assertNull(Sanitization::ipAddress(['REMOTE_ADDR' => 'not-an-ip']));
+        self::assertSame(hash('sha256', 'unknown'), Sanitization::hashIp(null));
+        self::assertSame(hash('sha256', '203.0.113.10'), Sanitization::hashIp('203.0.113.10'));
+    }
+
+    public function testHeaderExtractionIgnoresNonScalarAndNonStringInputs(): void
+    {
+        $headers = Sanitization::requestHeadersFromServer([
+            0 => 'ignored',
+            'HTTP_ARRAY' => ['ignored'],
+            'CONTENT_LENGTH' => 42,
+            'REQUEST_METHOD' => 'POST',
+        ]);
+
+        self::assertSame(['content-length' => '42'], $headers);
+    }
 }

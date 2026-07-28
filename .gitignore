@@ -1,6 +1,7 @@
 node_modules/
 vendor/
 coverage/
+coverage.xml
 .dist/
 .pnpm-store/
 .tmp/

@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.5.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.6.0/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,373 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
+  function createUuidV4() {
+    var _a, _b;
+    const cryptoSource = globalThis.crypto;
+    if (typeof (cryptoSource == null ? void 0 : cryptoSource.randomUUID) === "function") {
+      return cryptoSource.randomUUID();
+    }
+    const bytes = cryptoSource.getRandomValues(new Uint8Array(16));
+    const versionByte = (_a = bytes[6]) != null ? _a : 0;
+    const variantByte = (_b = bytes[8]) != null ? _b : 0;
+    bytes[6] = versionByte & 15 | 64;
+    bytes[8] = variantByte & 63 | 128;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
+  }
+  var EventTypeValues = [
+    "backend_exception",
+    "request_event",
+    "log_event",
+    "frontend_breadcrumb",
+    "frontend_exception",
+    "deploy_metadata",
+    "error_suppressed",
+    "probe_event"
+  ];
+  var EventTypeSchema = external_exports.enum(EventTypeValues);
+  var ServiceSchema = external_exports.object({
+    name: external_exports.string().min(1),
+    runtime: external_exports.string().min(1).nullable().optional(),
+    framework: external_exports.string().min(1).nullable().optional(),
+    environment: external_exports.string().min(1)
+  }).strict();
+  var CorrelationSchema = external_exports.object({
+    request_id: external_exports.string().nullable().optional(),
+    trace_id: external_exports.string().nullable().optional(),
+    session_id: external_exports.string().nullable().optional(),
+    user_id_hash: external_exports.string().nullable().optional()
+  }).strict().transform((value) => {
+    var _a, _b, _c, _d;
+    return {
+      request_id: (_a = value.request_id) != null ? _a : null,
+      trace_id: (_b = value.trace_id) != null ? _b : null,
+      session_id: (_c = value.session_id) != null ? _c : null,
+      user_id_hash: (_d = value.user_id_hash) != null ? _d : null
+    };
+  });
+  var InlineProbeDataItemSchema = external_exports.object({
+    label: external_exports.string().min(1),
+    data: external_exports.record(external_exports.string(), external_exports.unknown()),
+    timestamp: external_exports.string().datetime(),
+    activation_id: external_exports.string().uuid().nullable()
+  }).strict();
+  var InlineProbeDataSchema = external_exports.object({
+    version: external_exports.literal(1),
+    items: external_exports.array(InlineProbeDataItemSchema)
+  }).strict();
+  var RuntimeMemoryStatsSchema = external_exports.object({
+    rss: external_exports.number().nonnegative().nullable(),
+    heap_total: external_exports.number().nonnegative().nullable(),
+    heap_used: external_exports.number().nonnegative().nullable(),
+    external: external_exports.number().nonnegative().nullable(),
+    peak: external_exports.number().nonnegative().nullable()
+  }).strict();
+  var BackendRuntimePayloadSchema = external_exports.object({
+    version: external_exports.string().min(1),
+    platform: external_exports.string().min(1).nullable().optional(),
+    arch: external_exports.string().min(1).nullable().optional(),
+    pid: external_exports.number().int().nonnegative().nullable().optional(),
+    cwd: external_exports.string().min(1).nullable().optional(),
+    uptime_sec: external_exports.number().nonnegative().nullable().optional(),
+    hostname: external_exports.string().min(1).nullable().optional(),
+    thread_id: external_exports.union([external_exports.string(), external_exports.number()]).nullable().optional(),
+    framework_version: external_exports.string().min(1).nullable().optional(),
+    memory: RuntimeMemoryStatsSchema.nullable().optional(),
+    framework_extras: external_exports.record(external_exports.string(), external_exports.unknown()).nullable().optional()
+  }).strict();
+  var BackendExceptionPayloadSchema = external_exports.object({
+    name: external_exports.string().min(1),
+    message: external_exports.string().min(1),
+    stack: external_exports.string().min(1),
+    handled: external_exports.boolean(),
+    request: external_exports.object({
+      method: external_exports.string().min(1),
+      path: external_exports.string().min(1),
+      query: external_exports.record(external_exports.string(), external_exports.unknown()),
+      headers: external_exports.record(external_exports.string(), external_exports.unknown()),
+      body: external_exports.unknown().nullable().optional()
+    }),
+    response: external_exports.object({
+      status_code: external_exports.number().int().nonnegative(),
+      headers: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
+      body: external_exports.unknown().optional()
+    }),
+    runtime: BackendRuntimePayloadSchema,
+    probe_data: InlineProbeDataSchema.optional()
+  }).strict();
+  var ClientDeviceInfoFields = {
+    user_agent: external_exports.string().nullable(),
+    os: external_exports.object({
+      name: external_exports.string().nullable(),
+      version: external_exports.string().nullable()
+    }),
+    device_type: external_exports.enum(["desktop", "mobile", "tablet", "unknown"]),
+    screen: external_exports.object({
+      width: external_exports.number().int().nonnegative(),
+      height: external_exports.number().int().nonnegative()
+    }),
+    viewport: external_exports.object({
+      width: external_exports.number().int().nonnegative(),
+      height: external_exports.number().int().nonnegative()
+    }),
+    device_pixel_ratio: external_exports.number().positive().nullable(),
+    touch_capable: external_exports.boolean().nullable(),
+    language: external_exports.string().nullable(),
+    connection_type: external_exports.string().nullable(),
+    color_scheme_preference: external_exports.enum(["light", "dark", "no-preference"]).nullable()
+  };
+  var MobileDeviceInfoSchema = external_exports.object({
+    ...ClientDeviceInfoFields,
+    app_version: external_exports.string().nullable().optional(),
+    build_number: external_exports.string().nullable().optional(),
+    release_channel: external_exports.string().nullable().optional(),
+    api_level: external_exports.number().int().nonnegative().nullable().optional(),
+    manufacturer: external_exports.string().nullable().optional(),
+    model: external_exports.string().nullable().optional(),
+    timezone: external_exports.string().nullable().optional(),
+    battery_level: external_exports.number().nonnegative().nullable().optional(),
+    battery_charging: external_exports.boolean().nullable().optional(),
+    free_disk_bytes: external_exports.number().int().nonnegative().nullable().optional(),
+    free_memory_bytes: external_exports.number().int().nonnegative().nullable().optional(),
+    jailbroken: external_exports.boolean().nullable().optional()
+  }).strict();
+  var RequestEventPayloadFields = {
+    method: external_exports.string().min(1),
+    path: external_exports.string().min(1),
+    query: external_exports.record(external_exports.string(), external_exports.unknown()),
+    headers: external_exports.record(external_exports.string(), external_exports.unknown()),
+    body: external_exports.unknown().nullable().optional(),
+    response_status: external_exports.number().int().nonnegative(),
+    duration_ms: external_exports.number().nonnegative(),
+    route_template: external_exports.string().min(1).nullable().optional(),
+    response_headers: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
+    response_body: external_exports.unknown().optional()
+  };
+  var RequestEventPayloadSchema = external_exports.union([
+    external_exports.object(RequestEventPayloadFields).strict(),
+    external_exports.object({ ...RequestEventPayloadFields, device: MobileDeviceInfoSchema }).strict()
+  ]);
+  var LogEventPayloadFields = {
+    level: external_exports.string().min(1),
+    message: external_exports.string().min(1),
+    attributes: external_exports.record(external_exports.string(), external_exports.unknown())
+  };
+  var LogEventPayloadSchema = external_exports.union([
+    external_exports.object(LogEventPayloadFields).strict(),
+    external_exports.object({ ...LogEventPayloadFields, device: MobileDeviceInfoSchema }).strict()
+  ]);
+  var FrontendBreadcrumbPayloadFields = {
+    breadcrumb_type: external_exports.enum([
+      "route_change",
+      "click",
+      "form_submit",
+      "console_log",
+      "network_request"
+    ]),
+    route: external_exports.string().min(1).nullable().optional(),
+    data: external_exports.record(external_exports.string(), external_exports.unknown())
+  };
+  var FrontendBreadcrumbPayloadSchema = external_exports.union([
+    external_exports.object(FrontendBreadcrumbPayloadFields).strict(),
+    external_exports.object({
+      breadcrumb_type: external_exports.string().min(1),
+      route: external_exports.string().min(1).nullable().optional(),
+      data: external_exports.record(external_exports.string(), external_exports.unknown()),
+      device: MobileDeviceInfoSchema
+    }).strict()
+  ]);
+  var FrontendExceptionBreadcrumbSchema = external_exports.object({
+    ...FrontendBreadcrumbPayloadFields,
+    ts: external_exports.string().datetime()
+  }).strict();
+  var MobileExceptionBreadcrumbSchema = external_exports.object({
+    breadcrumb_type: external_exports.string().min(1),
+    route: external_exports.string().min(1).nullable().optional(),
+    data: external_exports.record(external_exports.string(), external_exports.unknown()),
+    ts: external_exports.string().datetime()
+  }).strict();
+  var BrowserDeviceInfoSchema = external_exports.object(ClientDeviceInfoFields).strict();
+  var BrowserExceptionEventSchema = external_exports.object({
+    kind: external_exports.enum(["window_error", "resource_error"]),
+    message: external_exports.string().nullable(),
+    file_name: external_exports.string().nullable(),
+    line_number: external_exports.number().int().nonnegative().nullable(),
+    column_number: external_exports.number().int().nonnegative().nullable(),
+    target: external_exports.object({
+      tag_name: external_exports.string().nullable(),
+      source_url: external_exports.string().nullable(),
+      attributes: external_exports.object({
+        rel: external_exports.string().optional(),
+        as: external_exports.string().optional(),
+        type: external_exports.string().optional(),
+        media: external_exports.string().optional(),
+        cross_origin: external_exports.string().optional(),
+        async: external_exports.boolean().optional(),
+        defer: external_exports.boolean().optional(),
+        integrity_present: external_exports.boolean().optional()
+      }).strict().optional()
+    }).strict().nullable(),
+    page: external_exports.object({
+      url: external_exports.string().nullable(),
+      referrer: external_exports.string().nullable(),
+      ready_state: external_exports.enum(["loading", "interactive", "complete"]).nullable(),
+      visibility_state: external_exports.enum(["visible", "hidden", "prerender", "unloaded"]).nullable()
+    }).strict().optional(),
+    opaque: external_exports.boolean()
+  }).strict();
+  var FrontendRejectionReasonSchema = external_exports.object({
+    kind: external_exports.enum(["error", "string", "object", "null", "undefined", "unknown"]),
+    name: external_exports.string().min(1).optional(),
+    message: external_exports.string().min(1).optional(),
+    preview: external_exports.string().min(1).optional()
+  }).strict();
+  var FrontendExceptionPayloadSchema = external_exports.object({
+    name: external_exports.string().min(1),
+    message: external_exports.string().min(1),
+    stack: external_exports.string().min(1),
+    route: external_exports.string().min(1).nullable().optional(),
+    browser: external_exports.object({
+      name: external_exports.string().min(1),
+      version: external_exports.string().min(1)
+    }).optional(),
+    breadcrumbs: external_exports.array(external_exports.union([FrontendExceptionBreadcrumbSchema, MobileExceptionBreadcrumbSchema])).optional(),
+    device: external_exports.union([BrowserDeviceInfoSchema, MobileDeviceInfoSchema]).nullable().optional(),
+    browser_event: BrowserExceptionEventSchema.optional(),
+    rejection_reason: FrontendRejectionReasonSchema.optional(),
+    dom_context: external_exports.object({
+      mode: external_exports.literal("lightweight"),
+      html_excerpt: external_exports.string().min(1)
+    }).nullable().optional(),
+    probe_data: InlineProbeDataSchema.optional()
+  }).strict();
+  var DeployMetadataPayloadSchema = external_exports.object({
+    commit_sha: external_exports.string().min(1),
+    version: external_exports.string().min(1),
+    branch: external_exports.string().min(1),
+    environment: external_exports.string().min(1),
+    deployed_at: external_exports.string().datetime()
+  }).strict();
+  var ErrorSuppressedPayloadFields = {
+    fingerprint: external_exports.string().min(1),
+    suppressed_count: external_exports.number().int().nonnegative(),
+    window_seconds: external_exports.number().int().positive(),
+    first_seen: external_exports.string().datetime(),
+    last_seen: external_exports.string().datetime()
+  };
+  var ErrorSuppressedPayloadSchema = external_exports.union([
+    external_exports.object(ErrorSuppressedPayloadFields).strict(),
+    external_exports.object({ ...ErrorSuppressedPayloadFields, device: MobileDeviceInfoSchema }).strict()
+  ]);
+  var ProbeEventPayloadFields = {
+    label: external_exports.string().min(1),
+    data: external_exports.record(external_exports.string(), external_exports.unknown()),
+    activation_id: external_exports.string().uuid().nullable(),
+    probe_label_pattern: external_exports.string().min(1)
+  };
+  var ProbeEventPayloadSchema = external_exports.union([
+    external_exports.object(ProbeEventPayloadFields).strict(),
+    external_exports.object({ ...ProbeEventPayloadFields, device: MobileDeviceInfoSchema }).strict()
+  ]);
+  var EnvelopeBaseSchema = external_exports.object({
+    schema_version: external_exports.string().min(1),
+    event_id: external_exports.string().uuid(),
+    event_type: EventTypeSchema,
+    project_token: external_exports.string().min(1).optional(),
+    project_id: external_exports.string().uuid().nullable().optional(),
+    sdk_name: external_exports.string().min(1),
+    sdk_version: external_exports.string().min(1),
+    service: ServiceSchema,
+    occurred_at: external_exports.string().datetime(),
+    correlation: CorrelationSchema.optional(),
+    context: external_exports.record(external_exports.string(), external_exports.unknown()).optional()
+  }).strict();
+  var MOBILE_SDK_NAMES = /* @__PURE__ */ new Set([
+    "@debugbundle/sdk-android",
+    "@debugbundle/sdk-swift",
+    "@debugbundle/sdk-react-native"
+  ]);
+  var EventEnvelopeSchema = external_exports.discriminatedUnion("event_type", [
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("backend_exception"),
+      payload: BackendExceptionPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("request_event"),
+      payload: RequestEventPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("log_event"),
+      payload: LogEventPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("frontend_breadcrumb"),
+      payload: FrontendBreadcrumbPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("frontend_exception"),
+      payload: FrontendExceptionPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("deploy_metadata"),
+      payload: DeployMetadataPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("error_suppressed"),
+      payload: ErrorSuppressedPayloadSchema
+    }),
+    EnvelopeBaseSchema.extend({
+      event_type: external_exports.literal("probe_event"),
+      payload: ProbeEventPayloadSchema
+    })
+  ]).superRefine((event, context) => {
+    if (event.event_type !== "frontend_exception") {
+      return;
+    }
+    if (MOBILE_SDK_NAMES.has(event.sdk_name)) {
+      if (event.payload.device === void 0 || event.payload.device === null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          message: "Required",
+          path: ["payload", "device"]
+        });
+      }
+      return;
+    }
+    if (event.payload.browser === void 0) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        message: "Required",
+        path: ["payload", "browser"]
+      });
+    }
+  });
+  function createEventEnvelope(input) {
+    var _a, _b, _c, _d, _e, _f;
+    const candidate = {
+      schema_version: (_a = input.schema_version) != null ? _a : "2026-03-01",
+      event_id: (_b = input.event_id) != null ? _b : createUuidV4(),
+      event_type: input.event_type,
+      project_token: input.project_token,
+      project_id: input.project_id,
+      sdk_name: (_c = input.sdk_name) != null ? _c : "debugbundle-node",
+      sdk_version: (_d = input.sdk_version) != null ? _d : "0.0.0",
+      service: input.service,
+      occurred_at: (_e = input.occurred_at) != null ? _e : (/* @__PURE__ */ new Date()).toISOString(),
+      correlation: (_f = input.correlation) != null ? _f : {
+        request_id: null,
+        trace_id: null,
+        session_id: null,
+        user_id_hash: null
+      },
+      context: input.context,
+      payload: input.payload
+    };
+    return EventEnvelopeSchema.parse(candidate);
+  }
+
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4299,7 +4665,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4673,7 +5039,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -4698,7 +5064,7 @@
     fingerprint: CaptureRuleFingerprintSchema.optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -4724,7 +5090,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -4747,7 +5113,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
   var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
   var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
@@ -5211,7 +5577,7 @@
     return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
   var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
   var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
   var AnalyticsOpportunityBundleStatusValues = [
@@ -5397,7 +5763,7 @@
     message: "At least one analytics settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
   var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
   var AnalyticsJourneySafeScalarSchema = external_exports.union([
     external_exports.string().max(256),
@@ -5491,7 +5857,7 @@
     journey: AnalyticsJourneySampleArtifactSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
   var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
   var AnalyticsSavedFunnelStepSchema = external_exports.object({
     step_key: AnalyticsSavedFunnelKeySchema,
@@ -5534,7 +5900,7 @@
     funnel: AnalyticsSavedFunnelSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -5557,267 +5923,7 @@
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.5.0/node_modules/@debugbundle/shared-types/dist/index.js
-  function createUuidV4() {
-    var _a, _b;
-    const cryptoSource = globalThis.crypto;
-    if (typeof (cryptoSource == null ? void 0 : cryptoSource.randomUUID) === "function") {
-      return cryptoSource.randomUUID();
-    }
-    const bytes = cryptoSource.getRandomValues(new Uint8Array(16));
-    const versionByte = (_a = bytes[6]) != null ? _a : 0;
-    const variantByte = (_b = bytes[8]) != null ? _b : 0;
-    bytes[6] = versionByte & 15 | 64;
-    bytes[8] = variantByte & 63 | 128;
-    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
-    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
-  }
-  var EventTypeValues = [
-    "backend_exception",
-    "request_event",
-    "log_event",
-    "frontend_breadcrumb",
-    "frontend_exception",
-    "deploy_metadata",
-    "error_suppressed",
-    "probe_event"
-  ];
-  var EventTypeSchema = external_exports.enum(EventTypeValues);
-  var ServiceSchema = external_exports.object({
-    name: external_exports.string().min(1),
-    runtime: external_exports.string().min(1).nullable().optional(),
-    framework: external_exports.string().min(1).nullable().optional(),
-    environment: external_exports.string().min(1)
-  });
-  var CorrelationSchema = external_exports.object({
-    request_id: external_exports.string().nullable().optional(),
-    trace_id: external_exports.string().nullable().optional(),
-    session_id: external_exports.string().nullable().optional(),
-    user_id_hash: external_exports.string().nullable().optional()
-  }).strict().transform((value) => {
-    var _a, _b, _c, _d;
-    return {
-      request_id: (_a = value.request_id) != null ? _a : null,
-      trace_id: (_b = value.trace_id) != null ? _b : null,
-      session_id: (_c = value.session_id) != null ? _c : null,
-      user_id_hash: (_d = value.user_id_hash) != null ? _d : null
-    };
-  });
-  var InlineProbeDataItemSchema = external_exports.object({
-    label: external_exports.string().min(1),
-    data: external_exports.record(external_exports.string(), external_exports.unknown()),
-    timestamp: external_exports.string().datetime(),
-    activation_id: external_exports.string().uuid().nullable()
-  }).strict();
-  var InlineProbeDataSchema = external_exports.object({
-    version: external_exports.literal(1),
-    items: external_exports.array(InlineProbeDataItemSchema)
-  }).strict();
-  var RuntimeMemoryStatsSchema = external_exports.object({
-    rss: external_exports.number().nonnegative().nullable(),
-    heap_total: external_exports.number().nonnegative().nullable(),
-    heap_used: external_exports.number().nonnegative().nullable(),
-    external: external_exports.number().nonnegative().nullable(),
-    peak: external_exports.number().nonnegative().nullable()
-  }).strict();
-  var BackendRuntimePayloadSchema = external_exports.object({
-    version: external_exports.string().min(1),
-    platform: external_exports.string().min(1).nullable().optional(),
-    arch: external_exports.string().min(1).nullable().optional(),
-    pid: external_exports.number().int().nonnegative().nullable().optional(),
-    cwd: external_exports.string().min(1).nullable().optional(),
-    uptime_sec: external_exports.number().nonnegative().nullable().optional(),
-    hostname: external_exports.string().min(1).nullable().optional(),
-    thread_id: external_exports.union([external_exports.string(), external_exports.number()]).nullable().optional(),
-    framework_version: external_exports.string().min(1).nullable().optional(),
-    memory: RuntimeMemoryStatsSchema.nullable().optional(),
-    framework_extras: external_exports.record(external_exports.string(), external_exports.unknown()).nullable().optional()
-  }).strict();
-  var BackendExceptionPayloadSchema = external_exports.object({
-    name: external_exports.string().min(1),
-    message: external_exports.string().min(1),
-    stack: external_exports.string().min(1),
-    handled: external_exports.boolean(),
-    request: external_exports.object({
-      method: external_exports.string().min(1),
-      path: external_exports.string().min(1),
-      query: external_exports.record(external_exports.string(), external_exports.unknown()),
-      headers: external_exports.record(external_exports.string(), external_exports.unknown()),
-      body: external_exports.unknown().nullable().optional()
-    }),
-    response: external_exports.object({
-      status_code: external_exports.number().int().nonnegative(),
-      headers: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
-      body: external_exports.unknown().optional()
-    }),
-    runtime: BackendRuntimePayloadSchema,
-    probe_data: InlineProbeDataSchema.optional()
-  }).strict();
-  var RequestEventPayloadSchema = external_exports.object({
-    method: external_exports.string().min(1),
-    path: external_exports.string().min(1),
-    query: external_exports.record(external_exports.string(), external_exports.unknown()),
-    headers: external_exports.record(external_exports.string(), external_exports.unknown()),
-    body: external_exports.unknown().nullable().optional(),
-    response_status: external_exports.number().int().nonnegative(),
-    duration_ms: external_exports.number().nonnegative(),
-    route_template: external_exports.string().min(1).nullable().optional(),
-    response_headers: external_exports.record(external_exports.string(), external_exports.unknown()).optional(),
-    response_body: external_exports.unknown().optional()
-  }).strict();
-  var LogEventPayloadSchema = external_exports.object({
-    level: external_exports.string().min(1),
-    message: external_exports.string().min(1),
-    attributes: external_exports.record(external_exports.string(), external_exports.unknown())
-  }).strict();
-  var FrontendBreadcrumbPayloadSchema = external_exports.object({
-    breadcrumb_type: external_exports.enum(["route_change", "click", "form_submit", "console_log", "network_request"]),
-    route: external_exports.string().min(1).nullable().optional(),
-    data: external_exports.record(external_exports.string(), external_exports.unknown())
-  }).strict();
-  var FrontendExceptionBreadcrumbSchema = FrontendBreadcrumbPayloadSchema.extend({
-    ts: external_exports.string().datetime()
-  });
-  var DeviceInfoSchema = external_exports.object({
-    user_agent: external_exports.string().nullable(),
-    os: external_exports.object({
-      name: external_exports.string().nullable(),
-      version: external_exports.string().nullable()
-    }),
-    device_type: external_exports.enum(["desktop", "mobile", "tablet", "unknown"]),
-    screen: external_exports.object({
-      width: external_exports.number().int().nonnegative(),
-      height: external_exports.number().int().nonnegative()
-    }),
-    viewport: external_exports.object({
-      width: external_exports.number().int().nonnegative(),
-      height: external_exports.number().int().nonnegative()
-    }),
-    device_pixel_ratio: external_exports.number().positive().nullable(),
-    touch_capable: external_exports.boolean().nullable(),
-    language: external_exports.string().nullable(),
-    connection_type: external_exports.string().nullable(),
-    color_scheme_preference: external_exports.enum(["light", "dark", "no-preference"]).nullable()
-  }).strict();
-  var BrowserExceptionEventSchema = external_exports.object({
-    kind: external_exports.enum(["window_error", "resource_error"]),
-    message: external_exports.string().nullable(),
-    file_name: external_exports.string().nullable(),
-    line_number: external_exports.number().int().nonnegative().nullable(),
-    column_number: external_exports.number().int().nonnegative().nullable(),
-    target: external_exports.object({
-      tag_name: external_exports.string().nullable(),
-      source_url: external_exports.string().nullable(),
-      attributes: external_exports.object({
-        rel: external_exports.string().optional(),
-        as: external_exports.string().optional(),
-        type: external_exports.string().optional(),
-        media: external_exports.string().optional(),
-        cross_origin: external_exports.string().optional(),
-        async: external_exports.boolean().optional(),
-        defer: external_exports.boolean().optional(),
-        integrity_present: external_exports.boolean().optional()
-      }).strict().optional()
-    }).strict().nullable(),
-    page: external_exports.object({
-      url: external_exports.string().nullable(),
-      referrer: external_exports.string().nullable(),
-      ready_state: external_exports.enum(["loading", "interactive", "complete"]).nullable(),
-      visibility_state: external_exports.enum(["visible", "hidden", "prerender", "unloaded"]).nullable()
-    }).strict().optional(),
-    opaque: external_exports.boolean()
-  }).strict();
-  var FrontendRejectionReasonSchema = external_exports.object({
-    kind: external_exports.enum(["error", "string", "object", "null", "undefined", "unknown"]),
-    name: external_exports.string().min(1).optional(),
-    message: external_exports.string().min(1).optional(),
-    preview: external_exports.string().min(1).optional()
-  }).strict();
-  var FrontendExceptionPayloadSchema = external_exports.object({
-    name: external_exports.string().min(1),
-    message: external_exports.string().min(1),
-    stack: external_exports.string().min(1),
-    route: external_exports.string().min(1).nullable().optional(),
-    browser: external_exports.object({
-      name: external_exports.string().min(1),
-      version: external_exports.string().min(1)
-    }),
-    breadcrumbs: external_exports.array(FrontendExceptionBreadcrumbSchema).optional(),
-    device: DeviceInfoSchema.nullable().optional(),
-    browser_event: BrowserExceptionEventSchema.optional(),
-    rejection_reason: FrontendRejectionReasonSchema.optional(),
-    dom_context: external_exports.object({
-      mode: external_exports.literal("lightweight"),
-      html_excerpt: external_exports.string().min(1)
-    }).nullable().optional(),
-    probe_data: InlineProbeDataSchema.optional()
-  }).strict();
-  var DeployMetadataPayloadSchema = external_exports.object({
-    commit_sha: external_exports.string().min(1),
-    version: external_exports.string().min(1),
-    branch: external_exports.string().min(1),
-    environment: external_exports.string().min(1),
-    deployed_at: external_exports.string().datetime()
-  }).strict();
-  var ErrorSuppressedPayloadSchema = external_exports.object({
-    fingerprint: external_exports.string().min(1),
-    suppressed_count: external_exports.number().int().nonnegative(),
-    window_seconds: external_exports.number().int().positive(),
-    first_seen: external_exports.string().datetime(),
-    last_seen: external_exports.string().datetime()
-  }).strict();
-  var ProbeEventPayloadSchema = external_exports.object({
-    label: external_exports.string().min(1),
-    data: external_exports.record(external_exports.string(), external_exports.unknown()),
-    activation_id: external_exports.string().uuid().nullable(),
-    probe_label_pattern: external_exports.string().min(1)
-  }).strict();
-  var EnvelopeBaseSchema = external_exports.object({
-    schema_version: external_exports.string().min(1),
-    event_id: external_exports.string().uuid(),
-    event_type: EventTypeSchema,
-    project_token: external_exports.string().min(1).optional(),
-    project_id: external_exports.string().uuid().nullable().optional(),
-    sdk_name: external_exports.string().min(1),
-    sdk_version: external_exports.string().min(1),
-    service: ServiceSchema,
-    occurred_at: external_exports.string().datetime(),
-    correlation: CorrelationSchema.optional(),
-    context: external_exports.record(external_exports.string(), external_exports.unknown()).optional()
-  }).strict();
-  var EventEnvelopeSchema = external_exports.discriminatedUnion("event_type", [
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("backend_exception"), payload: BackendExceptionPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("request_event"), payload: RequestEventPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("log_event"), payload: LogEventPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("frontend_breadcrumb"), payload: FrontendBreadcrumbPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("frontend_exception"), payload: FrontendExceptionPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("deploy_metadata"), payload: DeployMetadataPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("error_suppressed"), payload: ErrorSuppressedPayloadSchema }),
-    EnvelopeBaseSchema.extend({ event_type: external_exports.literal("probe_event"), payload: ProbeEventPayloadSchema })
-  ]);
-  function createEventEnvelope(input) {
-    var _a, _b, _c, _d, _e, _f;
-    const candidate = {
-      schema_version: (_a = input.schema_version) != null ? _a : "2026-03-01",
-      event_id: (_b = input.event_id) != null ? _b : createUuidV4(),
-      event_type: input.event_type,
-      project_token: input.project_token,
-      project_id: input.project_id,
-      sdk_name: (_c = input.sdk_name) != null ? _c : "debugbundle-node",
-      sdk_version: (_d = input.sdk_version) != null ? _d : "0.0.0",
-      service: input.service,
-      occurred_at: (_e = input.occurred_at) != null ? _e : (/* @__PURE__ */ new Date()).toISOString(),
-      correlation: (_f = input.correlation) != null ? _f : {
-        request_id: null,
-        trace_id: null,
-        session_id: null,
-        user_id_hash: null
-      },
-      context: input.context,
-      payload: input.payload
-    };
-    return EventEnvelopeSchema.parse(candidate);
-  }
+  // node_modules/.pnpm/@debugbundle+shared-types@1.6.0/node_modules/@debugbundle/shared-types/dist/index.js
   var SeveritySchema = external_exports.enum(["low", "medium", "high", "critical"]);
   var BundleSdkSchema = external_exports.object({
     name: external_exports.string().min(1),
@@ -5926,7 +6032,11 @@
     version: external_exports.literal(1),
     route_changes: external_exports.array(external_exports.object({ from: external_exports.string(), to: external_exports.string(), ts: external_exports.string().datetime() })),
     clicks: external_exports.array(external_exports.object({ selector: external_exports.string(), label: external_exports.string(), ts: external_exports.string().datetime() })),
-    form_submissions: external_exports.array(external_exports.object({ form: external_exports.string(), fields: external_exports.record(external_exports.string(), external_exports.unknown()), ts: external_exports.string().datetime() })),
+    form_submissions: external_exports.array(external_exports.object({
+      form: external_exports.string(),
+      fields: external_exports.record(external_exports.string(), external_exports.unknown()),
+      ts: external_exports.string().datetime()
+    })),
     console_logs: external_exports.array(external_exports.unknown()),
     network_requests: external_exports.array(external_exports.object({
       method: external_exports.string(),
@@ -6113,10 +6223,10 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.5.0",
+    version: "1.6.0",
     private: false,
     type: "module",
     license: "AGPL-3.0-only",
@@ -6147,12 +6257,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.5.0",
-      "@debugbundle/redaction": "1.5.0"
+      "@debugbundle/shared-types": "1.6.0",
+      "@debugbundle/redaction": "1.6.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6176,7 +6286,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6477,9 +6587,10 @@
         body: buildBrowserTransportRequestBody(request.transportMode, request.events)
       });
       const retryAfterMs = parseRetryAfter((_b = (_a = response.headers) == null ? void 0 : _a.get("Retry-After")) != null ? _b : null);
+      const body = typeof response.json === "function" ? await response.json().catch(() => void 0) : void 0;
       return {
         status: response.status,
-        body: typeof response.json === "function" ? await response.json() : void 0,
+        ...body === void 0 ? {} : { body },
         ...retryAfterMs === void 0 ? {} : { retry_after_ms: retryAfterMs }
       };
     };
@@ -6895,7 +7006,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -6950,7 +7061,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -6993,7 +7104,7 @@
     "country_code",
     "region_code"
   ]);
-  async function resolveStandardAnalyticsVisitor(projectToken) {
+  async function resolveStandardAnalyticsVisitor(projectToken, onStorageKeyResolved) {
     const projectScopeHash = await hashAnalyticsValue(projectToken);
     if (projectScopeHash === null) {
       return null;
@@ -7003,6 +7114,7 @@
     if (visitorId === null) {
       return null;
     }
+    onStorageKeyResolved == null ? void 0 : onStorageKeyResolved(storageKey);
     const visitorIdHash = await hashAnalyticsValue(`${projectScopeHash}:${visitorId}`);
     return visitorIdHash === null ? null : { storageKey, visitorIdHash };
   }
@@ -7223,7 +7335,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -7555,7 +7667,12 @@
       }
       active.visitorInitializationPending = true;
       try {
-        const visitor = await resolveStandardAnalyticsVisitor(projectToken);
+        const visitor = await resolveStandardAnalyticsVisitor(projectToken, (storageKey) => {
+          active.visitorStorageKey = storageKey;
+          if (this.active !== active || active.privacyMode !== "standard" || !active.consentGranted) {
+            removeStoredAnalyticsVisitor(storageKey);
+          }
+        });
         if (visitor === null) {
           return;
         }
@@ -7623,7 +7740,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -7646,7 +7763,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -7793,7 +7910,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8343,7 +8460,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8429,7 +8546,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -8814,7 +8931,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -8919,7 +9036,52 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
+    "rate_limited",
+    "monthly_quota_exceeded",
+    "analytics_quota_exceeded"
+  ]);
+  function decideBrowserAcknowledgement(body, batchLength) {
+    if (!hasAcknowledgementFields(body)) {
+      return { kind: "legacy" };
+    }
+    const acknowledgement = body;
+    if (!isCount(acknowledgement.accepted) || !isCount(acknowledgement.rejected) || !Array.isArray(acknowledgement.errors) || acknowledgement.accepted + acknowledgement.rejected !== batchLength || acknowledgement.errors.length !== acknowledgement.rejected) {
+      return { kind: "protocol_failure", reason: "inconsistent_counts" };
+    }
+    const seen = /* @__PURE__ */ new Set();
+    const retryableIndices = [];
+    const terminalErrors = [];
+    for (const error of acknowledgement.errors) {
+      if (!error || typeof error !== "object" || !Number.isInteger(error.index) || error.index < 0 || error.index >= batchLength || typeof error.reason !== "string" || error.reason.length === 0 || seen.has(error.index)) {
+        return { kind: "protocol_failure", reason: "invalid_error_index" };
+      }
+      seen.add(error.index);
+      if (RETRYABLE_REASONS.has(error.reason)) {
+        retryableIndices.push(error.index);
+      } else {
+        terminalErrors.push({ index: error.index, reason: error.reason });
+      }
+    }
+    return {
+      kind: "acknowledged",
+      accepted: acknowledgement.accepted,
+      retryableIndices,
+      terminalErrors
+    };
+  }
+  function hasAcknowledgementFields(body) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return false;
+    }
+    return "accepted" in body || "rejected" in body || "errors" in body;
+  }
+  function isCount(value) {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
@@ -9022,13 +9184,7 @@
             timeout_ms: config2.requestTimeoutMs
           });
           if (response.status >= 200 && response.status < 300) {
-            if (laneName === "debug") {
-              this.callbacks.onDebugResponse(response.body);
-            }
-            lane.nextRetryAt = null;
-            lane.lastEventAt = Date.now();
-            lane.consecutiveFailures = 0;
-            removeLeadingEvents(lane, events);
+            this.reconcileSuccessfulResponse(laneName, lane, events, response.body, response.retry_after_ms);
             return;
           }
           lane.consecutiveFailures += 1;
@@ -9087,9 +9243,10 @@
           keepalive: true
         }).then((response) => {
           if (response.status >= 200 && response.status < 300) {
-            removeLeadingEvents(lane, pendingEvents);
-            lane.nextRetryAt = null;
-            this.clearLaneTimer(lane);
+            void readResponseBody(response).then((responseBody) => {
+              this.reconcileSuccessfulResponse(laneName, lane, pendingEvents, responseBody, void 0);
+              this.clearLaneTimer(lane);
+            });
           }
         }).catch(() => void 0);
       };
@@ -9109,6 +9266,41 @@
     getLane(name) {
       return name === "debug" ? this.debug : this.analytics;
     }
+    reconcileSuccessfulResponse(laneName, lane, events, body, retryAfterMs) {
+      const acknowledgement = decideBrowserAcknowledgement(body, events.length);
+      if (acknowledgement.kind === "protocol_failure") {
+        lane.consecutiveFailures += 1;
+        lane.nextRetryAt = Date.now() + (retryAfterMs != null ? retryAfterMs : 1e3);
+        this.callbacks.onAcknowledgementDiagnostic(laneName, "invalid", acknowledgement.reason);
+        return;
+      }
+      if (laneName === "debug") {
+        this.callbacks.onDebugResponse(body);
+      }
+      if (acknowledgement.kind === "legacy") {
+        reconcileLeadingEvents(lane, events, []);
+        lane.nextRetryAt = null;
+        lane.lastEventAt = Date.now();
+        lane.consecutiveFailures = 0;
+        return;
+      }
+      const retryableEvents = acknowledgement.retryableIndices.map((index) => events[index]).filter((event) => event !== void 0);
+      reconcileLeadingEvents(lane, events, retryableEvents);
+      if (acknowledgement.terminalErrors.length > 0) {
+        const reasons = [...new Set(acknowledgement.terminalErrors.map((error) => error.reason))].join(",");
+        this.callbacks.onAcknowledgementDiagnostic(laneName, "terminal_rejection", reasons);
+      }
+      if (acknowledgement.accepted > 0) {
+        lane.lastEventAt = Date.now();
+      }
+      if (retryableEvents.length > 0) {
+        lane.consecutiveFailures += 1;
+        lane.nextRetryAt = Date.now() + (retryAfterMs != null ? retryAfterMs : 1e3);
+        return;
+      }
+      lane.nextRetryAt = null;
+      lane.consecutiveFailures = acknowledgement.accepted > 0 ? 0 : 3;
+    }
     clearLaneTimer(lane) {
       if (lane.timer !== null) {
         clearTimeout(lane.timer);
@@ -9116,13 +9308,19 @@
       }
     }
   };
-  function removeLeadingEvents(lane, events) {
+  function reconcileLeadingEvents(lane, events, retainedEvents) {
     if (lane.events.length >= events.length && events.every((event, index) => {
       var _a;
       return ((_a = lane.events[index]) == null ? void 0 : _a.event_id) === event.event_id;
     })) {
-      lane.events.splice(0, events.length);
+      lane.events.splice(0, events.length, ...retainedEvents);
     }
+  }
+  async function readResponseBody(response) {
+    if (typeof response.json !== "function") {
+      return void 0;
+    }
+    return response.json().catch(() => void 0);
   }
   function getTransportHeaders(config2) {
     return config2.projectToken === null ? { "content-type": "application/json" } : {
@@ -9131,7 +9329,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -9220,7 +9418,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -9404,7 +9602,7 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.5.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.6.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -9422,6 +9620,7 @@
       __publicField(this, "originalConsoleWarn", null);
       __publicField(this, "sessionSampledIn", true);
       __publicField(this, "sessionEventCount", 0);
+      __publicField(this, "reportedAcknowledgementDiagnostics", /* @__PURE__ */ new Set());
       __publicField(this, "suppressionTracker", new EventSuppressionTracker());
       __publicField(this, "probeController", new BrowserProbeController({
         getConfig: () => this.config,
@@ -9434,6 +9633,9 @@
         onDebugResponse: (payload) => this.probeController.updateFromIngestionResponse(payload),
         onUnauthorized: (lane, statusCode, endpoint, body) => {
           this.reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body);
+        },
+        onAcknowledgementDiagnostic: (lane, code, detail) => {
+          this.reportAcknowledgementDiagnostic(lane, code, detail);
         }
       }));
       __publicField(this, "analyticsController", new BrowserAnalyticsController({
@@ -9670,6 +9872,7 @@
       this.config = null;
       this.sessionSampledIn = true;
       this.sessionEventCount = 0;
+      this.reportedAcknowledgementDiagnostics.clear();
       this.suppressionTracker.reset();
       this.probeController.reset();
       this.analyticsController.reset();
@@ -9719,6 +9922,17 @@
         return;
       }
       (_a = consoleSource.warn) == null ? void 0 : _a.call(consoleSource, message);
+    }
+    reportAcknowledgementDiagnostic(lane, code, detail) {
+      var _a;
+      const key = `${lane}:${code}:${detail}`;
+      if (this.reportedAcknowledgementDiagnostics.has(key)) {
+        return;
+      }
+      this.reportedAcknowledgementDiagnostics.add(key);
+      const consoleSource = getConsoleSource();
+      const laneLabel = lane === "debug" ? "browser SDK" : "browser analytics";
+      (_a = consoleSource == null ? void 0 : consoleSource.warn) == null ? void 0 : _a.call(consoleSource, code === "invalid" ? `DebugBundle ${laneLabel} retained events after an invalid ingestion acknowledgement (${detail}).` : `DebugBundle ${laneLabel} removed terminally rejected events (${detail}).`);
     }
     installBrowserHooks() {
       const windowSource = getWindowSource();

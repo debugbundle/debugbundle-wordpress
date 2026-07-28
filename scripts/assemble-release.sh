@@ -66,6 +66,22 @@ composer install \
   --no-progress \
   --prefer-dist
 
+if [ -n "${DEBUGBUNDLE_PHP_SDK_SOURCE:-}" ]; then
+  if [ ! -r "$DEBUGBUNDLE_PHP_SDK_SOURCE/composer.json" ] ||
+    ! grep -Eq '"name":[[:space:]]*"debugbundle/sdk-php"' "$DEBUGBUNDLE_PHP_SDK_SOURCE/composer.json"; then
+    echo "DEBUGBUNDLE_PHP_SDK_SOURCE must point to a debugbundle/sdk-php checkout" >&2
+    exit 1
+  fi
+  rm -rf .dist/debugbundle/vendor/debugbundle/sdk-php/src
+  cp -R "$DEBUGBUNDLE_PHP_SDK_SOURCE/src" .dist/debugbundle/vendor/debugbundle/sdk-php/
+fi
+
+if [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/BeforeSend.php ] ||
+  ! grep -q 'beforeSend' .dist/debugbundle/vendor/debugbundle/sdk-php/src/DebugBundleSdk.php; then
+  echo "The locked PHP SDK does not provide the WordPress beforeSend contract. Publish and lock the coordinated PHP SDK release before publishing this plugin." >&2
+  exit 1
+fi
+
 find .dist/debugbundle/vendor -type d \( -name tests -o -name test -o -name examples -o -name smoke -o -name scripts -o -name .github \) -prune -exec rm -rf {} +
 find .dist/debugbundle/vendor -type f \( -name Makefile -o -name phpunit.xml.dist -o -name phpstan.neon -o -name coverage.xml -o -name composer.phar -o -name composer-setup.php \) -delete
 

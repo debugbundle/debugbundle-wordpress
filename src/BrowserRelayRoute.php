@@ -113,13 +113,7 @@ final class BrowserRelayRoute
             $spoolFile = $this->spool->write($acceptedEvents);
             if ($spoolFile !== null) {
                 $result = $this->forwarder->forward($acceptedEvents);
-                if ($result->success) {
-                    $this->spool->delete($spoolFile);
-                } elseif (!$result->drop) {
-                    $this->scheduleFlush();
-                } else {
-                    $this->spool->delete($spoolFile);
-                }
+                $this->reconcileSpoolFile($spoolFile, $result);
             }
         }
 
@@ -143,10 +137,32 @@ final class BrowserRelayRoute
             }
 
             $result = $this->forwarder->forward($events);
-            if ($result->success || $result->drop) {
-                $this->spool->delete($filePath);
-            }
+            $this->reconcileSpoolFile($filePath, $result);
         }
+    }
+
+    private function reconcileSpoolFile(string $filePath, RelayForwardResult $result): void
+    {
+        if ($result->success || $result->drop) {
+            $this->spool->delete($filePath);
+            return;
+        }
+
+        if ($result->retryEvents === null) {
+            $this->scheduleFlush();
+            return;
+        }
+
+        if ($result->retryEvents === []) {
+            $this->spool->delete($filePath);
+            return;
+        }
+
+        $replacement = $this->spool->write($result->retryEvents);
+        if ($replacement !== null) {
+            $this->spool->delete($filePath);
+        }
+        $this->scheduleFlush();
     }
 
     /** @return list<string> */
