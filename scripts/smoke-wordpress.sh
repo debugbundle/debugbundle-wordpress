@@ -10,15 +10,15 @@ WP_URL="http://127.0.0.1:18080"
 RELAY_URL="$WP_URL/?rest_route=/debugbundle/v1/browser"
 MOCK_EVENTS_FILE="$REPO_DIR/.smoke/ingestion-events.ndjson"
 PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
-PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-"$REPO_DIR/../debugbundle-php"}
-VERSION=${VERSION:-1.4.0}
+PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-}
+VERSION=${VERSION:-1.4.1}
 
 compose() {
   docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
 prepare_plugin() {
-  if [ ! -r "$PHP_SDK_DIR/composer.json" ]; then
+  if [ -n "$PHP_SDK_DIR" ] && [ ! -r "$PHP_SDK_DIR/composer.json" ]; then
     echo "The coordinated PHP SDK checkout is required at $PHP_SDK_DIR" >&2
     exit 1
   fi
@@ -31,13 +31,21 @@ prepare_plugin() {
       sh -lc "corepack enable && corepack pnpm install --frozen-lockfile=false && corepack pnpm build"
   fi
 
-  docker run --rm -t \
-    -v "$REPO_DIR:/workspace" \
-    -v "$PHP_SDK_DIR:/sdk-php:ro" \
-    -w /workspace \
-    -e DEBUGBUNDLE_PHP_SDK_SOURCE=/sdk-php \
-    composer:2 \
-    ./scripts/assemble-release.sh "$VERSION"
+  if [ -n "$PHP_SDK_DIR" ]; then
+    docker run --rm -t \
+      -v "$REPO_DIR:/workspace" \
+      -v "$PHP_SDK_DIR:/sdk-php:ro" \
+      -w /workspace \
+      -e DEBUGBUNDLE_PHP_SDK_SOURCE=/sdk-php \
+      composer:2 \
+      ./scripts/assemble-release.sh "$VERSION"
+  else
+    docker run --rm -t \
+      -v "$REPO_DIR:/workspace" \
+      -w /workspace \
+      composer:2 \
+      ./scripts/assemble-release.sh "$VERSION"
+  fi
 
   mkdir -p "$PLUGIN_STAGE_DIR"
   docker run --rm -t \
@@ -75,6 +83,12 @@ compose run --rm wpcli wp core install \
   --admin_password="password" \
   --admin_email="admin@example.com" \
   --skip-email
+
+wordpress_version=$(compose run --rm wpcli wp core version --allow-root)
+if [ "$wordpress_version" != "7.1" ]; then
+  echo "Expected WordPress 7.1 in the compatibility smoke, got $wordpress_version" >&2
+  exit 1
+fi
 
 compose run --rm wpcli wp plugin activate debugbundle --allow-root
 

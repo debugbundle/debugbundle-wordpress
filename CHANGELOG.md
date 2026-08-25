@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-25
+
+### Changed
+
+- Confirmed compatibility with WordPress 7.1 and updated the WordPress.org `Tested up to` declaration.
+- Pinned the packaged-plugin smoke environment to WordPress 7.1.0 and made local smoke use the locked published PHP SDK by default, so the compatibility claim is exercised against the same dependency set shipped in the ZIP.
+
 ## [1.4.0] - 2026-07-28
 
 ### Added

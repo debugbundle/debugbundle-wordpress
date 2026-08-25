@@ -2,8 +2,8 @@
 Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
-Tested up to: 7.0
-Stable tag: 1.4.0
+Tested up to: 7.1
+Stable tag: 1.4.1
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -101,6 +101,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 1.4.1 =
+
+* Confirm compatibility with WordPress 7.1 and pin the packaged-plugin smoke test to WordPress 7.1.0.
 
 = 1.4.0 =
 

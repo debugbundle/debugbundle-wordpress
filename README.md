@@ -3,14 +3,14 @@
 WordPress plugin for DebugBundle.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-1.4.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
 
 ## Requirements
 
-- WordPress 6.5 or newer
+- WordPress 6.5 or newer (tested through WordPress 7.1)
 - PHP 8.2 or newer
 
 ## Installation
@@ -99,12 +99,14 @@ make smoke-wordpress
 
 `make smoke-wordpress` boots WordPress, MariaDB, and a mock DebugBundle ingestion service in Docker. It activates the plugin, verifies disabled relay behavior, sends backend and frontend test events, proves server-side token forwarding, simulates an ingestion outage, and validates relay spool recovery.
 
+The local smoke uses the published PHP SDK version pinned in `composer.lock`. CI may additionally set `DEBUGBUNDLE_PHP_SDK_CHECKOUT` to exercise a coordinated PHP SDK checkout before that dependency is published.
+
 ## Packaging
 
 Build a local release ZIP:
 
 ```bash
-make release-artifact VERSION=1.4.0
+make release-artifact VERSION=1.4.1
 ```
 
 This writes `.dist/debugbundle-wordpress-<version>.zip` and a matching SHA-256 checksum. The packaged plugin directory inside the archive remains `debugbundle/` for WordPress compatibility.
