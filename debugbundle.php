@@ -25,7 +25,7 @@ if (!defined('DEBUGBUNDLE_WORDPRESS_VERSION')) {
 }
 
 if (!defined('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION')) {
-    define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '1.6.0');
+    define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '1.7.0');
 }
 
 $debugbundleAutoload = __DIR__ . '/vendor/autoload.php';

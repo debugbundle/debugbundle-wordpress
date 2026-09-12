@@ -29,3 +29,7 @@ update-php-sdk-lock:
 .PHONY: update-browser-sdk
 update-browser-sdk:
 	docker run --rm -v "$(CURDIR):/workspace" -w /workspace node:24-alpine sh -lc 'corepack enable && corepack pnpm install --no-frozen-lockfile && corepack pnpm build'
+
+.PHONY: verify-docker
+verify-docker:
+	docker run --rm -v "$(CURDIR):/app" -w /app --entrypoint sh composer:2 -lc 'composer install --no-interaction --prefer-dist && composer test && composer typecheck'
