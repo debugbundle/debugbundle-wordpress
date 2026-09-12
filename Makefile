@@ -21,3 +21,11 @@ release-artifact:
 
 wordpress-org-assets:
 	./scripts/generate-wordpress-org-assets.sh
+
+.PHONY: update-php-sdk-lock
+update-php-sdk-lock:
+	docker run --rm -v "$(CURDIR):/app" -w /app composer:2 update debugbundle/sdk-php --no-install --no-scripts --no-interaction
+
+.PHONY: update-browser-sdk
+update-browser-sdk:
+	docker run --rm -v "$(CURDIR):/workspace" -w /workspace node:24-alpine sh -lc 'corepack enable && corepack pnpm install --no-frozen-lockfile && corepack pnpm build'

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [1.4.2] - 2026-09-12
+
+- Refresh bundled DebugBundle SDK dependencies to Apache 2.0. The WordPress plugin retains GPL-2.0-or-later.
+
 ## [Unreleased]
 
 ## [1.4.1] - 2026-08-25

@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "479ef1ada1d9f76d9ee46dd1159d7236",
+    "content-hash": "e084225a53c42a0e2450fcf0ff484fcd",
     "packages": [
         {
             "name": "debugbundle/sdk-php",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/debugbundle/debugbundle-php.git",
-                "reference": "fc4cc6280fdbc256486ce2e0aa93b7f4361f64a4"
+                "reference": "fc274bb76d6e01ac26a0bfcb6cc3b530e6b99286"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/debugbundle/debugbundle-php/zipball/fc4cc6280fdbc256486ce2e0aa93b7f4361f64a4",
-                "reference": "fc4cc6280fdbc256486ce2e0aa93b7f4361f64a4",
+                "url": "https://api.github.com/repos/debugbundle/debugbundle-php/zipball/fc274bb76d6e01ac26a0bfcb6cc3b530e6b99286",
+                "reference": "fc274bb76d6e01ac26a0bfcb6cc3b530e6b99286",
                 "shasum": ""
             },
             "require": {
@@ -46,7 +46,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "AGPL-3.0-only"
+                "Apache-2.0"
             ],
             "description": "DebugBundle SDK for PHP",
             "homepage": "https://debugbundle.com/docs/sdks/php",
@@ -63,7 +63,7 @@
                 "issues": "https://github.com/debugbundle/debugbundle-php/issues",
                 "source": "https://github.com/debugbundle/debugbundle-php"
             },
-            "time": "2026-07-28T17:19:16+00:00"
+            "time": "2026-09-12T17:42:40+00:00"
         },
         {
             "name": "monolog/monolog",
