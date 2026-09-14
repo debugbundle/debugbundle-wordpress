@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.7.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@1.7.1/node_modules/@debugbundle/redaction/dist/index.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -4152,7 +4152,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/event-envelope.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4518,7 +4518,7 @@
     return EventEnvelopeSchema.parse(candidate);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4665,7 +4665,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -5039,7 +5039,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -5061,10 +5061,12 @@
     resource_url: CaptureRuleEvaluationUrlSchema.optional(),
     request_url: CaptureRuleEvaluationUrlSchema.optional(),
     status_code: external_exports.number().int().min(0).max(599).optional(),
-    fingerprint: CaptureRuleFingerprintSchema.optional()
+    fingerprint: CaptureRuleFingerprintSchema.optional(),
+    // Server-derived prior versions keep installed exact-match rules effective.
+    fingerprint_aliases: external_exports.array(CaptureRuleFingerprintSchema).max(2).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -5090,7 +5092,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -5113,7 +5115,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
   var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
   var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
@@ -5577,7 +5579,7 @@
     return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/analytics-product.js
   var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
   var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
   var AnalyticsOpportunityBundleStatusValues = [
@@ -5763,7 +5765,7 @@
     message: "At least one analytics settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
   var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
   var AnalyticsJourneySafeScalarSchema = external_exports.union([
     external_exports.string().max(256),
@@ -5857,7 +5859,7 @@
     journey: AnalyticsJourneySampleArtifactSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
   var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
   var AnalyticsSavedFunnelStepSchema = external_exports.object({
     step_key: AnalyticsSavedFunnelKeySchema,
@@ -5900,7 +5902,7 @@
     funnel: AnalyticsSavedFunnelSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -5923,7 +5925,7 @@
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.7.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@1.7.1/node_modules/@debugbundle/shared-types/dist/index.js
   var SeveritySchema = external_exports.enum(["low", "medium", "high", "critical"]);
   var BundleSdkSchema = external_exports.object({
     name: external_exports.string().min(1),
@@ -6223,10 +6225,25 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  function sanitizeBrowserStack(stack) {
+    return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
+      var _a, _b, _c, _d;
+      const suffix = (_d = (_c = (_a = source.match(/:\d+(?::\d+)?[),]*$/)) == null ? void 0 : _a[0]) != null ? _c : (_b = source.match(/[),]+$/)) == null ? void 0 : _b[0]) != null ? _d : "";
+      const location = suffix.length === 0 ? source : source.slice(0, -suffix.length);
+      try {
+        const parsed = new URL(location);
+        return `${parsed.origin}${parsed.pathname}${suffix}`;
+      } catch {
+        return `[unavailable-url]${suffix}`;
+      }
+    });
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.7.0",
+    version: "1.7.1",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -6257,12 +6274,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.7.0",
-      "@debugbundle/redaction": "1.7.0"
+      "@debugbundle/shared-types": "1.7.1",
+      "@debugbundle/redaction": "1.7.1"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6286,7 +6303,38 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  function readNativeField(value, key) {
+    try {
+      return value !== null && (typeof value === "object" || typeof value === "function") ? value[key] : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  function readNativeFields(value, keys) {
+    return Object.fromEntries(keys.map((key) => [key, readNativeField(value, key)]));
+  }
+  function hasErrorDetails(value) {
+    return typeof readNativeField(value, "message") === "string" || typeof readNativeField(value, "stack") === "string";
+  }
+  function readStructuralTarget(value) {
+    return readNativeFields(value, ["tagName", "id", "role", "type"]);
+  }
+  function countFormFields(target) {
+    const elements = readNativeField(target, "elements");
+    const length = readNativeField(elements, "length");
+    if (typeof length !== "number" || !Number.isFinite(length) || length < 0)
+      return 0;
+    let count = 0;
+    for (let index = 0; index < Math.min(Math.floor(length), 1e3); index += 1) {
+      const name = readNativeField(readNativeField(elements, String(index)), "name");
+      if (typeof name === "string" && name.length > 0)
+        count += 1;
+    }
+    return count;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6398,18 +6446,22 @@
     return Object.fromEntries(Object.entries(value));
   }
   function normalizeError(error) {
-    if (error instanceof Error) {
+    var _a, _b, _c;
+    if (hasErrorDetails(error)) {
+      const fields = readNativeFields(error, ["name", "message", "stack"]);
+      const name = (_a = getStringField(fields, "name")) != null ? _a : "Error";
+      const message = (_b = getStringField(fields, "message")) != null ? _b : "Unknown browser error";
       return {
-        name: error.name || "Error",
-        message: error.message || "Unknown browser error",
-        stack: error.stack || `${error.name || "Error"}: ${error.message || "Unknown browser error"}`
+        name,
+        message,
+        stack: sanitizeBrowserStack((_c = getStringField(fields, "stack")) != null ? _c : `${name}: ${message}`)
       };
     }
     if (typeof error === "string") {
       return {
         name: "Error",
         message: error,
-        stack: `Error: ${error}`
+        stack: sanitizeBrowserStack(`Error: ${error}`)
       };
     }
     return {
@@ -6500,7 +6552,7 @@
   }
   function normalizeBrowserErrorTarget(target) {
     var _a, _b, _c, _d;
-    const record = normalizeUnknownRecord(target);
+    const record = readNativeFields(target, ["tagName", "src", "href", "currentSrc", "rel", "as", "type", "media", "crossOrigin", "async", "defer", "integrity"]);
     const tagName = (_b = (_a = getStringField(record, "tagName")) == null ? void 0 : _a.toLowerCase()) != null ? _b : null;
     const sourceUrl = (_d = (_c = getStringField(record, "src")) != null ? _c : getStringField(record, "href")) != null ? _d : getStringField(record, "currentSrc");
     const attributes = normalizeBrowserErrorTargetAttributes(record);
@@ -6514,9 +6566,9 @@
     };
   }
   function normalizeBrowserErrorEvent(event) {
-    const record = normalizeUnknownRecord(event);
-    const target = normalizeBrowserErrorTarget(record["target"]);
-    const hasErrorObject = record["error"] instanceof Error;
+    const record = readNativeFields(event, ["message", "filename", "lineno", "colno"]);
+    const target = normalizeBrowserErrorTarget(readNativeField(event, "target"));
+    const hasErrorObject = hasErrorDetails(readNativeField(event, "error"));
     const kind = target !== null && target.source_url !== null ? "resource_error" : "window_error";
     return {
       kind,
@@ -7006,7 +7058,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -7061,7 +7113,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -7335,7 +7387,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -7740,7 +7792,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -7763,7 +7815,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -7782,44 +7834,51 @@
       immediateClientErrorPathRules: []
     };
   }
+  function rejectionFallback(message, name = "Error") {
+    const error = new Error(message);
+    error.name = name;
+    error.stack = `${name}: ${message}`;
+    return error;
+  }
   function normalizeUnhandledRejectionReason(reason) {
-    var _a;
-    if (reason instanceof Error) {
+    var _a, _b;
+    if (hasErrorDetails(reason) && typeof readNativeField(reason, "stack") === "string") {
+      const fields = readNativeFields(reason, ["name", "message"]);
       return {
         error: reason,
         rejectionReason: {
           kind: "error",
-          name: reason.name || "Error",
-          message: truncateRejectionReasonPreview(reason.message || "Unknown rejection error")
+          name: (_a = readReasonStringField(fields, "name")) != null ? _a : "Error",
+          message: truncateRejectionReasonPreview((_b = readReasonStringField(fields, "message")) != null ? _b : "Unknown rejection error")
         }
       };
     }
     if (typeof reason === "string") {
       const preview2 = truncateRejectionReasonPreview(reason.length > 0 ? reason : "[empty string]");
       return {
-        error: new Error(reason.length > 0 ? reason : "Unhandled promise rejection"),
+        error: rejectionFallback(reason.length > 0 ? reason : "Unhandled promise rejection"),
         rejectionReason: { kind: "string", preview: preview2 }
       };
     }
     if (reason === null) {
       return {
-        error: new Error("Unhandled promise rejection: null"),
+        error: rejectionFallback("Unhandled promise rejection: null"),
         rejectionReason: { kind: "null", preview: "null" }
       };
     }
     if (reason === void 0) {
       return {
-        error: new Error("Unhandled promise rejection: undefined"),
+        error: rejectionFallback("Unhandled promise rejection: undefined"),
         rejectionReason: { kind: "undefined", preview: "undefined" }
       };
     }
-    const record = normalizeUnknownRecord(reason);
+    const record = readNativeFields(reason, ["name", "message"]);
     const name = readReasonStringField(record, "name");
     const message = readReasonStringField(record, "message");
-    const constructorName = typeof reason === "object" && reason !== null && "constructor" in reason ? (_a = reason.constructor) == null ? void 0 : _a.name : void 0;
+    const constructorName = readNativeField(readNativeField(reason, "constructor"), "name");
     const preview = typeof constructorName === "string" && constructorName.length > 0 ? constructorName : "object";
     return {
-      error: new Error(message != null ? message : "Unhandled promise rejection"),
+      error: rejectionFallback(message != null ? message : "Unhandled promise rejection", name != null ? name : "Error"),
       rejectionReason: {
         kind: "object",
         ...name === void 0 ? {} : { name },
@@ -7910,7 +7969,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8460,7 +8519,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8546,7 +8605,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -8931,7 +8990,26 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  function captureNativeError(event, capture) {
+    var _a;
+    try {
+      const browserEvent = normalizeBrowserErrorEvent(event);
+      const fallback = browserEvent.kind === "resource_error" ? "Browser resource load error" : "Window error";
+      const error = readNativeField(event, "error");
+      capture(hasErrorDetails(error) || typeof error === "string" ? error : (_a = browserEvent.message) != null ? _a : fallback, { browser_event: browserEvent });
+    } catch {
+    }
+  }
+  function captureNativeRejection(event, capture) {
+    try {
+      const rejection = normalizeUnhandledRejectionReason(readNativeField(event, "reason"));
+      capture(rejection.error, { rejection_reason: rejection.rejectionReason });
+    } catch {
+    }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -9036,7 +9114,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -9081,7 +9159,7 @@
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
@@ -9329,7 +9407,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -9418,7 +9496,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -9602,7 +9680,7 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@1.7.1/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -9938,26 +10016,16 @@
       const windowSource = getWindowSource();
       if (windowSource !== null) {
         const onPageHide = (event) => {
-          if (normalizeUnknownRecord(event)["persisted"] !== true) {
+          if (readNativeField(event, "persisted") !== true) {
             this.analyticsController.captureSessionSummary();
           }
           this.flushViaBeacon();
         };
         const onError = (event) => {
-          var _a, _b;
-          const maybeError = normalizeUnknownRecord(event);
-          const browserEvent = normalizeBrowserErrorEvent(event);
-          const fallbackMessage = browserEvent.kind === "resource_error" ? "Browser resource load error" : "Window error";
-          this.captureException((_b = (_a = maybeError["error"]) != null ? _a : maybeError["message"]) != null ? _b : new Error(fallbackMessage), {
-            browser_event: browserEvent
-          });
+          captureNativeError(event, (error, context) => this.captureException(error, context));
         };
         const onUnhandledRejection = (event) => {
-          const maybeError = normalizeUnknownRecord(event);
-          const rejection = normalizeUnhandledRejectionReason(maybeError["reason"]);
-          this.captureException(rejection.error, {
-            rejection_reason: rejection.rejectionReason
-          });
+          captureNativeRejection(event, (error, context) => this.captureException(error, context));
         };
         windowSource.addEventListener("pagehide", onPageHide);
         windowSource.addEventListener("error", onError, true);
@@ -9976,8 +10044,8 @@
           if (!captureDebugClick && !captureAnalyticsAction && !captureAnalyticsFriction) {
             return;
           }
-          const targetIdentity = normalizeUnknownRecord(event)["target"];
-          const target = normalizeUnknownRecord(targetIdentity);
+          const targetIdentity = readNativeField(event, "target");
+          const target = readStructuralTarget(targetIdentity);
           if (captureDebugClick) {
             const selector = buildSelector(target);
             if (selector !== null) {
@@ -9999,10 +10067,10 @@
         };
         const onSubmit = (event) => {
           var _a;
-          const target = normalizeUnknownRecord(normalizeUnknownRecord(event)["target"]);
+          const targetIdentity = readNativeField(event, "target");
+          const target = readStructuralTarget(targetIdentity);
           const selector = (_a = buildSelector(target)) != null ? _a : "form";
-          const elements = Array.isArray(target["elements"]) ? target["elements"] : [];
-          const fieldCount = elements.map((entry) => normalizeUnknownRecord(entry)).filter((entry) => typeof entry["name"] === "string" && entry["name"].length > 0).length;
+          const fieldCount = countFormFields(targetIdentity);
           this.addBreadcrumb({
             ts: (/* @__PURE__ */ new Date()).toISOString(),
             breadcrumb_type: "form_submit",

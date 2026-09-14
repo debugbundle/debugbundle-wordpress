@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+## [1.4.3] - 2026-09-14
+
+### Fixed
+
+- Rebuild the embedded browser SDK from published `@debugbundle/sdk-browser@1.7.1` for native error/rejection capture, bounded structural breadcrumbs and safe stack URLs.
+- Preserve the existing PHP SDK, relay route and server-side credential boundary.
+
 ## [1.4.2] - 2026-09-12
 
 - Refresh bundled DebugBundle SDK dependencies to Apache 2.0. The WordPress plugin retains GPL-2.0-or-later.
-
-## [Unreleased]
 
 ## [1.4.1] - 2026-08-25
 

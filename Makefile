@@ -15,6 +15,10 @@ verify: test typecheck coverage
 smoke-wordpress:
 	./scripts/smoke-wordpress.sh
 
+.PHONY: smoke-wordpress-down
+smoke-wordpress-down:
+	docker compose -p debugbundle-wordpress-smoke -f docker-compose.smoke.yml down --volumes --remove-orphans
+
 release-artifact:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION is required" >&2; exit 1; fi
 	./scripts/assemble-release.sh $(VERSION)
