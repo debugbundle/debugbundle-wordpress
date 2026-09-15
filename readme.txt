@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -31,7 +31,7 @@ Useful for:
 
 What gets captured:
 
-- PHP errors, uncaught exceptions, fatal shutdown errors, request metadata, and logs at or above the configured level
+- PHP errors allowed by error_reporting(), uncaught exceptions, fatal shutdown errors, request metadata, and logs at or above the configured level
 - frontend browser exceptions from public pages
 - error-only browser breadcrumbs such as clicks, route changes, and first-party request failures
 - service, environment, WordPress, PHP, and SDK version context useful for debugging
@@ -101,6 +101,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 1.4.4 =
+* Respect PHP error_reporting() and @ suppression through bundled PHP SDK 1.4.1.
+* Align the bundled browser SDK at 1.7.2; preserve enabled errors, explicit capture and fatal shutdown handling.
 
 = 1.4.3 =
 * Update the bundled browser SDK to 1.7.1 to preserve native JavaScript errors, promise rejection reasons and structural breadcrumbs.

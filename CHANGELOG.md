@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-09-15
+
+### Fixed
+
+- Bundle PHP SDK 1.4.1 so warnings, notices and deprecations suppressed by `@` or `error_reporting()` do not produce events. Enabled errors, explicit capture and fatal shutdown handling remain available.
+- Align the embedded browser SDK with published 1.7.2; browser behavior and relay credentials are unchanged.
+
 ## [1.4.3] - 2026-09-14
 
 ### Fixed

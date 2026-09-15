@@ -37,3 +37,10 @@ update-browser-sdk:
 .PHONY: verify-docker
 verify-docker:
 	docker run --rm -v "$(CURDIR):/app" -w /app --entrypoint sh composer:2 -lc 'composer install --no-interaction --prefer-dist && composer test && composer typecheck'
+
+.PHONY: test-focused test-php-sdk
+test-focused:
+	docker run --rm -v "$(CURDIR):/app" -w /app composer:2 composer test -- $(TEST_ARGS)
+
+test-php-sdk:
+	docker run --rm -v "$(CURDIR):/app" -v "$(PHP_SDK_CHECKOUT):/app/vendor/debugbundle/sdk-php:ro" -w /app composer:2 composer test -- $(TEST_ARGS)
