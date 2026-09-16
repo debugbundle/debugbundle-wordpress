@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 1.4.4
+Stable tag: 1.4.5
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -101,6 +101,10 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 1.4.5 =
+* Update the bundled browser SDK to 1.8.0 for correct same-origin resource rules and preserved external resource hosts.
+* Existing captures remain compatible with Bundle v1.
 
 = 1.4.4 =
 * Respect PHP error_reporting() and @ suppression through bundled PHP SDK 1.4.1.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.5] - 2026-09-16
+
+### Fixed
+
+- Bundle browser SDK 1.8.0 for page-origin-aware resource rules and correct protocol-relative external targets. PHP capture and relay contracts are unchanged.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
