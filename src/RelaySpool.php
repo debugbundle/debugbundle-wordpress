@@ -34,6 +34,7 @@ final class RelaySpool
             return false;
         }
         if (is_dir($path)) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- The private runtime spool must fail closed unless POSIX 0700 permissions can be enforced; WP_Filesystem does not guarantee that mode or work without credentials.
             if (!@chmod($path, 0700)) {
                 return false;
             }
@@ -45,6 +46,7 @@ final class RelaySpool
             return false;
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- The private runtime spool must fail closed unless POSIX 0700 permissions can be enforced; WP_Filesystem does not guarantee that mode or work without credentials.
         if (!@chmod($path, 0700)) {
             return false;
         }
@@ -96,7 +98,9 @@ final class RelaySpool
             if (!$this->writePrivateFile($temporary, $replacement)) {
                 return null;
             }
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Same-filesystem rename provides the atomic replacement needed to prevent readers from observing partially rewritten retry data.
             if (!@rename($temporary, $filePath)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Remove only the private temporary file created above when atomic replacement fails.
                 @unlink($temporary);
                 return null;
             }
@@ -126,6 +130,7 @@ final class RelaySpool
                 }
             }
             // An unsafe or failed migration must never leave raw retry bytes under uploads.
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Legacy raw retry bytes must be removed immediately even when WP_Filesystem credentials are unavailable.
             if (!@unlink($oldFile)) {
                 Diagnostics::recordRelayError('relay_privacy_migration_failed');
             }
@@ -157,22 +162,28 @@ final class RelaySpool
 
     private function writePrivateFile(string $path, string $content): bool
     {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Exclusive binary creation is required to prevent overwriting or following an attacker-created spool entry.
         $handle = @fopen($path, 'xb');
         if ($handle === false) {
             return false;
         }
         try {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Retry payloads must fail closed unless POSIX 0600 permissions are applied before writing.
             if (!@chmod($path, 0600)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Remove only the just-created empty private file after permission hardening fails.
                 @unlink($path);
                 return false;
             }
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- The already-open exclusive handle preserves the create-and-harden sequence; WP_Filesystem cannot provide this invariant.
             $written = @fwrite($handle, $content);
             if ($written !== strlen($content) || !@fflush($handle)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Remove the incomplete private retry file so it can never be forwarded later.
                 @unlink($path);
                 return false;
             }
             return true;
         } finally {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Close the exclusive handle opened above on every success and failure path.
             fclose($handle);
         }
     }
