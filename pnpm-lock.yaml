@@ -9,22 +9,22 @@ importers:
   .:
     dependencies:
       '@debugbundle/sdk-browser':
-        specifier: 1.8.0
-        version: 1.8.0
+        specifier: 2.0.0
+        version: 2.0.0
       esbuild:
         specifier: ^0.25.5
         version: 0.25.12
 
 packages:
 
-  '@debugbundle/redaction@1.8.0':
-    resolution: {integrity: sha512-OOtNWHJZvycr7wdIa36IsvPD2AKusDg9Setl2LCqQus9kNUywDi+yJzw4EGuzc/aCHBf+0AYOekw2sOjoweERA==}
+  '@debugbundle/redaction@2.0.0':
+    resolution: {integrity: sha512-H6R0QuqsTHMSa0DWezn/A4X7cmM9NOq3KwwnsLMT8WCJcnh4UmrhNkQzGLeiUQgseS2uqpWFs4fKimepdms8eQ==}
 
-  '@debugbundle/sdk-browser@1.8.0':
-    resolution: {integrity: sha512-bY3Zq4k9hOEModo5jrQc2VymoXIgy+uocOMd9Smuj9Gh+3JZIwAojoeeKz7Ov8Gfux4rFVvir4K0ds8eWMq0xg==}
+  '@debugbundle/sdk-browser@2.0.0':
+    resolution: {integrity: sha512-PWlbsd0J79nN7X8mr5kzse2ssgXNHilenAe0RV/4LCZzPvTGJmNEFHZy6y+g4Imi+G86DTjcb+GpBe7Ci6OKrw==}
 
-  '@debugbundle/shared-types@1.8.0':
-    resolution: {integrity: sha512-6VEmeNp13cvX7trgQPTVV66Mv+qyp/tUfPoLimfIcD9HYeBPBA09c5bOHPTOsoZBI33ig5syTGvWBLIzvCi9kQ==}
+  '@debugbundle/shared-types@2.0.0':
+    resolution: {integrity: sha512-QMrN5r6Q/N+GyVyBlYSR00SSd1S3usp74FaBR4yI8Bef4gyVwGrgFYZLQ/ji/2abriN34DJ2cKMclWTCUygEDA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -192,14 +192,14 @@ packages:
 
 snapshots:
 
-  '@debugbundle/redaction@1.8.0': {}
+  '@debugbundle/redaction@2.0.0': {}
 
-  '@debugbundle/sdk-browser@1.8.0':
+  '@debugbundle/sdk-browser@2.0.0':
     dependencies:
-      '@debugbundle/redaction': 1.8.0
-      '@debugbundle/shared-types': 1.8.0
+      '@debugbundle/redaction': 2.0.0
+      '@debugbundle/shared-types': 2.0.0
 
-  '@debugbundle/shared-types@1.8.0':
+  '@debugbundle/shared-types@2.0.0':
     dependencies:
       zod: 3.25.76
 

@@ -362,3 +362,9 @@ if (!function_exists('register_setting')) {
 }
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Until the PHP SDK protection release is published, exercise this plugin against
+// its checked-out source implementation; production must install that SDK line.
+if (!class_exists(\DebugBundle\TelemetryPrivacy::class)) {
+    require dirname(__DIR__, 2) . '/debugbundle-php/src/TelemetryPrivacy.php';
+}

@@ -19,6 +19,7 @@ final class RelaySpoolTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->removeDirectory((new RelaySpool())->path());
         $this->removeDirectory($this->uploadBaseDir);
         unset($GLOBALS['debugbundle_wp_test_upload_basedir']);
     }
@@ -37,14 +38,34 @@ final class RelaySpoolTest extends TestCase
         self::assertStringContainsString('Require all denied', (string) file_get_contents($directory . '/.htaccess'));
     }
 
+    public function testPrivateSpoolRejectsAReplacedDirectorySymlink(): void
+    {
+        $spool = new RelaySpool();
+        $path = $spool->path();
+        mkdir($this->uploadBaseDir, 0700, true);
+        symlink($this->uploadBaseDir, $path);
+        try {
+            self::assertFalse($spool->ensureDirectory());
+            self::assertNull($spool->write([['event_id' => 'evt-symlink',
+                'service' => ['name' => 'wp', 'environment' => 'test'],
+                'payload' => ['message' => 'password=canary']]]));
+            self::assertSame(['.', '..'], scandir($this->uploadBaseDir));
+        } finally {
+            unlink($path);
+        }
+    }
+
     public function testWriteListStatsDeleteAndAgePruning(): void
     {
         $spool = new RelaySpool();
         self::assertSame([], $spool->files());
 
-        $written = $spool->write([['event_id' => 'evt-1']]);
+        $written = $spool->write([['event_id' => 'evt-1',
+            'service' => ['name' => 'wp', 'environment' => 'test'],
+            'payload' => ['message' => 'password=raw-canary-secret']]]);
         self::assertIsString($written);
         self::assertFileExists($written);
+        self::assertStringNotContainsString('raw-canary-secret', (string) file_get_contents($written));
         self::assertSame(1, $spool->stats()['count']);
         self::assertGreaterThan(0, $spool->stats()['size']);
 
@@ -53,9 +74,49 @@ final class RelaySpoolTest extends TestCase
         self::assertFileDoesNotExist($written);
 
         $outside = $this->uploadBaseDir . '/outside.events.json';
+        mkdir($this->uploadBaseDir, 0700, true);
         file_put_contents($outside, '{}');
         $spool->delete(sys_get_temp_dir() . '/not-in-spool.events.json');
         self::assertFileExists($outside);
+    }
+
+    public function testDeleteCannotEscapeThroughASpoolPathPrefix(): void
+    {
+        $spool = new RelaySpool();
+        $outside = $spool->path() . '-unrelated.events.json';
+        file_put_contents($outside, '{}');
+        try {
+            $spool->delete($outside);
+            self::assertFileExists($outside);
+        } finally {
+            unlink($outside);
+        }
+    }
+
+    public function testLegacyUploadsAreDrainedInBoundedBatches(): void
+    {
+        $legacy = $this->uploadBaseDir . '/debugbundle-spool';
+        mkdir($legacy, 0700, true);
+        for ($index = 0; $index < 26; $index++) {
+            file_put_contents($legacy . sprintf('/%03d.events.json', $index), json_encode([
+                'events' => [['event_id' => 'evt-' . $index,
+                    'service' => ['name' => 'wp', 'environment' => 'test'],
+                    'payload' => ['message' => 'password=raw-legacy-canary'],
+                ]],
+            ], JSON_THROW_ON_ERROR));
+        }
+
+        $spool = new RelaySpool();
+        $spool->migrateLegacy();
+
+        self::assertCount(1, glob($legacy . '/*.events.json'));
+        self::assertCount(25, $spool->files());
+        $spool->migrateLegacy();
+        self::assertSame([], glob($legacy . '/*.events.json'));
+        self::assertCount(26, $spool->files());
+        foreach ($spool->files() as $file) {
+            self::assertStringNotContainsString('raw-legacy-canary', (string) file_get_contents($file));
+        }
     }
 
     private function removeDirectory(string $path): void

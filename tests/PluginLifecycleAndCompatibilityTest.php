@@ -44,6 +44,7 @@ final class PluginLifecycleAndCompatibilityTest extends TestCase
     protected function tearDown(): void
     {
         $this->resetPluginSingleton();
+        $this->removeDirectory((new \DebugBundleWp\RelaySpool())->path());
         unset(
             $GLOBALS['debugbundle_wp_test_upload_basedir'],
             $GLOBALS['debugbundle_wp_test_wordpress_version'],
@@ -79,7 +80,8 @@ final class PluginLifecycleAndCompatibilityTest extends TestCase
         $instance = (new \ReflectionClass(Plugin::class))->getStaticPropertyValue('instance');
         self::assertInstanceOf(Plugin::class, $instance);
         $instance->activate();
-        self::assertDirectoryExists($this->uploadBaseDir . '/debugbundle-spool');
+        self::assertDirectoryExists((new \DebugBundleWp\RelaySpool())->path());
+        self::assertStringNotContainsString($this->uploadBaseDir, (new \DebugBundleWp\RelaySpool())->path());
 
         $instance->onPluginsLoaded();
         self::assertNotEmpty($GLOBALS['debugbundle_wp_test_actions']['admin_menu'][10] ?? []);

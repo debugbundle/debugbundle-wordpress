@@ -170,7 +170,7 @@ final class AdminTestEvents
 
             return new AdminTestResult(true, 'Frontend relay test event sent to DebugBundle for service ' . $this->settings->getBrowserService() . '.');
         } catch (\Throwable $throwable) {
-            Diagnostics::recordRelayError($throwable->getMessage());
+            Diagnostics::recordRelayError('frontend_relay_test_failed');
             return new AdminTestResult(false, 'Frontend relay test event failed: ' . $this->safeErrorMessage($throwable));
         }
     }
@@ -318,7 +318,7 @@ final class AdminTestEvents
 
     private function safeErrorMessage(\Throwable $throwable): string
     {
-        return substr($throwable->getMessage(), 0, 300);
+        return $throwable instanceof \InvalidArgumentException ? 'invalid_test_input' : 'test_event_failed';
     }
 
     private function uuidV4(): string

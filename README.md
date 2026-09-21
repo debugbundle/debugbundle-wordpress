@@ -3,7 +3,7 @@
 WordPress plugin for DebugBundle.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-1.4.5-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
@@ -75,6 +75,14 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 - Captured data is operational incident and request telemetry used for debugging.
 - Site owners should review their DebugBundle configuration and privacy disclosures before enabling production capture.
 
+### Privacy protection and upgrade preparation
+
+Version 1.5.0 protects PHP and browser relay events before forwarding and before writing retry files. It moves the retry spool from public uploads into a private temporary directory with restrictive file permissions and ships the protected PHP 1.5 and Browser 2.0 SDK lines. An installed older plugin remains on its previous capture behavior until upgraded.
+
+An upgrade does not erase old retry files automatically at install time. Activation and scheduled flushes sanitize and move at most 25 old files per run. Before returning an upgraded site to public traffic, an operator should restrict HTTP access to the old `wp-content/uploads/debugbundle-spool/` path at the web server (including nginx, where `.htaccess` has no effect), keep PHP's temporary directory outside the document root, and repeatedly invoke the plugin's flush hook until no `*.events.json` files remain in the old uploads directory. Verify the new private spool contains no synthetic credential canary, then restore traffic. If a file cannot be removed, keep the old uploads path blocked and investigate it without printing its contents. Already-sent data, backups, and old AI conversations require separate retention and credential-response decisions.
+
+The release gate pins the published PHP and browser packages, rebuilds the locally served browser asset, and exercises backend capture, browser relay, outage/retry, and old-spool migration with synthetic canaries. An installed ZIP check remains the final acceptance for the packaged plugin.
+
 ## Local Development
 
 Install PHP dependencies:
@@ -108,7 +116,7 @@ The local smoke uses the published PHP SDK version pinned in `composer.lock`. CI
 Build a local release ZIP:
 
 ```bash
-make release-artifact VERSION=1.4.5
+make release-artifact VERSION=1.5.0
 ```
 
 This writes `.dist/debugbundle-wordpress-<version>.zip` and a matching SHA-256 checksum. The packaged plugin directory inside the archive remains `debugbundle/` for WordPress compatibility.

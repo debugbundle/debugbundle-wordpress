@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@1.8.0/node_modules/@debugbundle/redaction/dist/index.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/keys.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -34,22 +34,10 @@
     "verification_code"
   ];
   function canonicalizeSensitiveKey(value) {
-    return value.replace(/[^a-z0-9]+/g, "");
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
   }
   function splitKeyIntoSegments(key) {
     return key.trim().replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase().split(/[^a-z0-9]+/).filter((segment) => segment.length > 0);
-  }
-  function buildKeyCandidates(key) {
-    const segments = splitKeyIntoSegments(key);
-    const candidates = /* @__PURE__ */ new Set();
-    for (let start = 0; start < segments.length; start += 1) {
-      let combined = "";
-      for (let end = start; end < segments.length; end += 1) {
-        combined += segments[end];
-        candidates.add(combined);
-      }
-    }
-    return [...candidates];
   }
   function isSensitiveKey(key, sensitiveKeys) {
     const normalized = key.trim().toLowerCase();
@@ -57,49 +45,248 @@
       return true;
     }
     const canonicalSensitiveKeys = new Set(sensitiveKeys.map(canonicalizeSensitiveKey));
-    const candidates = buildKeyCandidates(key);
-    return candidates.some((candidate) => canonicalSensitiveKeys.has(candidate));
-  }
-  function redactInternal(value, path, sensitiveKeys, replacement, touchedPaths, seen) {
-    if (Array.isArray(value)) {
-      if (seen.has(value)) {
-        return "[Circular]";
+    const segments = splitKeyIntoSegments(key);
+    for (let start = 0; start < segments.length; start += 1) {
+      let combined = "";
+      for (let end = start; end < segments.length; end += 1) {
+        combined += segments[end];
+        if (canonicalSensitiveKeys.has(combined)) {
+          return true;
+        }
       }
-      seen.add(value);
-      const redactedArray = value.map((entry, index) => redactInternal(entry, path.length === 0 ? `[${index}]` : `${path}[${index}]`, sensitiveKeys, replacement, touchedPaths, seen));
-      seen.delete(value);
-      return redactedArray;
     }
-    if (value === null || typeof value !== "object") {
+    return false;
+  }
+
+  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/telemetry-text.js
+  var REDACTED = "[REDACTED]";
+  var BUILTIN_LABELS = [
+    ...DEFAULT_SENSITIVE_KEYS,
+    "client_secret",
+    "x_api_key",
+    "accessToken",
+    "refreshToken",
+    "privateKey",
+    "clientSecret"
+  ];
+  var ASSIGNMENT = new RegExp(`\\b(${BUILTIN_LABELS.join("|")})\\b(["']?\\s*[:=]\\s*)(?:"[^"]*"|'[^']*'|[^\\s&,;]+)`, "gi");
+  var HEADER = /\b(Authorization|Proxy-Authorization|Cookie|Set-Cookie)\s*:\s*[^\r\n]*/gi;
+  var PEM = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/gi;
+  var PEM_COMPLETE = new RegExp(PEM.source, "i");
+  var PEM_START = /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
+  var DEBUGBUNDLE_TOKEN = /\bdbundle_(?:proj|mem|probe|agent)_[A-Za-z0-9_-]+\b/g;
+  var BEARER = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]{6,}/gi;
+  var URL_TEXT = /\bhttps?:\/\/[^\s<>"']+/gi;
+  var CARD = /(?<![A-Za-z0-9_-])(?:\d[ -]?){12,18}\d(?![A-Za-z0-9_-])/g;
+  function isValidCard(value) {
+    const digits = value.replace(/[^0-9]/g, "");
+    if (digits.length < 13 || digits.length > 19 || /^(\d)\1+$/.test(digits)) {
+      return false;
+    }
+    let sum = 0;
+    for (let index = digits.length - 1; index >= 0; index -= 1) {
+      let digit = Number(digits[index]);
+      if ((digits.length - index) % 2 === 0) {
+        digit *= 2;
+        if (digit > 9)
+          digit -= 9;
+      }
+      sum += digit;
+    }
+    return sum % 10 === 0;
+  }
+  function scrubUrl(raw, keys) {
+    try {
+      const url = new URL(raw);
+      if (url.username || url.password) {
+        url.username = "REDACTED";
+        url.password = "";
+      }
+      const nextQuery = new URLSearchParams();
+      for (const [key, value] of url.searchParams) {
+        if (key.length > 128 || scrubCredentialText(key, keys, false) !== key)
+          continue;
+        nextQuery.append(key, isSensitiveKey(key, keys) || scrubCredentialText(value, keys, false) !== value ? REDACTED : value);
+      }
+      url.search = nextQuery.toString();
+      url.hash = "";
+      return url.toString();
+    } catch {
+      return REDACTED;
+    }
+  }
+  function scrubCredentialText(input, additionalKeys, scanUrls = true) {
+    const keys = [...DEFAULT_SENSITIVE_KEYS, ...additionalKeys];
+    if (PEM_START.test(input) && !PEM_COMPLETE.test(input))
+      return REDACTED;
+    let output = input;
+    if (/(?:password|token|secret|authorization|cookie)%3[ad]/i.test(output)) {
+      try {
+        output = decodeURIComponent(output);
+      } catch {
+        return REDACTED;
+      }
+    }
+    output = output.replace(PEM, REDACTED).replace(HEADER, "$1: [REDACTED]");
+    output = output.replace(BEARER, "$1 [REDACTED]").replace(DEBUGBUNDLE_TOKEN, REDACTED);
+    output = output.replace(ASSIGNMENT, "$1$2[REDACTED]");
+    if (additionalKeys.length > 0) {
+      for (const key of additionalKeys) {
+        const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const named = new RegExp(`\\b(${escaped})\\b(["']?\\s*[:=]\\s*)(?:"[^"]*"|'[^']*'|[^\\s&,;]+)`, "gi");
+        output = output.replace(named, "$1$2[REDACTED]");
+      }
+    }
+    output = output.replace(CARD, (candidate) => isValidCard(candidate) ? REDACTED : candidate);
+    if (!scanUrls)
+      return output;
+    return output.replace(URL_TEXT, (matched) => {
+      var _a, _b;
+      const trailing = (_b = (_a = matched.match(/[).,;]+$/)) == null ? void 0 : _a[0]) != null ? _b : "";
+      return scrubUrl(matched.slice(0, matched.length - trailing.length), keys) + trailing;
+    });
+  }
+
+  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/telemetry.js
+  var REDACTED2 = "[REDACTED]";
+  var MAX_DEPTH = 16;
+  var MAX_NODES = 4096;
+  var MAX_ENTRIES = 256;
+  var MAX_STRING_BYTES = 16 * 1024;
+  var MAX_TOTAL_BYTES = 256 * 1024;
+  var BudgetExceeded = class extends Error {
+  };
+  function byteLength(value) {
+    return new TextEncoder().encode(value).length;
+  }
+  function mask(state) {
+    state.redactionCount += 1;
+    return REDACTED2;
+  }
+  function sanitizeString(value, state, allowStructured) {
+    if (value.length > MAX_STRING_BYTES)
+      return mask(state);
+    const length = byteLength(value);
+    if (length > MAX_STRING_BYTES)
+      return mask(state);
+    state.textBytes += length;
+    if (state.textBytes > state.maxTotalBytes)
+      throw new BudgetExceeded();
+    if (allowStructured && (value.startsWith("{") || value.startsWith("["))) {
+      try {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === "object" && parsed !== null) {
+          const nested = sanitizeValue(parsed, state, 0, false);
+          const encoded = JSON.stringify(nested);
+          if (encoded !== value)
+            state.redactionCount += 1;
+          return encoded;
+        }
+      } catch (error) {
+        if (error instanceof BudgetExceeded)
+          throw error;
+      }
+    }
+    const result = scrubCredentialText(value, state.extra);
+    if (result !== value)
+      state.redactionCount += 1;
+    if ((value.startsWith("{") || value.startsWith("[")) && result === value && /(?:password|token|secret|authorization|cookie)["']?\s*[:=]/i.test(value)) {
+      return mask(state);
+    }
+    return result;
+  }
+  function sanitizeValue(value, state, depth, allowStructured) {
+    state.nodes += 1;
+    if (state.nodes > MAX_NODES)
+      throw new BudgetExceeded();
+    if (depth > MAX_DEPTH)
+      return mask(state);
+    if (typeof value === "string")
+      return sanitizeString(value, state, allowStructured);
+    if (value === null || typeof value === "boolean")
       return value;
-    }
-    if (seen.has(value)) {
+    if (typeof value === "number" && Number.isFinite(value))
+      return value;
+    if (typeof value !== "object")
+      throw new TypeError("unsafe_input");
+    if (state.seen.has(value))
       return "[Circular]";
-    }
-    seen.add(value);
-    const output = {};
-    for (const [key, nestedValue] of Object.entries(value)) {
-      const nextPath = path.length === 0 ? key : `${path}.${key}`;
-      if (isSensitiveKey(key, sensitiveKeys)) {
-        output[key] = replacement;
-        touchedPaths.push(nextPath);
-        continue;
+    state.seen.add(value);
+    try {
+      if (Array.isArray(value)) {
+        if (value.length > MAX_ENTRIES)
+          return mask(state);
+        return Array.from({ length: value.length }, (_, index) => {
+          const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+          if (descriptor === void 0 || !("value" in descriptor))
+            throw new TypeError("unsafe_input");
+          return sanitizeValue(descriptor.value, state, depth + 1, allowStructured);
+        });
       }
-      output[key] = redactInternal(nestedValue, nextPath, sensitiveKeys, replacement, touchedPaths, seen);
+      if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
+        throw new TypeError("unsafe_input");
+      }
+      const keys = Object.keys(value);
+      if (keys.length > MAX_ENTRIES)
+        return mask(state);
+      const result = {};
+      for (const key of keys) {
+        if (key.length > 128) {
+          state.redactionCount += 1;
+          continue;
+        }
+        state.textBytes += byteLength(key);
+        if (state.textBytes > state.maxTotalBytes)
+          throw new BudgetExceeded();
+        const safeKey = scrubCredentialText(key, state.extra);
+        if (safeKey !== key) {
+          state.redactionCount += 1;
+          continue;
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        if (descriptor === void 0 || !("value" in descriptor))
+          throw new TypeError("unsafe_input");
+        const safeValue = isSensitiveKey(key, state.keys) ? mask(state) : sanitizeValue(descriptor.value, state, depth + 1, allowStructured);
+        Object.defineProperty(result, key, {
+          value: safeValue,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      }
+      return result;
+    } finally {
+      state.seen.delete(value);
     }
-    seen.delete(value);
-    return output;
   }
-  function redact(payload, options) {
-    var _a, _b, _c;
-    const sensitiveKeys = (_b = (_a = options == null ? void 0 : options.sensitiveKeys) == null ? void 0 : _a.map((key) => key.trim().toLowerCase())) != null ? _b : [...DEFAULT_SENSITIVE_KEYS];
-    const replacement = (_c = options == null ? void 0 : options.replacement) != null ? _c : "[REDACTED]";
-    const touchedPaths = [];
-    const redacted = redactInternal(payload, "", sensitiveKeys, replacement, touchedPaths, /* @__PURE__ */ new WeakSet());
-    return {
-      redacted,
-      redacted_fields: touchedPaths
-    };
+  function sanitizeTelemetry(value, options = {}) {
+    var _a, _b;
+    try {
+      const extra = (_a = options.additionalKeys) != null ? _a : [];
+      if (extra.length > 128 || extra.some((key) => typeof key !== "string" || key.length > 64 || !key.trim())) {
+        return { ok: false, reason: "unsafe_input" };
+      }
+      const maxTotalBytes = (_b = options.maxTotalBytes) != null ? _b : MAX_TOTAL_BYTES;
+      if (!Number.isInteger(maxTotalBytes) || maxTotalBytes < 1 || maxTotalBytes > 512 * 1024) {
+        return { ok: false, reason: "unsafe_input" };
+      }
+      const state = {
+        nodes: 0,
+        textBytes: 0,
+        redactionCount: 0,
+        seen: /* @__PURE__ */ new WeakSet(),
+        keys: [...DEFAULT_SENSITIVE_KEYS, ...extra],
+        extra,
+        maxTotalBytes
+      };
+      const sanitized = sanitizeValue(value, state, 0, true);
+      if (byteLength(JSON.stringify(sanitized)) > maxTotalBytes) {
+        return { ok: false, reason: "budget_exceeded" };
+      }
+      return { ok: true, value: sanitized, redactionCount: state.redactionCount };
+    } catch (error) {
+      return { ok: false, reason: error instanceof BudgetExceeded ? "budget_exceeded" : "unsafe_input" };
+    }
   }
 
   // node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js
@@ -2720,10 +2907,10 @@
         catchall: index
       });
     }
-    pick(mask) {
+    pick(mask2) {
       const shape = {};
-      for (const key of util.objectKeys(mask)) {
-        if (mask[key] && this.shape[key]) {
+      for (const key of util.objectKeys(mask2)) {
+        if (mask2[key] && this.shape[key]) {
           shape[key] = this.shape[key];
         }
       }
@@ -2732,10 +2919,10 @@
         shape: () => shape
       });
     }
-    omit(mask) {
+    omit(mask2) {
       const shape = {};
       for (const key of util.objectKeys(this.shape)) {
-        if (!mask[key]) {
+        if (!mask2[key]) {
           shape[key] = this.shape[key];
         }
       }
@@ -2750,11 +2937,11 @@
     deepPartial() {
       return deepPartialify(this);
     }
-    partial(mask) {
+    partial(mask2) {
       const newShape = {};
       for (const key of util.objectKeys(this.shape)) {
         const fieldSchema = this.shape[key];
-        if (mask && !mask[key]) {
+        if (mask2 && !mask2[key]) {
           newShape[key] = fieldSchema;
         } else {
           newShape[key] = fieldSchema.optional();
@@ -2765,10 +2952,10 @@
         shape: () => newShape
       });
     }
-    required(mask) {
+    required(mask2) {
       const newShape = {};
       for (const key of util.objectKeys(this.shape)) {
-        if (mask && !mask[key]) {
+        if (mask2 && !mask2[key]) {
           newShape[key] = this.shape[key];
         } else {
           const fieldSchema = this.shape[key];
@@ -4152,7 +4339,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4518,7 +4705,7 @@
     return EventEnvelopeSchema.parse(candidate);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
   var BrowserResourceRoutesSchema = external_exports.object({
     items: external_exports.array(external_exports.object({ route: external_exports.string().max(1024), occurrences: external_exports.number().int().positive() })).max(20),
     recorded_occurrences: external_exports.number().int().nonnegative(),
@@ -4527,7 +4714,7 @@
     coverage: external_exports.enum(["occurrence_metadata", "retained_samples"])
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
   var BrowserResourceContextSchema = external_exports.object({
     version: external_exports.literal(1),
     host: external_exports.string().max(255).nullable(),
@@ -4549,7 +4736,7 @@
     routes: BrowserResourceRoutesSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4696,7 +4883,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -5070,7 +5257,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -5097,7 +5284,7 @@
     fingerprint_aliases: external_exports.array(CaptureRuleFingerprintSchema).max(2).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -5124,7 +5311,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -5147,7 +5334,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
   var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
   var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
@@ -5611,7 +5798,7 @@
     return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
   var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
   var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
   var AnalyticsOpportunityBundleStatusValues = [
@@ -5797,7 +5984,7 @@
     message: "At least one analytics settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
   var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
   var AnalyticsJourneySafeScalarSchema = external_exports.union([
     external_exports.string().max(256),
@@ -5891,7 +6078,7 @@
     journey: AnalyticsJourneySampleArtifactSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
   var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
   var AnalyticsSavedFunnelStepSchema = external_exports.object({
     step_key: AnalyticsSavedFunnelKeySchema,
@@ -5934,7 +6121,7 @@
     funnel: AnalyticsSavedFunnelSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -5957,7 +6144,7 @@
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@1.8.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/index.js
   var SeveritySchema = external_exports.enum(["low", "medium", "high", "critical"]);
   var BundleSdkSchema = external_exports.object({
     name: external_exports.string().min(1),
@@ -6258,7 +6445,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a, _b, _c, _d;
@@ -6273,10 +6460,10 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "1.8.0",
+    version: "2.0.0",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -6307,12 +6494,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "1.8.0",
-      "@debugbundle/redaction": "1.8.0"
+      "@debugbundle/shared-types": "2.0.0",
+      "@debugbundle/redaction": "2.0.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6336,7 +6523,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key] : void 0;
@@ -6367,7 +6554,7 @@
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -7091,7 +7278,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -7146,7 +7333,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -7420,7 +7607,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -7825,7 +8012,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -7848,7 +8035,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -8002,7 +8189,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -8030,7 +8217,7 @@
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8581,7 +8768,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8667,7 +8854,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -9052,7 +9239,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a;
     try {
@@ -9071,7 +9258,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -9176,7 +9363,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -9221,7 +9408,7 @@
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
@@ -9469,7 +9656,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -9558,7 +9745,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -9588,10 +9775,10 @@
         return;
       }
       try {
-        const redacted = redact(normalizeProbeInput(data), {
-          sensitiveKeys: config2.redactFields
-        }).redacted;
-        const probeData = normalizeUnknownRecord(redacted);
+        const protectedData = sanitizeTelemetry(normalizeProbeInput(data), { additionalKeys: config2.redactFields });
+        if (!protectedData.ok)
+          return;
+        const probeData = normalizeUnknownRecord(protectedData.value);
         this.buffer(normalizedLabel, probeData);
         const matchingDirectives = this.getMatchingDirectives(normalizedLabel, Date.now());
         if (!this.host.isSessionSampledIn()) {
@@ -9742,7 +9929,37 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@1.8.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  function protectBrowserEvent(event, additionalKeys) {
+    var _a, _b;
+    for (const value of [
+      event.schema_version,
+      event.sdk_name,
+      event.sdk_version,
+      ...Object.values((_a = event.correlation) != null ? _a : {})
+    ]) {
+      if (typeof value !== "string")
+        continue;
+      const checked = sanitizeTelemetry(value, { additionalKeys });
+      if (!checked.ok || checked.value !== value)
+        return null;
+    }
+    const result = sanitizeTelemetry({ payload: event.payload, service: event.service, context: (_b = event.context) != null ? _b : {} }, {
+      additionalKeys
+    });
+    if (!result.ok)
+      return null;
+    const protectedFields = Object(result.value);
+    const parsed = EventEnvelopeSchema.safeParse({
+      ...event,
+      payload: protectedFields["payload"],
+      service: protectedFields["service"],
+      ...event.context === void 0 ? {} : { context: protectedFields["context"] }
+    });
+    return parsed.success ? parsed.data : null;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -9942,12 +10159,13 @@
         return;
       }
       try {
-        const attributes = redact({
+        const protectedAttributes = sanitizeTelemetry({
           ...this.persistentContext,
           ...normalizeUnknownRecord(context)
-        }, {
-          sensitiveKeys: config2.redactFields
-        }).redacted;
+        }, { additionalKeys: config2.redactFields });
+        if (!protectedAttributes.ok || protectedAttributes.value === null || Array.isArray(protectedAttributes.value) || typeof protectedAttributes.value !== "object")
+          return;
+        const attributes = protectedAttributes.value;
         const event = createEventEnvelope({
           schema_version: SDK_SCHEMA_VERSION,
           event_type: "log_event",
@@ -9983,15 +10201,18 @@
       this.captureLog(message, normalizeLogLevel(level), context);
     }
     setContext(key, value) {
-      var _a;
       const config2 = this.config;
-      if (config2 === null || key.trim().length === 0) {
+      if (config2 === null || typeof key !== "string" || key.length > 128 || key.trim().length === 0) {
         return;
       }
-      const redacted = redact({ [key]: value }, {
-        sensitiveKeys: config2.redactFields
-      }).redacted;
-      this.persistentContext[key] = (_a = redacted[key]) != null ? _a : null;
+      try {
+        const result = sanitizeTelemetry({ ...this.persistentContext, [key]: value }, { additionalKeys: config2.redactFields });
+        if (!result.ok || result.value === null || Array.isArray(result.value) || typeof result.value !== "object")
+          return;
+        this.persistentContext = result.value;
+      } catch {
+        return;
+      }
     }
     probe(label, data) {
       this.probeController.capture(label, data);
@@ -10195,6 +10416,10 @@
       if (config2 === null || this.eventTransport.debugRejected || !this.shouldCaptureBreadcrumb()) {
         return;
       }
+      const protectedBreadcrumb = sanitizeTelemetry(breadcrumb, { additionalKeys: config2.redactFields });
+      if (!protectedBreadcrumb.ok || protectedBreadcrumb.value === null || Array.isArray(protectedBreadcrumb.value) || typeof protectedBreadcrumb.value !== "object")
+        return;
+      breadcrumb = protectedBreadcrumb.value;
       if (config2.breadcrumbsOnErrorOnly !== true) {
         this.enqueueEvent(this.createBreadcrumbEvent(breadcrumb));
         return;
@@ -10345,14 +10570,20 @@
       return typeof locationSource.pathname === "string" ? locationSource.pathname : null;
     }
     enqueueEvent(event, countTowardSession = true) {
-      var _a;
-      const beforeSendEvent = applyBrowserBeforeSend(event, (_a = this.config) == null ? void 0 : _a.beforeSend);
+      var _a, _b, _c, _d, _e;
+      const protectedInput = protectBrowserEvent(event, (_b = (_a = this.config) == null ? void 0 : _a.redactFields) != null ? _b : []);
+      if (protectedInput === null)
+        return;
+      const beforeSendEvent = applyBrowserBeforeSend(protectedInput, (_c = this.config) == null ? void 0 : _c.beforeSend);
       if (beforeSendEvent === null) {
         return;
       }
+      const protectedResult = protectBrowserEvent(beforeSendEvent, (_e = (_d = this.config) == null ? void 0 : _d.redactFields) != null ? _e : []);
+      if (protectedResult === null)
+        return;
       const captureRuleResult = applyBrowserCaptureRules({
         config: this.config,
-        event: beforeSendEvent,
+        event: protectedResult,
         currentRoute: this.getCurrentRoute(),
         now: (/* @__PURE__ */ new Date()).toISOString()
       });
@@ -10382,11 +10613,20 @@
         return;
       }
       if (applyBeforeSend && event.event_type !== "analytics_event") {
-        const beforeSendEvent = applyBrowserBeforeSend(event, config2.beforeSend);
+        const protectedInput = protectBrowserEvent(event, config2.redactFields);
+        if (protectedInput === null)
+          return;
+        const beforeSendEvent = applyBrowserBeforeSend(protectedInput, config2.beforeSend);
         if (beforeSendEvent === null) {
           return;
         }
         event = beforeSendEvent;
+      }
+      if (event.event_type !== "analytics_event") {
+        const protectedResult = protectBrowserEvent(event, config2.redactFields);
+        if (protectedResult === null)
+          return;
+        event = protectedResult;
       }
       this.eventTransport.enqueueDebug(event);
       if (countTowardSession && event.event_type !== "frontend_exception") {

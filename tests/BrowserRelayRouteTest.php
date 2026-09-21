@@ -38,6 +38,7 @@ final class BrowserRelayRouteTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->removeDirectory((new \DebugBundleWp\RelaySpool())->path());
         $this->removeDirectory($this->uploadBaseDir);
         unset(
             $GLOBALS['debugbundle_wp_test_upload_basedir'],
@@ -131,6 +132,44 @@ final class BrowserRelayRouteTest extends TestCase
             $spooled['events'][0]['event_id']
         );
         self::assertArrayHasKey('debugbundle_test_cron', $GLOBALS['debugbundle_wp_test_scheduled_hooks']);
+    }
+
+    public function testPreUpgradeSpoolAndForwardingScrubBeforeRetry(): void
+    {
+        $fixture = self::relayComplianceFixture('valid-browser-batch');
+        $event = $fixture['request']['bodyJson']['batch'][0];
+        $event['payload']['message'] = 'password=raw-canary-secret';
+        $spool = new \DebugBundleWp\RelaySpool();
+        self::assertTrue($spool->ensureDirectory());
+        file_put_contents($spool->path() . '/old.events.json', json_encode(['events' => [$event]], JSON_THROW_ON_ERROR));
+        $GLOBALS['debugbundle_wp_test_remote_response'] = ['response' => ['code' => 503], 'body' => ''];
+
+        (new BrowserRelayRoute(new Settings(), 'debugbundle_test_cron'))->flushSpool();
+
+        $files = $spool->files();
+        self::assertCount(1, $files);
+        self::assertStringNotContainsString('raw-canary-secret', (string) file_get_contents($files[0]));
+        self::assertStringNotContainsString('raw-canary-secret', (string) ($GLOBALS['debugbundle_wp_test_last_remote_post']['args']['body'] ?? ''));
+    }
+
+    public function testUploadsSpoolIsMovedIntoPrivateStorageBeforeDelivery(): void
+    {
+        $fixture = self::relayComplianceFixture('valid-browser-batch');
+        $event = $fixture['request']['bodyJson']['batch'][0];
+        $event['payload']['message'] = 'password=raw-legacy-secret';
+        $legacy = $this->uploadBaseDir . '/debugbundle-spool';
+        mkdir($legacy, 0700, true);
+        file_put_contents($legacy . '/old.events.json', json_encode(['events' => [$event]], JSON_THROW_ON_ERROR));
+        $GLOBALS['debugbundle_wp_test_remote_response'] = ['response' => ['code' => 503], 'body' => ''];
+
+        (new BrowserRelayRoute(new Settings(), 'debugbundle_test_cron'))->flushSpool();
+
+        self::assertFileDoesNotExist($legacy . '/old.events.json');
+        $spool = new \DebugBundleWp\RelaySpool();
+        self::assertStringNotContainsString($this->uploadBaseDir, $spool->path());
+        self::assertCount(1, $spool->files());
+        self::assertStringNotContainsString('raw-legacy-secret', (string) file_get_contents($spool->files()[0]));
+        self::assertStringNotContainsString('raw-legacy-secret', (string) ($GLOBALS['debugbundle_wp_test_last_remote_post']['args']['body'] ?? ''));
     }
 
     public function testFlushSpoolDropsUnreadableMalformedAndTerminallyRejectedFiles(): void

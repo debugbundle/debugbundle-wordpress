@@ -36,6 +36,8 @@ require_grep '^[[:space:]]*\* Version:[[:space:]]+'"$VERSION"'$' debugbundle.php
 require_grep '^Stable tag: '"$VERSION"'$' readme.txt "readme.txt stable tag does not match $VERSION"
 require_grep '^  "version": "'"$VERSION"'",$' package.json "package.json version does not match $VERSION"
 require_grep '^## \['"$VERSION"'\] - ' CHANGELOG.md "CHANGELOG.md is missing a $VERSION heading"
+require_grep "'@debugbundle/sdk-browser@2\\." pnpm-lock.yaml "The browser SDK lock predates mandatory privacy; publish and lock the coordinated v2 browser SDK first"
+require_grep '@debugbundle\+sdk-browser@2\.' assets/dist/debugbundle-browser.js "The bundled browser asset does not match the protected v2 SDK; rebuild it from the locked dependencies"
 
 rm -rf .dist
 mkdir -p .dist/debugbundle
@@ -66,6 +68,12 @@ composer install \
   --no-progress \
   --prefer-dist
 
+# A source overlay is useful for local tests, but cannot certify a shipped dependency lock.
+if [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/TelemetryPrivacy.php ]; then
+  echo "The Composer lock lacks the mandatory PHP privacy policy; publish and lock that SDK first." >&2
+  exit 1
+fi
+
 if [ -n "${DEBUGBUNDLE_PHP_SDK_SOURCE:-}" ]; then
   if [ ! -r "$DEBUGBUNDLE_PHP_SDK_SOURCE/composer.json" ] ||
     ! grep -Eq '"name":[[:space:]]*"debugbundle/sdk-php"' "$DEBUGBUNDLE_PHP_SDK_SOURCE/composer.json"; then
@@ -76,9 +84,10 @@ if [ -n "${DEBUGBUNDLE_PHP_SDK_SOURCE:-}" ]; then
   cp -R "$DEBUGBUNDLE_PHP_SDK_SOURCE/src" .dist/debugbundle/vendor/debugbundle/sdk-php/
 fi
 
-if [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/BeforeSend.php ] ||
+if [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/TelemetryPrivacy.php ] ||
+  [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/BeforeSend.php ] ||
   ! grep -q 'beforeSend' .dist/debugbundle/vendor/debugbundle/sdk-php/src/DebugBundleSdk.php; then
-  echo "The locked PHP SDK does not provide the WordPress beforeSend contract. Publish and lock the coordinated PHP SDK release before publishing this plugin." >&2
+  echo "The locked PHP SDK lacks mandatory telemetry privacy. Publish and lock the coordinated PHP SDK release before publishing this plugin." >&2
   exit 1
 fi
 

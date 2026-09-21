@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 
 final class BrowserAssets
 {
-    private const FALLBACK_ASSET_VERSION = '1.4.5';
+    private const FALLBACK_ASSET_VERSION = '1.5.0';
 
     public function __construct(
         private readonly Settings $settings,

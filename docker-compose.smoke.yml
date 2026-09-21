@@ -15,7 +15,7 @@ services:
       - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:7.1.0-php8.2-apache
+    image: wordpress:7.1.1-php8.2-apache
     depends_on:
       db:
         condition: service_healthy
@@ -39,6 +39,7 @@ services:
       retries: 20
     volumes:
       - wordpress_data:/var/www/html
+      - private_tmp:/tmp
       - ${DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR:-.}:/var/www/html/wp-content/plugins/debugbundle
 
   mock-ingestion:
@@ -77,8 +78,10 @@ services:
       WORDPRESS_DB_PASSWORD: wordpress
     volumes:
       - wordpress_data:/var/www/html
+      - private_tmp:/tmp
       - ${DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR:-.}:/var/www/html/wp-content/plugins/debugbundle
 
 volumes:
   db_data:
+  private_tmp:
   wordpress_data:

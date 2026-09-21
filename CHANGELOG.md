@@ -1,16 +1,27 @@
 # Changelog
 
-## [1.4.5] - 2026-09-16
-
-### Fixed
-
-- Bundle browser SDK 1.8.0 for page-origin-aware resource rules and correct protocol-relative external targets. PHP capture and relay contracts are unchanged.
-
 All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
 ## [Unreleased]
+
+## [1.5.0] - 2026-09-21
+
+### Security
+
+- Protect PHP and browser relay events before forwarding and before retry storage with the mandatory privacy baseline.
+- Move the relay retry spool outside public uploads with restrictive permissions, bounded migration of old files, and safe deletion only after successful delivery.
+
+### Changed
+
+- Bundle `debugbundle/sdk-php` 1.5.0 and `@debugbundle/sdk-browser` 2.0.0 while preserving the existing settings and relay interfaces.
+
+## [1.4.5] - 2026-09-16
+
+### Fixed
+
+- Bundle browser SDK 1.8.0 for page-origin-aware resource rules and correct protocol-relative external targets. PHP capture and relay contracts are unchanged.
 
 ## [1.4.4] - 2026-09-15
 

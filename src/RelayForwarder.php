@@ -13,6 +13,11 @@ final class RelayForwarder
     /** @param list<array<string, mixed>> $events */
     public function forward(array $events): RelayForwardResult
     {
+        $events = Sanitization::protectRelayEvents($events);
+        if ($events === null || $events === []) {
+            Diagnostics::recordRelayError('relay_privacy_unavailable');
+            return new RelayForwardResult(false, true, 'relay_privacy_unavailable');
+        }
         if (!function_exists('wp_remote_post')) {
             Diagnostics::recordRelayError('wp_remote_post unavailable');
             return new RelayForwardResult(false, false, 'wp_remote_post unavailable');
@@ -28,9 +33,8 @@ final class RelayForwarder
         ]);
 
         if (function_exists('is_wp_error') && \is_wp_error($response)) {
-            $message = method_exists($response, 'get_error_message') ? (string) $response->get_error_message() : 'relay_forward_failed';
-            Diagnostics::recordRelayError($message);
-            return new RelayForwardResult(false, false, $message);
+            Diagnostics::recordRelayError('relay_forward_failed');
+            return new RelayForwardResult(false, false, 'relay_forward_failed');
         }
 
         $statusCode = function_exists('wp_remote_retrieve_response_code')
@@ -152,7 +156,8 @@ final class RelayForwarder
             $indexes[$error['index']] = true;
             $normalized[] = [
                 'index' => $error['index'],
-                'reason' => $error['reason'],
+                'reason' => preg_match('/^[a-z][a-z0-9_]{0,63}$/D', $error['reason']) === 1
+                    ? $error['reason'] : 'unknown_rejection',
             ];
         }
 

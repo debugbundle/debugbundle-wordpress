@@ -394,7 +394,8 @@ final class AdminPageAndTestEventsTest extends TestCase
         $result = $events->sendFrontend();
 
         self::assertFalse($result->success);
-        self::assertStringContainsString('relay factory failed', $result->message);
+        self::assertStringContainsString('test_event_failed', $result->message);
+        self::assertStringNotContainsString('relay factory failed', $result->message);
     }
 
     public function testSendFrontendReportsQueuedRetryWhenRelaySpoolsInsteadOfForwarding(): void
@@ -439,6 +440,26 @@ final class AdminPageAndTestEventsTest extends TestCase
         self::assertSame('ingestion_rejected accepted=0 expected=1 rejected=1 errors=event[0]: invalid_event', $result->error);
         self::assertSame($result->error, $GLOBALS['debugbundle_wp_test_transients']['debugbundle_last_relay_error'] ?? null);
         self::assertSame('accepted=0 rejected=1 errors=event[0]: invalid_event', $GLOBALS['debugbundle_wp_test_transients']['debugbundle_last_relay_ingestion_result'] ?? null);
+    }
+
+    public function testRelayForwarderDoesNotRetainRemoteErrorOrArbitraryRejectionText(): void
+    {
+        $GLOBALS['debugbundle_wp_test_remote_response'] = new \WP_Error('Authorization: Bearer canary-private-value');
+        $forwarder = new RelayForwarder(new Settings());
+        $result = $forwarder->forward([$this->frontendEvent()]);
+        self::assertSame('relay_forward_failed', $result->error);
+        self::assertSame('relay_forward_failed', $GLOBALS['debugbundle_wp_test_transients']['debugbundle_last_relay_error'] ?? null);
+
+        $GLOBALS['debugbundle_wp_test_remote_response'] = [
+            'response' => ['code' => 202],
+            'body' => json_encode([
+                'accepted' => 0, 'rejected' => 1,
+                'errors' => [['index' => 0, 'reason' => 'password=canary-private-value']],
+            ]),
+        ];
+        $result = $forwarder->forward([$this->frontendEvent()]);
+        self::assertStringNotContainsString('canary-private-value', (string) $result->error);
+        self::assertStringContainsString('unknown_rejection', (string) $result->error);
     }
 
     public function testRelayForwarderSucceedsWhenIngestionAcceptsEveryEvent(): void

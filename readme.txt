@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 1.4.5
+Stable tag: 1.5.0
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -101,6 +101,11 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 1.5.0 =
+* Protect PHP and browser relay telemetry before forwarding and before retry storage with the mandatory privacy baseline.
+* Move retry files to a private bounded spool and safely migrate old uploads-spool files in limited batches.
+* Bundle PHP SDK 1.5.0 and Browser SDK 2.0.0 while preserving the existing WordPress settings and relay flow.
 
 = 1.4.5 =
 * Update the bundled browser SDK to 1.8.0 for correct same-origin resource rules and preserved external resource hosts.

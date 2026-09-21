@@ -50,7 +50,11 @@ final class BrowserRelayRoute
 
     public function ensureSpoolDirectory(): bool
     {
-        return $this->spool->ensureDirectory();
+        $ready = $this->spool->ensureDirectory();
+        if ($ready) {
+            $this->spool->migrateLegacy();
+        }
+        return $ready;
     }
 
     public function handleRequest(mixed $request): mixed
@@ -111,10 +115,11 @@ final class BrowserRelayRoute
 
         if ($acceptedEvents !== []) {
             $spoolFile = $this->spool->write($acceptedEvents);
-            if ($spoolFile !== null) {
-                $result = $this->forwarder->forward($acceptedEvents);
-                $this->reconcileSpoolFile($spoolFile, $result);
+            if ($spoolFile === null) {
+                return $this->response(['accepted' => 0, 'rejected' => count($acceptedEvents), 'errors' => ['relay_privacy_unavailable']], 503, $responseHeaders);
             }
+            $result = $this->forwarder->forward($acceptedEvents);
+            $this->reconcileSpoolFile($spoolFile, $result);
         }
 
         return $this->response($relayResponse->body ?? null, $relayResponse->status, $responseHeaders);
@@ -122,15 +127,9 @@ final class BrowserRelayRoute
 
     public function flushSpool(): void
     {
+        $this->spool->migrateLegacy();
         foreach (array_slice($this->spool->files(), 0, 25) as $filePath) {
-            $contents = @file_get_contents($filePath);
-            if (!is_string($contents) || $contents === '') {
-                $this->spool->delete($filePath);
-                continue;
-            }
-
-            $decoded = json_decode($contents, true);
-            $events = is_array($decoded) && isset($decoded['events']) && is_array($decoded['events']) ? $decoded['events'] : null;
+            $events = $this->spool->readProtected($filePath);
             if ($events === null) {
                 $this->spool->delete($filePath);
                 continue;
