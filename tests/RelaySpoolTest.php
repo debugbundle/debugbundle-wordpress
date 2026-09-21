@@ -80,6 +80,47 @@ final class RelaySpoolTest extends TestCase
         self::assertFileExists($outside);
     }
 
+    public function testProtectedReadRejectsOutsideFilesAndRewritesSafeSpoolContent(): void
+    {
+        $spool = new RelaySpool();
+        self::assertNull($spool->readProtected($this->uploadBaseDir . '/outside.events.json'));
+
+        self::assertTrue($spool->ensureDirectory());
+        $file = $spool->path() . '/protected.events.json';
+        file_put_contents($file, json_encode([
+            'events' => [[
+                'event_id' => 'evt-protected-read',
+                'service' => ['name' => 'wp', 'environment' => 'test'],
+                'payload' => ['message' => 'password=raw-protected-read-canary'],
+            ]],
+        ], JSON_THROW_ON_ERROR));
+
+        $events = $spool->readProtected($file);
+
+        self::assertIsArray($events);
+        self::assertSame('evt-protected-read', $events[0]['event_id']);
+        self::assertStringNotContainsString('raw-protected-read-canary', (string) file_get_contents($file));
+        self::assertSame(0600, fileperms($file) & 0777);
+    }
+
+    public function testPruneEnforcesTheTotalPrivateSpoolBound(): void
+    {
+        $spool = new RelaySpool();
+        self::assertTrue($spool->ensureDirectory());
+        for ($index = 0; $index < 42; $index++) {
+            $file = $spool->path() . sprintf('/%03d.events.json', $index);
+            file_put_contents($file, str_repeat('x', 262_000));
+            touch($file, time() - 100 + $index);
+        }
+
+        self::assertGreaterThan(10_485_760, $spool->stats()['size']);
+        $spool->prune();
+
+        self::assertLessThanOrEqual(10_485_760, $spool->stats()['size']);
+        self::assertFileDoesNotExist($spool->path() . '/000.events.json');
+        self::assertFileExists($spool->path() . '/041.events.json');
+    }
+
     public function testDeleteCannotEscapeThroughASpoolPathPrefix(): void
     {
         $spool = new RelaySpool();
