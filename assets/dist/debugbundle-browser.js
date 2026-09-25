@@ -6524,7 +6524,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a, _b, _c, _d;
@@ -6539,10 +6539,10 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "3.0.0",
+    version: "3.0.2",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -6579,7 +6579,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6603,7 +6603,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key] : void 0;
@@ -6634,7 +6634,7 @@
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
   function getFetchSource() {
     const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
@@ -6647,9 +6647,12 @@
       return void 0;
     const seconds = Number(value);
     if (Number.isFinite(seconds))
-      return Math.max(0, seconds * 1e3);
+      return boundedRetryAfterMs(seconds * 1e3);
     const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? void 0 : Math.max(0, parsed - Date.now());
+    return Number.isNaN(parsed) ? void 0 : boundedRetryAfterMs(parsed - Date.now());
+  }
+  function boundedRetryAfterMs(value) {
+    return value === void 0 || Number.isNaN(value) ? 1e3 : Math.min(3e5, Math.max(0, value));
   }
   function createFetchTransport() {
     const fetchImpl = getFetchSource();
@@ -6686,7 +6689,7 @@
     return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -7365,7 +7368,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -7420,7 +7423,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -7694,7 +7697,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -8099,7 +8102,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -8126,7 +8129,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -8280,7 +8283,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -8308,7 +8311,7 @@
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8859,7 +8862,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8945,7 +8948,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -9330,7 +9333,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a;
     try {
@@ -9349,7 +9352,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -9518,15 +9521,15 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
     "analytics_quota_exceeded"
   ]);
-  function decideBrowserAcknowledgement(body, batchLength) {
+  function decideBrowserAcknowledgement(body, batchLength, required = false) {
     if (!hasAcknowledgementFields(body)) {
-      return { kind: "legacy" };
+      return required ? { kind: "protocol_failure", reason: "missing_acknowledgement" } : { kind: "legacy" };
     }
     const acknowledgement = body;
     if (!isCount(acknowledgement.accepted) || !isCount(acknowledgement.rejected) || !Array.isArray(acknowledgement.errors) || acknowledgement.accepted + acknowledgement.rejected !== batchLength || acknowledgement.errors.length !== acknowledgement.rejected) {
@@ -9563,7 +9566,7 @@
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
@@ -9573,6 +9576,9 @@
       inFlightEvents: /* @__PURE__ */ new Map(),
       beaconCommitted: false,
       keepalivePending: false,
+      keepalivePromise: null,
+      detachedCount: 0,
+      detachedBytes: 0,
       queuedBytes: 0,
       sizes: /* @__PURE__ */ new WeakMap(),
       flushPromise: null,
@@ -9596,6 +9602,7 @@
   var MAX_ANALYTICS_QUEUED_EVENTS = 256;
   var MAX_DEBUG_QUEUED_BYTES = 8 * 1024 * 1024;
   var MAX_ANALYTICS_QUEUED_BYTES = 4 * 1024 * 1024;
+  var MAX_UNLOAD_BODY_BYTES = 60 * 1024;
   var PRESSURE_REPORT_INTERVAL_MS = 3e4;
   function recordDebugPressure(lane) {
     var _a;
@@ -9678,14 +9685,27 @@
       else
         lane.inFlightEvents.set(event, retained - 1);
     }
+    updateDetachedRetention(lane);
     invalidateAdmission(lane);
+  }
+  function updateDetachedRetention(lane) {
+    var _a;
+    const queued = new Set(lane.events);
+    lane.detachedCount = 0;
+    lane.detachedBytes = 0;
+    for (const event of lane.inFlightEvents.keys()) {
+      if (queued.has(event))
+        continue;
+      lane.detachedCount += 1;
+      lane.detachedBytes += (_a = lane.sizes.get(event)) != null ? _a : 0;
+    }
   }
   function admitEvent(lane, event, limit, maxBytes, preferRetained = false, onDrop) {
     var _a;
     const incomingPriority = eventPriority(event);
     const allowEqualPriorityEviction = !preferRetained && incomingPriority < 2;
     const maxVictimPriority = incomingPriority - (allowEqualPriorityEviction ? 0 : 1);
-    if (lane.events.length >= limit && !hasEvictableEvent(lane, maxVictimPriority)) {
+    if (lane.events.length + lane.detachedCount >= limit && !hasEvictableEvent(lane, maxVictimPriority)) {
       onDrop == null ? void 0 : onDrop(event);
       return false;
     }
@@ -9694,11 +9714,11 @@
       onDrop == null ? void 0 : onDrop(event);
       return false;
     }
-    if (lane.queuedBytes + bytes > maxBytes && !hasEvictableEvent(lane, maxVictimPriority)) {
+    if (lane.queuedBytes + lane.detachedBytes + bytes > maxBytes && !hasEvictableEvent(lane, maxVictimPriority)) {
       onDrop == null ? void 0 : onDrop(event);
       return false;
     }
-    while (lane.events.length >= limit || lane.queuedBytes + bytes > maxBytes) {
+    while (lane.events.length + lane.detachedCount >= limit || lane.queuedBytes + lane.detachedBytes + bytes > maxBytes) {
       let victimIndex = -1;
       let victimPriority = incomingPriority;
       for (let index = 0; index < lane.events.length; index += 1) {
@@ -9731,6 +9751,10 @@
       __publicField(this, "callbacks");
       __publicField(this, "config", null);
       __publicField(this, "flushCycle", null);
+      __publicField(this, "keepaliveBytes", 0);
+      // Beacon exposes no completion signal. Keep its reservation for this instance;
+      // ordinary transport remains available after the lifecycle budget is consumed.
+      __publicField(this, "beaconBytes", 0);
       __publicField(this, "debug", createLane());
       __publicField(this, "analytics", createLane());
       __publicField(this, "retiredDebug", /* @__PURE__ */ new Set());
@@ -9759,7 +9783,7 @@
       const lane = this.debug;
       if (this.config === null || lane.rejected || lane.beaconCommitted || this.retiredDebug.size > 0)
         return false;
-      if (lane.events.length < MAX_DEBUG_QUEUED_EVENTS && lane.queuedBytes < MAX_DEBUG_QUEUED_BYTES)
+      if (lane.events.length + lane.detachedCount < MAX_DEBUG_QUEUED_EVENTS && lane.queuedBytes + lane.detachedBytes < MAX_DEBUG_QUEUED_BYTES)
         return true;
       const priority = capturePriority(kind, level, status);
       if (hasEvictableEvent(lane, priority < 2 ? priority : priority - 1))
@@ -9791,7 +9815,7 @@
     }
     flush() {
       var _a, _b;
-      if (this.debug.events.length === 0 && this.analytics.events.length === 0 && this.debug.pressureCount === 0)
+      if (this.debug.events.length === 0 && this.analytics.events.length === 0 && this.debug.pressureCount === 0 && this.debug.flushPromise === null && this.analytics.flushPromise === null && !this.debug.keepalivePending && !this.analytics.keepalivePending)
         return Promise.resolve();
       if (this.flushCycle !== null)
         return this.flushCycle;
@@ -9816,7 +9840,7 @@
       for (let attempt = 0; attempt < 3; attempt += 1) {
         const lane = this.getLane(laneName);
         const before = lane.events.length;
-        if (before === 0 && lane.pressureCount === 0)
+        if (before === 0 && lane.pressureCount === 0 && lane.flushPromise === null && !lane.keepalivePending)
           return;
         await this.flushLane(laneName);
         if (this.getLane(laneName) !== lane || lane.events.length === 0 || lane.events.length >= before || lane.nextRetryAt !== null)
@@ -9871,12 +9895,14 @@
       this.schedule(laneName);
     }
     async flushLane(laneName) {
-      var _a, _b;
+      var _a, _b, _c;
       const config2 = this.config;
       const lane = this.getLane(laneName);
-      if (config2 === null || lane.rejected || lane.keepalivePending || this.getRetired(laneName).size > 0) {
+      if (config2 === null || lane.rejected || this.getRetired(laneName).size > 0) {
         return;
       }
+      if (lane.keepalivePending)
+        return (_a = lane.keepalivePromise) != null ? _a : void 0;
       if (lane.flushPromise !== null) {
         lane.flushRequestedDuringSend = true;
         return lane.flushPromise;
@@ -9886,7 +9912,7 @@
       }
       if (laneName === "debug") {
         try {
-          (_b = (_a = this.callbacks).beforeDebugFlush) == null ? void 0 : _b.call(_a);
+          (_c = (_b = this.callbacks).beforeDebugFlush) == null ? void 0 : _c.call(_b);
         } catch {
         }
         this.enqueuePressureReport(lane, config2);
@@ -9912,7 +9938,7 @@
       });
       lane.flushPromise = completion;
       void (async () => {
-        var _a2, _b2;
+        var _a2;
         try {
           const response = await config2.transport({
             endpoint: config2.endpoint,
@@ -9924,23 +9950,11 @@
           if (this.getLane(laneName) !== lane)
             return;
           if (response.status >= 200 && response.status < 300) {
-            this.reconcileSuccessfulResponse(laneName, lane, events, response.body, response.retry_after_ms);
+            this.reconcileSuccessfulResponse(laneName, lane, events, response.body, response.retry_after_ms, config2.requireAcknowledgement === true);
             acknowledged = true;
             return;
           }
-          lane.consecutiveFailures += 1;
-          if (response.status === 401 || response.status === 403) {
-            lane.rejected = true;
-            lane.nextRetryAt = null;
-            lane.events = [];
-            lane.queuedBytes = 0;
-            invalidateAdmission(lane);
-            this.callbacks.onUnauthorized(laneName, response.status, config2.endpoint, response.body);
-            return;
-          }
-          if (response.status === 429) {
-            lane.nextRetryAt = Date.now() + ((_a2 = response.retry_after_ms) != null ? _a2 : 1e3);
-          }
+          this.reconcileFailure(laneName, lane, config2, response.status, response.body, response.retry_after_ms);
         } catch {
           lane.consecutiveFailures += 1;
         } finally {
@@ -9957,13 +9971,27 @@
               const retryDelay = lane.nextRetryAt === null ? flushRequestedDuringSend || acknowledged && lane.events.length >= Math.min(config2.batchSize, 256) ? 0 : void 0 : Math.max(0, lane.nextRetryAt - Date.now());
               this.schedule(laneName, retryDelay);
             } else if (laneName === "debug" && lane.pressureCount > 0) {
-              const nextReportAt = ((_b2 = lane.lastPressureReportAt) != null ? _b2 : 0) + PRESSURE_REPORT_INTERVAL_MS;
+              const nextReportAt = ((_a2 = lane.lastPressureReportAt) != null ? _a2 : 0) + PRESSURE_REPORT_INTERVAL_MS;
               this.schedule(laneName, Math.max(0, nextReportAt - Date.now()));
             }
           }
         }
       })().catch(() => void 0).finally(finishSend);
       return completion;
+    }
+    reconcileFailure(laneName, lane, config2, status, body, retryAfterMs) {
+      lane.consecutiveFailures += 1;
+      if (status === 401 || status === 403) {
+        lane.rejected = true;
+        lane.nextRetryAt = null;
+        lane.events = [];
+        lane.queuedBytes = 0;
+        updateDetachedRetention(lane);
+        invalidateAdmission(lane);
+        this.callbacks.onUnauthorized(laneName, status, config2.endpoint, body);
+      } else if (status === 429) {
+        lane.nextRetryAt = Date.now() + boundedRetryAfterMs(retryAfterMs);
+      }
     }
     prepareDebugEvents(lane, limit) {
       var _a, _b, _c, _d;
@@ -10043,69 +10071,128 @@
       }
     }
     flushLaneViaBeacon(laneName) {
+      var _a;
       const config2 = this.config;
       const lane = this.getLane(laneName);
-      const navigatorSource = getNavigatorSource();
-      if (config2 === null || lane.events.length === 0 || lane.rejected || navigatorSource === null || lane.keepalivePending || this.getRetired(laneName).size > 0) {
+      if (config2 === null || lane.events.length === 0 || lane.rejected || lane.keepalivePending || this.getRetired(laneName).size > 0 || lane.nextRetryAt !== null && Date.now() < lane.nextRetryAt) {
         return;
       }
-      const pendingEvents = lane.events.filter((event) => laneName !== "debug" || lane.prepared.has(event) || this.callbacks.prepareDebugEvent === void 0);
-      if (pendingEvents.length === 0)
+      const pendingEvents = [];
+      const availableBytes = MAX_UNLOAD_BODY_BYTES - this.keepaliveBytes - this.beaconBytes;
+      let bodyBytes = buildBrowserTransportRequestBody(config2.transportMode, []).length;
+      for (const event of lane.events) {
+        if (laneName === "debug" && !lane.prepared.has(event) && this.callbacks.prepareDebugEvent !== void 0)
+          continue;
+        const bytes = eventBytes(lane, event);
+        if (bytes === null || bodyBytes + bytes + (pendingEvents.length === 0 ? 0 : 1) > availableBytes)
+          continue;
+        pendingEvents.push(event);
+        bodyBytes += bytes + (pendingEvents.length === 1 ? 0 : 1);
+        if (pendingEvents.length >= 256)
+          break;
+      }
+      if (pendingEvents.length === 0) {
+        this.schedule(laneName, 0);
         return;
+      }
       const body = buildBrowserTransportRequestBody(config2.transportMode, pendingEvents);
+      const requestBytes = new TextEncoder().encode(body).byteLength;
+      if (requestBytes > availableBytes) {
+        this.schedule(laneName, 0);
+        return;
+      }
       const flushViaKeepalive = () => {
         if (config2.fetchImpl === null) {
           void this.flushLane(laneName);
           return;
         }
-        if (typeof AbortController !== "function")
+        if (typeof AbortController !== "function") {
+          this.schedule(laneName, 0);
           return;
+        }
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), boundedTransportTimeoutMs(config2.requestTimeoutMs));
         lane.keepalivePending = true;
+        this.keepaliveBytes += requestBytes;
         retainSend(lane, pendingEvents);
-        void Promise.resolve().then(() => config2.fetchImpl(config2.endpoint, {
+        lane.keepalivePromise = Promise.resolve().then(() => config2.fetchImpl(config2.endpoint, {
           method: "POST",
           headers: getTransportHeaders(config2),
           body,
           keepalive: true,
           signal: controller.signal
         })).then(async (response) => {
+          var _a2, _b;
           if (this.getLane(laneName) !== lane)
             return;
+          const retryAfterMs = parseRetryAfter((_b = (_a2 = response.headers) == null ? void 0 : _a2.get("Retry-After")) != null ? _b : null);
           if (response.status >= 200 && response.status < 300) {
             const responseBody = await readResponseBody(response);
             if (controller.signal.aborted)
               return;
-            this.reconcileSuccessfulResponse(laneName, lane, pendingEvents, responseBody, void 0);
+            this.reconcileSuccessfulResponse(laneName, lane, pendingEvents, responseBody, retryAfterMs, config2.transportMode === "direct");
             this.clearLaneTimer(lane);
+          } else {
+            this.reconcileFailure(laneName, lane, config2, response.status, void 0, retryAfterMs);
           }
         }).catch(() => void 0).finally(() => {
           clearTimeout(timeout);
+          this.keepaliveBytes -= requestBytes;
           releaseSend(lane, pendingEvents);
           lane.keepalivePending = false;
+          lane.keepalivePromise = null;
           if (lane.inFlightEvents.size === 0)
             lane.beaconCommitted = false;
           if (lane.inFlightEvents.size === 0)
             this.getRetired(laneName).delete(lane);
           if (this.getLane(laneName) === lane && lane.events.length > 0 && !lane.rejected) {
-            this.schedule(laneName);
+            this.schedule(laneName, lane.nextRetryAt === null ? lane.events.length > pendingEvents.length ? 0 : void 0 : Math.max(0, lane.nextRetryAt - Date.now()));
           }
         });
       };
-      if (typeof navigatorSource.sendBeacon !== "function") {
+      if (config2.transportMode === "direct") {
         flushViaKeepalive();
         return;
       }
-      const beaconBody = typeof Blob === "function" ? new Blob([body], { type: "application/json" }) : body;
-      if (navigatorSource.sendBeacon(config2.endpoint, beaconBody)) {
-        lane.events = [];
-        lane.queuedBytes = 0;
-        invalidateAdmission(lane);
-        lane.beaconCommitted = lane.inFlightEvents.size > 0;
-        lane.nextRetryAt = null;
-        this.clearLaneTimer(lane);
+      const navigatorSource = getNavigatorSource();
+      if (typeof (navigatorSource == null ? void 0 : navigatorSource.sendBeacon) !== "function") {
+        flushViaKeepalive();
         return;
+      }
+      this.beaconBytes += requestBytes;
+      let accepted = false;
+      try {
+        const beaconBody = typeof Blob === "function" ? new Blob([body], { type: "application/json" }) : body;
+        if (navigatorSource.sendBeacon(config2.endpoint, beaconBody)) {
+          accepted = true;
+          const selected = /* @__PURE__ */ new Map();
+          for (const event of pendingEvents)
+            selected.set(event, ((_a = selected.get(event)) != null ? _a : 0) + 1);
+          lane.events = lane.events.filter((event) => {
+            var _a2;
+            const remaining = (_a2 = selected.get(event)) != null ? _a2 : 0;
+            if (remaining === 0)
+              return true;
+            selected.set(event, remaining - 1);
+            return false;
+          });
+          lane.queuedBytes -= pendingEvents.reduce((total, event) => {
+            var _a2;
+            return total + ((_a2 = lane.sizes.get(event)) != null ? _a2 : 0);
+          }, 0);
+          updateDetachedRetention(lane);
+          invalidateAdmission(lane);
+          lane.beaconCommitted = lane.inFlightEvents.size > 0;
+          lane.nextRetryAt = null;
+          this.clearLaneTimer(lane);
+          if (lane.events.length > 0 && !lane.beaconCommitted)
+            this.schedule(laneName, 0);
+          return;
+        }
+      } catch {
+      } finally {
+        if (!accepted)
+          this.beaconBytes -= requestBytes;
       }
       flushViaKeepalive();
     }
@@ -10115,13 +10202,13 @@
     getRetired(name) {
       return name === "debug" ? this.retiredDebug : this.retiredAnalytics;
     }
-    reconcileSuccessfulResponse(laneName, lane, events, body, retryAfterMs) {
+    reconcileSuccessfulResponse(laneName, lane, events, body, retryAfterMs, requireAcknowledgement = false) {
       if (this.getLane(laneName) !== lane)
         return;
-      const acknowledgement = decideBrowserAcknowledgement(body, events.length);
+      const acknowledgement = decideBrowserAcknowledgement(body, events.length, requireAcknowledgement);
       if (acknowledgement.kind === "protocol_failure") {
         lane.consecutiveFailures += 1;
-        lane.nextRetryAt = Date.now() + (retryAfterMs != null ? retryAfterMs : 1e3);
+        lane.nextRetryAt = Date.now() + boundedRetryAfterMs(retryAfterMs);
         this.callbacks.onAcknowledgementDiagnostic(laneName, "invalid", acknowledgement.reason);
         return;
       }
@@ -10129,14 +10216,14 @@
         this.callbacks.onDebugResponse(body);
       }
       if (acknowledgement.kind === "legacy") {
-        reconcileLeadingEvents(lane, events, [], laneName === "debug" ? (dropped) => recordDebugDrop(lane, dropped) : void 0);
+        reconcileLeadingEvents(lane, events, []);
         lane.nextRetryAt = null;
         lane.lastEventAt = Date.now();
         lane.consecutiveFailures = 0;
         return;
       }
       const retryableEvents = acknowledgement.retryableIndices.map((index) => events[index]).filter((event) => event !== void 0);
-      reconcileLeadingEvents(lane, events, retryableEvents, laneName === "debug" ? (dropped) => recordDebugDrop(lane, dropped) : void 0);
+      reconcileLeadingEvents(lane, events, retryableEvents);
       if (acknowledgement.terminalErrors.length > 0) {
         const reasons = [...new Set(acknowledgement.terminalErrors.map((error) => error.reason))].join(",");
         this.callbacks.onAcknowledgementDiagnostic(laneName, "terminal_rejection", reasons);
@@ -10146,7 +10233,7 @@
       }
       if (retryableEvents.length > 0) {
         lane.consecutiveFailures += 1;
-        lane.nextRetryAt = Date.now() + (retryAfterMs != null ? retryAfterMs : 1e3);
+        lane.nextRetryAt = Date.now() + boundedRetryAfterMs(retryAfterMs);
         return;
       }
       lane.nextRetryAt = null;
@@ -10159,18 +10246,36 @@
       }
     }
   };
-  function reconcileLeadingEvents(lane, events, retainedEvents, onDrop) {
-    var _a, _b;
-    const sentEvents = new Set(events);
-    const queued = lane.events.filter((event) => !sentEvents.has(event));
-    lane.events = [];
-    lane.queuedBytes = 0;
-    invalidateAdmission(lane);
-    const limit = ((_a = events[0]) == null ? void 0 : _a.event_type) === "analytics_event" ? MAX_ANALYTICS_QUEUED_EVENTS : MAX_DEBUG_QUEUED_EVENTS;
-    const maxBytes = ((_b = events[0]) == null ? void 0 : _b.event_type) === "analytics_event" ? MAX_ANALYTICS_QUEUED_BYTES : MAX_DEBUG_QUEUED_BYTES;
-    for (const event of [...retainedEvents, ...queued]) {
-      admitEvent(lane, event, limit, maxBytes, true, onDrop);
+  function reconcileLeadingEvents(lane, events, retainedEvents) {
+    var _a, _b, _c, _d;
+    const selected = /* @__PURE__ */ new Map();
+    const retries = /* @__PURE__ */ new Map();
+    for (const event of events)
+      selected.set(event, ((_a = selected.get(event)) != null ? _a : 0) + 1);
+    for (const event of retainedEvents)
+      retries.set(event, ((_b = retries.get(event)) != null ? _b : 0) + 1);
+    const queued = [];
+    const retryable = [];
+    for (const event of lane.events) {
+      const count = (_c = selected.get(event)) != null ? _c : 0;
+      if (count === 0) {
+        queued.push(event);
+        continue;
+      }
+      selected.set(event, count - 1);
+      const retryCount = (_d = retries.get(event)) != null ? _d : 0;
+      if (retryCount > 0) {
+        retryable.push(event);
+        retries.set(event, retryCount - 1);
+      }
     }
+    lane.events = [...retryable, ...queued];
+    lane.queuedBytes = lane.events.reduce((total, event) => {
+      var _a2;
+      return total + ((_a2 = lane.sizes.get(event)) != null ? _a2 : 0);
+    }, 0);
+    updateDetachedRetention(lane);
+    invalidateAdmission(lane);
   }
   async function readResponseBody(response) {
     if (typeof response.json !== "function") {
@@ -10185,7 +10290,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -10274,7 +10379,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -10458,7 +10563,7 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/privacy.js
   function protectBrowserEvent(event, additionalKeys) {
     var _a, _b;
     for (const value of [
@@ -10488,7 +10593,7 @@
     return parsed.success ? parsed.data : null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -10589,6 +10694,7 @@
         captureRules: [],
         fetchImpl: getFetchSource(),
         transport: (_g = config2.transport) != null ? _g : createFetchTransport(),
+        requireAcknowledgement: config2.transport === void 0 && resolvedTransport.mode === "direct",
         transportMode: resolvedTransport.mode,
         ...config2.beforeSend === void 0 ? {} : { beforeSend: config2.beforeSend }
       };
