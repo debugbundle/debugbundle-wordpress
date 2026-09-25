@@ -38,9 +38,21 @@ update-browser-sdk:
 verify-docker:
 	docker run --rm -v "$(CURDIR):/app" -w /app --entrypoint sh composer:2 -lc 'composer install --no-interaction --prefer-dist && composer test && composer typecheck'
 
-.PHONY: test-focused test-php-sdk
+.PHONY: test-focused test-php-sdk check-php-sdk
 test-focused:
 	docker run --rm -v "$(CURDIR):/app" -w /app composer:2 composer test -- $(TEST_ARGS)
 
 test-php-sdk:
 	docker run --rm -v "$(CURDIR):/app" -v "$(PHP_SDK_CHECKOUT):/app/vendor/debugbundle/sdk-php:ro" -w /app composer:2 composer test -- $(TEST_ARGS)
+
+check-php-sdk:
+	docker run --rm -v "$(CURDIR):/app" -v "$(PHP_SDK_CHECKOUT):/app/vendor/debugbundle/sdk-php:ro" -w /app composer:2 sh -c 'composer validate --strict && composer test && composer typecheck'
+
+.PHONY: coverage-php-sdk
+coverage-php-sdk:
+	docker build -q -f "$(PHP_SDK_CHECKOUT)/smoke/Dockerfile.coverage" -t debugbundle-php-coverage:local "$(PHP_SDK_CHECKOUT)"
+	docker run --rm -e XDEBUG_MODE=coverage -v "$(CURDIR):/app" -v "$(PHP_SDK_CHECKOUT):/app/vendor/debugbundle/sdk-php:ro" -w /app debugbundle-php-coverage:local sh -c 'vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml && php scripts/check_coverage.php coverage.xml'
+
+.PHONY: staged-release-check
+staged-release-check:
+	python3 scripts/check-staged-release.py --php-sdk "$(PHP_SDK_CHECKOUT)" --browser-artifact "$(BROWSER_ARTIFACT)"

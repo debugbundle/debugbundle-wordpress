@@ -12,12 +12,16 @@ use DebugBundle\DebugBundleSdk;
 
 final class SdkBootstrap
 {
+    public const CONFIG_REFRESH_HOOK = 'debugbundle_refresh_sdk_config';
+
     private ?DebugBundleSdk $sdk = null;
+    private readonly CachedConfigFetcher $configCache;
     private float $requestStartedAt;
 
     public function __construct(private readonly Settings $settings)
     {
         $this->requestStartedAt = microtime(true);
+        $this->configCache = new CachedConfigFetcher();
     }
 
     public function register(): void
@@ -35,7 +39,7 @@ final class SdkBootstrap
                 'environment' => $this->settings->getEnvironment(),
                 'sampleRate' => $this->settings->getSampleRate(),
                 'logLevel' => $this->settings->getLogLevel(),
-                'configFetcher' => new ConfigFetcher(),
+                'configFetcher' => $this->configCache,
                 'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
                 'beforeSend' => static function (array $event): mixed {
                     return function_exists('apply_filters')
@@ -43,6 +47,7 @@ final class SdkBootstrap
                         : $event;
                 },
             ]);
+            $this->sdk->refreshRemoteConfig(true);
         } catch (\Throwable $throwable) {
             $this->sdk = null;
             $this->recordBackendDiagnostic($throwable);
@@ -52,6 +57,26 @@ final class SdkBootstrap
         if (function_exists('add_action')) {
             \add_action('init', [$this, 'onInit'], 0);
             \add_action('shutdown', [$this, 'onShutdown'], 0);
+        }
+        // The SDK's PHP shutdown hook must run after WordPress captures the request,
+        // so a fatal error during a later WordPress shutdown callback can join the batch.
+        register_shutdown_function([$this, 'recordBackendFlush']);
+        $this->scheduleConfigRefresh();
+    }
+
+    public function refreshConfig(): void
+    {
+        if ($this->settings->isBackendCaptureEnabled()) {
+            $this->configCache->refresh($this->settings->getEndpoint(), $this->settings->getProjectToken());
+            $this->scheduleConfigRefresh();
+        }
+    }
+
+    private function scheduleConfigRefresh(): void
+    {
+        if (function_exists('wp_next_scheduled') && function_exists('wp_schedule_single_event')
+            && !\wp_next_scheduled(self::CONFIG_REFRESH_HOOK)) {
+            \wp_schedule_single_event(time() + 60, self::CONFIG_REFRESH_HOOK);
         }
     }
 
@@ -77,7 +102,17 @@ final class SdkBootstrap
         try {
             $this->attachContext();
             $this->sdk->captureRequest($this->buildRequestPayload(), $this->buildResponsePayload());
-            $this->sdk->flush();
+        } catch (\Throwable $throwable) {
+            $this->recordBackendDiagnostic($throwable);
+        }
+    }
+
+    public function recordBackendFlush(): void
+    {
+        if ($this->sdk === null) {
+            return;
+        }
+        try {
             if ($this->sdk->getLastEventAt() !== null) {
                 Diagnostics::recordBackendFlush($this->sdk->getLastEventAt());
             }

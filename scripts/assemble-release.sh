@@ -36,8 +36,41 @@ require_grep '^[[:space:]]*\* Version:[[:space:]]+'"$VERSION"'$' debugbundle.php
 require_grep '^Stable tag: '"$VERSION"'$' readme.txt "readme.txt stable tag does not match $VERSION"
 require_grep '^  "version": "'"$VERSION"'",$' package.json "package.json version does not match $VERSION"
 require_grep '^## \['"$VERSION"'\] - ' CHANGELOG.md "CHANGELOG.md is missing a $VERSION heading"
-require_grep "'@debugbundle/sdk-browser@2\\." pnpm-lock.yaml "The browser SDK lock predates mandatory privacy; publish and lock the coordinated v2 browser SDK first"
-require_grep '@debugbundle\+sdk-browser@2\.' assets/dist/debugbundle-browser.js "The bundled browser asset does not match the protected v2 SDK; rebuild it from the locked dependencies"
+if [ -f src/CachedConfigFetcher.php ]; then
+  if [ -n "${DEBUGBUNDLE_PHP_SDK_SOURCE:-}" ]; then
+    if [ "${DEBUGBUNDLE_SOURCE_OVERLAY_SMOKE:-}" != "1" ]; then
+      echo "Source-overlay packaging is only permitted for an explicit local smoke." >&2
+      exit 1
+    fi
+  else
+    case "$VERSION" in
+      2.*) ;;
+      *) echo "Bounded request-end delivery requires a WordPress 2.x major release." >&2; exit 1 ;;
+    esac
+    require_grep '"debugbundle/sdk-php":[[:space:]]*"\^2\.0' composer.json "WordPress 2.x must require the PHP 2.x SDK"
+    require_grep '"version":[[:space:]]*"v?2\.' composer.lock "WordPress 2.x must lock the published PHP 2.x SDK"
+  fi
+fi
+if [ -f .debugbundle-staged-candidate.json ]; then
+  if [ "${DEBUGBUNDLE_STAGED_ARTIFACT_CHECK:-}" != "1" ]; then
+    echo "A staged candidate cannot be assembled as a public release." >&2
+    exit 1
+  fi
+elif [ "${DEBUGBUNDLE_SOURCE_OVERLAY_SMOKE:-}" != "1" ]; then
+  if grep -Eq '(^|[[:space:]])file:|/stage/' composer.lock pnpm-lock.yaml; then
+    echo "Public release locks must reference registry artifacts, not local staged packages." >&2
+    exit 1
+  fi
+  require_grep "'@debugbundle/sdk-browser@3\\." pnpm-lock.yaml "WordPress 2.x must lock the hardened browser 3.x SDK"
+fi
+php -r '
+$receipt = json_decode(file_get_contents("assets/dist/sdk-build.json"), true);
+if (!is_array($receipt) || ($receipt["package"] ?? null) !== "@debugbundle/sdk-browser"
+    || !preg_match(getenv("DEBUGBUNDLE_SOURCE_OVERLAY_SMOKE") === "1" ? "/^[23]\\./" : "/^3\\./", $receipt["version"] ?? "")
+    || ($receipt["asset_sha256"] ?? null) !== hash_file("sha256", "assets/dist/debugbundle-browser.js")) {
+    fwrite(STDERR, "Rebuild the browser 3.x asset and matching receipt from the locked dependency.\n");
+    exit(1);
+}'
 
 rm -rf .dist
 mkdir -p .dist/debugbundle
@@ -46,6 +79,7 @@ cp debugbundle.php .dist/debugbundle/
 cp uninstall.php .dist/debugbundle/
 cp readme.txt .dist/debugbundle/
 cp README.md .dist/debugbundle/
+cp MIGRATION-2.0.md .dist/debugbundle/
 cp CHANGELOG.md .dist/debugbundle/
 cp SECURITY.md .dist/debugbundle/
 cp LICENSE .dist/debugbundle/
@@ -59,6 +93,9 @@ if ! command -v composer >/dev/null 2>&1; then
   exit 1
 fi
 
+if [ -f .debugbundle-staged-candidate.json ]; then
+  cp .debugbundle-staged-candidate.json .dist/debugbundle/STAGED-CANDIDATE.json
+fi
 cp composer.json .dist/debugbundle/
 cp composer.lock .dist/debugbundle/
 composer install \

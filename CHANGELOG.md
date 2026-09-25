@@ -6,6 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-25
+
+### Changed
+
+- PHP 2.0 integration no longer sends when a capture batch fills. The plugin asks the PHP SDK for one priority-selected best-effort request-end attempt. It may briefly occupy a PHP worker and may lose data during an outage; no added collector is required.
+- Visitor requests read remote capture policy from a local WordPress transient scoped to the endpoint and project-token hash. WP-Cron authenticates its refresh with the project token and uses a short advisory HTTP timeout; a missing or expired cache falls back to the minimal policy. WP-Cron must run for remote policy changes to arrive.
+- Bundle published PHP 2.0 and Browser 3.0 SDKs, while retaining the existing settings and relay interfaces.
+
 ## [1.5.0] - 2026-09-21
 
 ### Security

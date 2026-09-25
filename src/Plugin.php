@@ -45,6 +45,7 @@ final class Plugin
         \register_deactivation_hook($this->pluginFile, [$this, 'deactivate']);
         \add_action('plugins_loaded', [$this, 'onPluginsLoaded']);
         \add_action(self::CRON_HOOK, [$this->browserRelayRoute, 'flushSpool']);
+        \add_action(SdkBootstrap::CONFIG_REFRESH_HOOK, [$this->sdkBootstrap, 'refreshConfig']);
     }
 
     public function activate(): void
@@ -60,6 +61,7 @@ final class Plugin
     {
         if (function_exists('wp_clear_scheduled_hook')) {
             \wp_clear_scheduled_hook(self::CRON_HOOK);
+            \wp_clear_scheduled_hook(SdkBootstrap::CONFIG_REFRESH_HOOK);
         }
     }
 

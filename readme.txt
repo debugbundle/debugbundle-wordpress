@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 1.5.0
+Stable tag: 2.0.0
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -39,6 +39,7 @@ What gets captured:
 How delivery works:
 
 - backend events are sent server-side through `debugbundle/sdk-php`
+- backend batches do not send during capture; one small best-effort request-end attempt prioritizes exceptions and may briefly occupy a PHP worker or lose events during an outage
 - browser events are posted to `/wp-json/debugbundle/v1/browser` and forwarded server-side
 - transient browser relay delivery failures are retried through a bounded local spool
 - the browser SDK is served from this plugin package, not from a third-party CDN
@@ -101,6 +102,11 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 2.0.0 =
+* Bundle PHP SDK 2.0.0 and Browser SDK 3.0.0 while keeping the existing settings and relay route.
+* Prioritize backend exceptions and make one bounded best-effort request-end delivery attempt instead of sending when a batch fills.
+* Refresh remote backend capture policy through WP-Cron and a local visitor-request cache.
 
 = 1.5.0 =
 * Protect PHP and browser relay telemetry before forwarding and before retry storage with the mandatory privacy baseline.

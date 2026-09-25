@@ -31,6 +31,8 @@ The plugin can also read the project token from `wp-config.php`:
 define('DEBUGBUNDLE_PROJECT_TOKEN', 'dbundle_proj_xxxxxxxxxxxx');
 ```
 
+Version 2.0 reads remote capture policy from a local cache on visitor requests. WP-Cron refreshes it using the project token; the cache is scoped by endpoint and token hash, and an unavailable cache falls back to the minimal capture policy. WP-Cron must run for remote policy changes to arrive.
+
 ## What It Captures
 
 - Backend PHP errors, exceptions, shutdown failures, request context, logs, runtime facts, and probes through `debugbundle/sdk-php`
@@ -78,6 +80,10 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 ### Privacy protection and upgrade preparation
 
 Version 1.5.0 protects PHP and browser relay events before forwarding and before writing retry files. It moves the retry spool from public uploads into a private temporary directory with restrictive file permissions and ships the protected PHP 1.5 and Browser 2.0 SDK lines. An installed older plugin remains on its previous capture behavior until upgraded.
+
+WordPress 2.0 keeps one-plugin installation. Backend capture never sends when a batch fills. At request end it selects one small best-effort PHP SDK batch, prioritizing exceptions, and may occupy a PHP worker briefly or lose unsent events during an outage. Visitor requests load cached capture policy locally; WP-Cron refreshes remote policy separately, so WP-Cron must run for policy changes to arrive. Installed 1.5 sites retain their existing behavior until upgraded.
+
+See [the 2.0 migration guide](MIGRATION-2.0.md) for upgrade checks and the request-end delivery limit.
 
 An upgrade does not erase old retry files automatically at install time. Activation and scheduled flushes sanitize and move at most 25 old files per run. Before returning an upgraded site to public traffic, an operator should restrict HTTP access to the old `wp-content/uploads/debugbundle-spool/` path at the web server (including nginx, where `.htaccess` has no effect), keep PHP's temporary directory outside the document root, and repeatedly invoke the plugin's flush hook until no `*.events.json` files remain in the old uploads directory. Verify the new private spool contains no synthetic credential canary, then restore traffic. If a file cannot be removed, keep the old uploads path blocked and investigate it without printing its contents. Already-sent data, backups, and old AI conversations require separate retention and credential-response decisions.
 

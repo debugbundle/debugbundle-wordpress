@@ -11,6 +11,7 @@ RELAY_URL="$WP_URL/?rest_route=/debugbundle/v1/browser"
 MOCK_EVENTS_FILE="$REPO_DIR/.smoke/ingestion-events.ndjson"
 PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
 PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-}
+USE_ASSEMBLED_ARTIFACT=${DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT:-0}
 VERSION=${VERSION:-1.5.0}
 
 compose() {
@@ -18,12 +19,24 @@ compose() {
 }
 
 prepare_plugin() {
+  if [ "$USE_ASSEMBLED_ARTIFACT" = "1" ]; then
+    if [ -n "$PHP_SDK_DIR" ]; then
+      echo "An assembled release smoke cannot use a PHP source overlay" >&2
+      exit 1
+    fi
+    if [ ! -r "$REPO_DIR/.dist/debugbundle-wordpress-${VERSION}.zip" ] ||
+      [ ! -r "$REPO_DIR/.dist/debugbundle-wordpress-${VERSION}.zip.sha256" ]; then
+      echo "The assembled WordPress release ZIP and checksum are required" >&2
+      exit 1
+    fi
+    (cd "$REPO_DIR/.dist" && sha256sum -c "debugbundle-wordpress-${VERSION}.zip.sha256")
+  else
   if [ -n "$PHP_SDK_DIR" ] && [ ! -r "$PHP_SDK_DIR/composer.json" ]; then
     echo "The coordinated PHP SDK checkout is required at $PHP_SDK_DIR" >&2
     exit 1
   fi
 
-  if [ ! -r "$REPO_DIR/assets/dist/debugbundle-browser.js" ]; then
+  if [ ! -r "$REPO_DIR/assets/dist/debugbundle-browser.js" ] || [ ! -r "$REPO_DIR/assets/dist/sdk-build.json" ]; then
     docker run --rm -t \
       -v "$REPO_DIR:/workspace" \
       -w /workspace \
@@ -37,6 +50,7 @@ prepare_plugin() {
       -v "$PHP_SDK_DIR:/sdk-php:ro" \
       -w /workspace \
       -e DEBUGBUNDLE_PHP_SDK_SOURCE=/sdk-php \
+      -e DEBUGBUNDLE_SOURCE_OVERLAY_SMOKE=1 \
       composer:2 \
       ./scripts/assemble-release.sh "$VERSION"
   else
@@ -45,6 +59,7 @@ prepare_plugin() {
       -w /workspace \
       composer:2 \
       ./scripts/assemble-release.sh "$VERSION"
+  fi
   fi
 
   mkdir -p "$PLUGIN_STAGE_DIR"
@@ -70,6 +85,18 @@ rm -rf "$REPO_DIR/.smoke"
 mkdir -p "$REPO_DIR/.smoke"
 
 prepare_plugin
+if [ -z "$PHP_SDK_DIR" ]; then
+  # All staged and publication lanes execute the asset and PHP configuration
+  # from this exact checksum-verified ZIP, with no checked-out source overlay.
+  docker run --rm -v "$REPO_DIR:/workspace:ro" -w /workspace composer:2 \
+    php scripts/browser-asset-config.php /workspace/.smoke/plugin/debugbundle \
+    > "$REPO_DIR/.smoke/browser-inline.js"
+  docker run --rm -v "$REPO_DIR:/workspace:ro" -w /workspace node:24-alpine \
+    node scripts/smoke-browser-asset.mjs .smoke/plugin/debugbundle .smoke/browser-inline.js
+else
+  echo "Source-overlay diagnostic smoke: Browser 3 release qualification is not being certified."
+fi
+browser_sdk_version=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$PLUGIN_STAGE_DIR/debugbundle/assets/dist/sdk-build.json")
 DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR="$PLUGIN_STAGE_DIR/debugbundle"
 export DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR
 
@@ -115,6 +142,35 @@ rm -f "$response_file"
 
 settings_json='{"enabled":true,"project_token":"dbundle_proj_smoke","environment":"development","service":"wordpress-smoke","endpoint":"http://mock-ingestion:18081/v1/events","backend_capture_enabled":true,"frontend_capture_enabled":true,"sample_rate":1,"browser_session_sample_rate":1,"browser_max_events_per_session":100,"browser_capture_console":false,"log_level":"warning","delete_on_uninstall":false,"settings_version":1}'
 compose run --rm wpcli wp option update debugbundle_settings "$settings_json" --format=json --allow-root
+
+compose run --rm wpcli wp eval '
+$bootstrap = new \DebugBundleWp\SdkBootstrap(new \DebugBundleWp\Settings());
+$bootstrap->refreshConfig();
+$cache = get_transient("debugbundle_sdk_capture_config");
+if (!is_array($cache) || ($cache["payload"]["capture_policy"]["capture_logs"] ?? null) !== "error"
+    || ($cache["token_hash"] ?? null) !== hash("sha256", "Bearer dbundle_proj_smoke")
+    || str_contains(json_encode($cache), "dbundle_proj_smoke")) {
+    fwrite(STDERR, "Packaged plugin did not authenticate and cache project-scoped remote policy" . PHP_EOL);
+    exit(1);
+}
+$captured = [];
+add_filter("debugbundle_before_send", static function (array $event) use (&$captured): ?array {
+    if (($event["event_type"] ?? null) === "log_event") {
+        $captured[] = $event["payload"]["message"] ?? "";
+        return null;
+    }
+    return $event;
+});
+$bootstrap->register();
+$sdk = (new ReflectionProperty($bootstrap, "sdk"))->getValue($bootstrap);
+$sdk->captureLog("remote policy warning blocked", "warning");
+$sdk->captureLog("remote policy error kept", "error");
+if ($captured !== ["remote policy error kept"]) {
+    fwrite(STDERR, "Packaged plugin did not apply authenticated remote policy" . PHP_EOL);
+    exit(1);
+}
+$sdk->reset();
+' --allow-root
 
 compose run --rm wpcli wp eval '
 $captured = [];
@@ -164,6 +220,7 @@ if (!$result->success) {
 ' --allow-root
 
 browser_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000001","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"2.0.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000002"},"payload":{"name":"DebugBundleWordPressSmokeFrontendError","message":"DebugBundle WordPress smoke frontend event","stack":"DebugBundleWordPressSmokeFrontendError: DebugBundle WordPress smoke frontend event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
+browser_payload=$(printf '%s' "$browser_payload" | python3 -c 'import json, sys; value=json.load(sys.stdin); value["batch"][0]["sdk_version"]=sys.argv[1]; print(json.dumps(value))' "$browser_sdk_version")
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
   -X POST "$RELAY_URL" \
@@ -204,6 +261,7 @@ if ! grep -q 'Bearer dbundle_proj_smoke' "$MOCK_EVENTS_FILE"; then
 fi
 
 touch "$REPO_DIR/.smoke/fail-ingestion"
+# Keep a legacy Browser 2.x event as an explicit relay/spool compatibility case.
 spool_payload='{"batch":[{"schema_version":"2026-03-01","event_id":"00000000-0000-4000-8000-000000000101","event_type":"frontend_exception","occurred_at":"2026-05-19T00:00:00Z","sdk_name":"@debugbundle/sdk-browser","sdk_version":"2.0.0","service":{"name":"wordpress-smoke-browser","environment":"development"},"correlation":{"trace_id":"00000000-0000-4000-8000-000000000102"},"payload":{"name":"DebugBundleWordPressSpoolSmokeError","message":"DebugBundle WordPress spool smoke event","stack":"DebugBundleWordPressSpoolSmokeError: DebugBundle WordPress spool smoke event","url":"http://127.0.0.1:18080/","breadcrumbs":[]}}]}'
 response_file=$(mktemp)
 status_code=$(curl -sS -o "$response_file" -w "%{http_code}" \
@@ -245,4 +303,4 @@ if ! grep -q '00000000-0000-4000-8000-000000000101' "$MOCK_EVENTS_FILE"; then
   exit 1
 fi
 
-echo "WordPress smoke passed: plugin activated, PHP suppression respected, admin tests sent, relay events reached mock ingestion, and spool retry flushed."
+echo "WordPress smoke passed: authenticated config policy, PHP suppression, admin and relay delivery, and spool retry."

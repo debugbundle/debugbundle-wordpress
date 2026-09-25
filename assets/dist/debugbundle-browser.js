@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/keys.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.1.0/node_modules/@debugbundle/redaction/dist/keys.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -58,7 +58,7 @@
     return false;
   }
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/telemetry-text.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.1.0/node_modules/@debugbundle/redaction/dist/telemetry-text.js
   var REDACTED = "[REDACTED]";
   var BUILTIN_LABELS = [
     ...DEFAULT_SENSITIVE_KEYS,
@@ -147,7 +147,7 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.0.0/node_modules/@debugbundle/redaction/dist/telemetry.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.1.0/node_modules/@debugbundle/redaction/dist/telemetry.js
   var REDACTED2 = "[REDACTED]";
   var MAX_DEPTH = 16;
   var MAX_NODES = 4096;
@@ -4339,7 +4339,7 @@
   };
   var NEVER = INVALID;
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
   function createUuidV4() {
     var _a, _b;
     const cryptoSource = globalThis.crypto;
@@ -4705,7 +4705,7 @@
     return EventEnvelopeSchema.parse(candidate);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
   var BrowserResourceRoutesSchema = external_exports.object({
     items: external_exports.array(external_exports.object({ route: external_exports.string().max(1024), occurrences: external_exports.number().int().positive() })).max(20),
     recorded_occurrences: external_exports.number().int().nonnegative(),
@@ -4714,7 +4714,7 @@
     coverage: external_exports.enum(["occurrence_metadata", "retained_samples"])
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
   var BrowserResourceContextSchema = external_exports.object({
     version: external_exports.literal(1),
     host: external_exports.string().max(255).nullable(),
@@ -4733,10 +4733,24 @@
     title: external_exports.string(),
     optional_candidate: external_exports.boolean(),
     diagnosis: external_exports.string(),
-    routes: BrowserResourceRoutesSchema
+    routes: BrowserResourceRoutesSchema,
+    interruption: external_exports.object({
+      visibility_state: external_exports.enum(["hidden", "prerender", "unloaded"]),
+      ready_state: external_exports.enum(["loading", "interactive"]),
+      target_tag_name: external_exports.literal("link"),
+      rel: external_exports.enum(["preload", "modulepreload", "prefetch"])
+    }).optional(),
+    recovery_failures: external_exports.array(external_exports.object({
+      source: external_exports.enum(["request_event", "frontend_breadcrumb"]),
+      method: external_exports.string().min(1).max(32),
+      path: external_exports.string().min(1).max(1024),
+      status_code: external_exports.number().int().min(400).max(599),
+      occurred_at: external_exports.string().datetime(),
+      delay_ms: external_exports.number().int().nonnegative().max(3e4)
+    })).max(10).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -4883,7 +4897,7 @@
   var BALANCED_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([408, 423, 424, 425, 429]);
   var INVESTIGATIVE_IMMEDIATE_REQUEST_STATUSES = /* @__PURE__ */ new Set([...BALANCED_IMMEDIATE_REQUEST_STATUSES, 409]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -4911,6 +4925,13 @@
   var CaptureRuleRuntimeSchema = external_exports.enum(CAPTURE_RULE_RUNTIME_VALUES);
   var CaptureRuleEventTypeSchema = external_exports.enum(CAPTURE_RULE_EVENT_TYPES);
   var BrowserEventKindSchema = external_exports.enum(["window_error", "resource_error"]);
+  var BrowserPageVisibilityStateSchema = external_exports.enum([
+    "visible",
+    "hidden",
+    "prerender",
+    "unloaded"
+  ]);
+  var BrowserPageReadyStateSchema = external_exports.enum(["loading", "interactive", "complete"]);
   var CaptureRuleClientKindSchema = external_exports.enum(["human", "bot", "unknown"]);
   function normalizeOptionalTrimmedString(value) {
     const trimmed = value == null ? void 0 : value.trim();
@@ -4930,6 +4951,30 @@
   function hasValue(value) {
     return value !== void 0 && value !== null;
   }
+  var BrowserTargetAttributesSchema = external_exports.object({
+    rel: external_exports.string().trim().min(1).max(120).optional(),
+    as: external_exports.string().trim().min(1).max(120).optional(),
+    type: external_exports.string().trim().min(1).max(255).optional(),
+    media: external_exports.string().trim().min(1).max(500).optional(),
+    cross_origin: external_exports.string().trim().min(1).max(120).optional(),
+    async: external_exports.boolean().optional(),
+    defer: external_exports.boolean().optional(),
+    integrity_present: external_exports.boolean().optional()
+  }).strict().transform((value) => {
+    const normalized = {};
+    for (const key of ["rel", "as", "type", "media", "cross_origin"]) {
+      const attribute = normalizeOptionalTrimmedString(value[key]);
+      if (attribute !== void 0)
+        normalized[key] = attribute.toLowerCase();
+    }
+    for (const key of ["async", "defer", "integrity_present"]) {
+      if (value[key] !== void 0)
+        normalized[key] = value[key];
+    }
+    return normalized;
+  }).refine((value) => Object.keys(value).length > 0, {
+    message: "Browser target attribute matchers must include at least one attribute."
+  });
   var UrlMatcherSchema = external_exports.object({
     host: external_exports.string().min(1).max(255).optional(),
     host_suffix: external_exports.string().min(1).max(255).optional(),
@@ -4990,6 +5035,10 @@
     message_equals: external_exports.string().min(1).max(500).optional(),
     browser_event_kind: BrowserEventKindSchema.optional(),
     browser_event_opaque: external_exports.boolean().optional(),
+    browser_page_visibility_state: BrowserPageVisibilityStateSchema.optional(),
+    browser_page_ready_state: BrowserPageReadyStateSchema.optional(),
+    browser_target_tag_name: external_exports.string().trim().min(1).max(120).optional(),
+    browser_target_attributes: BrowserTargetAttributesSchema.optional(),
     client_kind: CaptureRuleClientKindSchema.optional(),
     bot_family: external_exports.string().min(1).max(120).optional(),
     resource_url: UrlMatcherSchema.optional(),
@@ -5007,6 +5056,7 @@
     const messageContains = normalizeOptionalTrimmedString(value.message_contains);
     const messageEquals = normalizeOptionalTrimmedString(value.message_equals);
     const botFamily = normalizeOptionalTrimmedString(value.bot_family);
+    const browserTargetTagName = normalizeOptionalTrimmedString(value.browser_target_tag_name);
     const statusCodes = normalizeNumberArray(value.status_codes);
     if (eventTypes !== void 0) {
       normalized.event_types = eventTypes;
@@ -5037,6 +5087,18 @@
     }
     if (value.browser_event_opaque !== void 0) {
       normalized.browser_event_opaque = value.browser_event_opaque;
+    }
+    if (value.browser_page_visibility_state !== void 0) {
+      normalized.browser_page_visibility_state = value.browser_page_visibility_state;
+    }
+    if (value.browser_page_ready_state !== void 0) {
+      normalized.browser_page_ready_state = value.browser_page_ready_state;
+    }
+    if (browserTargetTagName !== void 0) {
+      normalized.browser_target_tag_name = browserTargetTagName.toLowerCase();
+    }
+    if (value.browser_target_attributes !== void 0) {
+      normalized.browser_target_attributes = value.browser_target_attributes;
     }
     if (value.client_kind !== void 0) {
       normalized.client_kind = value.client_kind;
@@ -5071,6 +5133,10 @@
       "message_equals",
       "browser_event_kind",
       "browser_event_opaque",
+      "browser_page_visibility_state",
+      "browser_page_ready_state",
+      "browser_target_tag_name",
+      "browser_target_attributes",
       "client_kind",
       "bot_family",
       "resource_url",
@@ -5257,7 +5323,7 @@
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -5274,6 +5340,19 @@
     message: external_exports.string().min(1).optional(),
     browser_event_kind: BrowserEventKindSchema.optional(),
     browser_event_opaque: external_exports.boolean().optional(),
+    browser_page_visibility_state: BrowserPageVisibilityStateSchema.optional(),
+    browser_page_ready_state: BrowserPageReadyStateSchema.optional(),
+    browser_target_tag_name: external_exports.string().min(1).max(120).optional(),
+    browser_target_attributes: external_exports.object({
+      rel: external_exports.string().min(1).max(120).optional(),
+      as: external_exports.string().min(1).max(120).optional(),
+      type: external_exports.string().min(1).max(255).optional(),
+      media: external_exports.string().min(1).max(500).optional(),
+      cross_origin: external_exports.string().min(1).max(120).optional(),
+      async: external_exports.boolean().optional(),
+      defer: external_exports.boolean().optional(),
+      integrity_present: external_exports.boolean().optional()
+    }).optional(),
     client_kind: CaptureRuleClientKindSchema.optional(),
     bot_family: external_exports.string().min(1).max(120).optional(),
     resource_url: CaptureRuleEvaluationUrlSchema.optional(),
@@ -5284,7 +5363,7 @@
     fingerprint_aliases: external_exports.array(CaptureRuleFingerprintSchema).max(2).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -5311,7 +5390,7 @@
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -5334,7 +5413,7 @@
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
   var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
   var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
@@ -5798,7 +5877,7 @@
     return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
   var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
   var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
   var AnalyticsOpportunityBundleStatusValues = [
@@ -5984,7 +6063,7 @@
     message: "At least one analytics settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
   var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
   var AnalyticsJourneySafeScalarSchema = external_exports.union([
     external_exports.string().max(256),
@@ -6078,7 +6157,7 @@
     journey: AnalyticsJourneySampleArtifactSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
   var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
   var AnalyticsSavedFunnelStepSchema = external_exports.object({
     step_key: AnalyticsSavedFunnelKeySchema,
@@ -6121,7 +6200,7 @@
     funnel: AnalyticsSavedFunnelSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -6144,7 +6223,7 @@
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@2.0.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@2.1.0/node_modules/@debugbundle/shared-types/dist/index.js
   var SeveritySchema = external_exports.enum(["low", "medium", "high", "critical"]);
   var BundleSdkSchema = external_exports.object({
     name: external_exports.string().min(1),
@@ -6445,7 +6524,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a, _b, _c, _d;
@@ -6460,10 +6539,10 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "2.0.0",
+    version: "3.0.0",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -6480,7 +6559,8 @@
     files: [
       "dist",
       "README.md",
-      "LICENSE"
+      "LICENSE",
+      "MIGRATION-3.0.md"
     ],
     main: "./dist/index.js",
     types: "./dist/index.d.ts",
@@ -6494,12 +6574,12 @@
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "2.0.0",
-      "@debugbundle/redaction": "2.0.0"
+      "@debugbundle/shared-types": "2.1.0",
+      "@debugbundle/redaction": "2.1.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6523,7 +6603,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key] : void 0;
@@ -6554,7 +6634,59 @@
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  function getFetchSource() {
+    const candidate = globalThis["fetch"];
+    return typeof candidate === "function" ? candidate : null;
+  }
+  function boundedTransportTimeoutMs(requested) {
+    return Number.isFinite(requested) ? Math.min(6e4, Math.max(1, Math.trunc(requested))) : DEFAULT_REQUEST_TIMEOUT_MS;
+  }
+  function parseRetryAfter(value) {
+    if (value === null)
+      return void 0;
+    const seconds = Number(value);
+    if (Number.isFinite(seconds))
+      return Math.max(0, seconds * 1e3);
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? void 0 : Math.max(0, parsed - Date.now());
+  }
+  function createFetchTransport() {
+    const fetchImpl = getFetchSource();
+    return async (request) => {
+      var _a, _b;
+      if (fetchImpl === null)
+        throw new Error("fetch unavailable");
+      if (typeof AbortController !== "function")
+        throw new Error("abort controller unavailable");
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), boundedTransportTimeoutMs(request.timeout_ms));
+      try {
+        const response = await fetchImpl(request.endpoint, {
+          method: "POST",
+          headers: request.headers,
+          body: buildBrowserTransportRequestBody(request.transportMode, request.events),
+          signal: controller.signal
+        });
+        const retryAfterMs = parseRetryAfter((_b = (_a = response.headers) == null ? void 0 : _a.get("Retry-After")) != null ? _b : null);
+        const body = typeof response.json === "function" ? await response.json().catch(() => void 0) : void 0;
+        if (controller.signal.aborted)
+          throw new Error("transport timeout");
+        return {
+          status: response.status,
+          ...body === void 0 ? {} : { body },
+          ...retryAfterMs === void 0 ? {} : { retry_after_ms: retryAfterMs }
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+  }
+  function buildBrowserTransportRequestBody(transportMode, events) {
+    return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -6603,10 +6735,6 @@
   }
   function getMatchMedia() {
     const candidate = globalThis["matchMedia"];
-    return typeof candidate === "function" ? candidate : null;
-  }
-  function getFetchSource() {
-    const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
   }
   function getConsoleSource() {
@@ -6831,47 +6959,6 @@
       frameIndex++;
     }
     return frames;
-  }
-  function parseRetryAfter(value) {
-    if (value === null) {
-      return void 0;
-    }
-    const seconds = Number(value);
-    if (Number.isFinite(seconds)) {
-      return Math.max(0, seconds * 1e3);
-    }
-    const parsed = Date.parse(value);
-    if (Number.isNaN(parsed)) {
-      return void 0;
-    }
-    return Math.max(0, parsed - Date.now());
-  }
-  function createFetchTransport() {
-    const fetchImpl = getFetchSource();
-    return async (request) => {
-      var _a, _b;
-      if (fetchImpl === null) {
-        throw new Error("fetch unavailable");
-      }
-      const response = await fetchImpl(request.endpoint, {
-        method: "POST",
-        headers: request.headers,
-        body: buildBrowserTransportRequestBody(request.transportMode, request.events)
-      });
-      const retryAfterMs = parseRetryAfter((_b = (_a = response.headers) == null ? void 0 : _a.get("Retry-After")) != null ? _b : null);
-      const body = typeof response.json === "function" ? await response.json().catch(() => void 0) : void 0;
-      return {
-        status: response.status,
-        ...body === void 0 ? {} : { body },
-        ...retryAfterMs === void 0 ? {} : { retry_after_ms: retryAfterMs }
-      };
-    };
-  }
-  function buildBrowserTransportRequestBody(transportMode, events) {
-    if (transportMode === "direct") {
-      return JSON.stringify({ events });
-    }
-    return JSON.stringify({ batch: events });
   }
   function isAbsoluteHttpUrl(value) {
     try {
@@ -7278,7 +7365,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -7333,7 +7420,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -7607,7 +7694,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -8012,7 +8099,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -8022,6 +8109,10 @@
     }
     try {
       const result = beforeSend(cloneEvent(event));
+      if (result instanceof Promise) {
+        void result.catch(() => void 0);
+        return event;
+      }
       if (result === null) {
         return null;
       }
@@ -8035,7 +8126,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -8189,7 +8280,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -8217,7 +8308,7 @@
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8768,7 +8859,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8854,7 +8945,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -9239,7 +9330,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a;
     try {
@@ -9258,13 +9349,38 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
   var LOOP_RESET_AFTER_MS = 6e4;
   var LOOP_CHECKPOINT_MS = 3e4;
   var MAX_NORMAL_EVENTS_PER_WINDOW = 3;
+  var MAX_TRACKED_FINGERPRINTS = 2048;
+  var MAX_DETAILED_AGGREGATES = 64;
+  function createBrowserSuppressionEvent(config2, aggregate) {
+    return createEventEnvelope({
+      schema_version: SDK_SCHEMA_VERSION,
+      event_type: "error_suppressed",
+      ...config2.projectToken === null ? {} : { project_token: config2.projectToken },
+      sdk_name: SDK_NAME,
+      sdk_version: SDK_VERSION,
+      service: {
+        name: config2.service,
+        runtime: "browser",
+        framework: null,
+        environment: config2.environment
+      },
+      occurred_at: aggregate.lastSeen,
+      payload: {
+        fingerprint: aggregate.fingerprint,
+        suppressed_count: aggregate.suppressedCount,
+        window_seconds: aggregate.windowSeconds,
+        first_seen: aggregate.firstSeen,
+        last_seen: aggregate.lastSeen
+      }
+    });
+  }
   function createState(nowMs) {
     return {
       windowStartedAtMs: nowMs,
@@ -9300,12 +9416,28 @@
   var EventSuppressionTracker = class {
     constructor() {
       __publicField(this, "states", /* @__PURE__ */ new Map());
+      __publicField(this, "overflowCount", 0);
+      __publicField(this, "overflowFirstAtMs", null);
+      __publicField(this, "overflowLastAtMs", null);
+    }
+    get trackedCount() {
+      return this.states.size;
     }
     reset() {
       this.states.clear();
+      this.overflowCount = 0;
+      this.overflowFirstAtMs = null;
+      this.overflowLastAtMs = null;
     }
     shouldCapture(key, nowMs) {
       var _a;
+      if (!this.states.has(key) && this.states.size >= MAX_TRACKED_FINGERPRINTS) {
+        const oldest = this.states.entries().next().value;
+        if (oldest !== void 0) {
+          this.addOverflow(oldest[1]);
+          this.states.delete(oldest[0]);
+        }
+      }
       const state = (_a = this.states.get(key)) != null ? _a : createState(nowMs);
       this.states.set(key, state);
       if (state.suppressionMode && nowMs - state.lastSeenAtMs >= LOOP_RESET_AFTER_MS) {
@@ -9344,13 +9476,17 @@
         if (state.suppressionMode && state.lastAggregateEmittedAtMs !== null && nowMs - state.lastAggregateEmittedAtMs < LOOP_CHECKPOINT_MS) {
           continue;
         }
-        aggregates.push({
-          fingerprint: buildFingerprint(key),
-          suppressedCount: state.pendingSuppressedCount,
-          firstSeen: new Date(state.pendingFirstSeenAtMs).toISOString(),
-          lastSeen: new Date(state.pendingLastSeenAtMs).toISOString(),
-          windowSeconds: DUPLICATE_WINDOW_MS / 1e3
-        });
+        if (aggregates.length < MAX_DETAILED_AGGREGATES) {
+          aggregates.push({
+            fingerprint: buildFingerprint(key),
+            suppressedCount: state.pendingSuppressedCount,
+            firstSeen: new Date(state.pendingFirstSeenAtMs).toISOString(),
+            lastSeen: new Date(state.pendingLastSeenAtMs).toISOString(),
+            windowSeconds: DUPLICATE_WINDOW_MS / 1e3
+          });
+        } else {
+          this.addOverflow(state);
+        }
         state.pendingSuppressedCount = 0;
         state.pendingFirstSeenAtMs = null;
         state.pendingLastSeenAtMs = null;
@@ -9359,11 +9495,30 @@
           this.states.delete(key);
         }
       }
+      if (this.overflowCount > 0 && this.overflowFirstAtMs !== null && this.overflowLastAtMs !== null) {
+        aggregates.push({
+          fingerprint: buildFingerprint("suppression_state_pressure"),
+          suppressedCount: this.overflowCount,
+          firstSeen: new Date(this.overflowFirstAtMs).toISOString(),
+          lastSeen: new Date(this.overflowLastAtMs).toISOString(),
+          windowSeconds: DUPLICATE_WINDOW_MS / 1e3
+        });
+        this.overflowCount = 0;
+        this.overflowFirstAtMs = null;
+        this.overflowLastAtMs = null;
+      }
       return aggregates;
+    }
+    addOverflow(state) {
+      if (state.pendingSuppressedCount === 0 || state.pendingFirstSeenAtMs === null || state.pendingLastSeenAtMs === null)
+        return;
+      this.overflowCount = Math.min(Number.MAX_SAFE_INTEGER, this.overflowCount + state.pendingSuppressedCount);
+      this.overflowFirstAtMs = this.overflowFirstAtMs === null ? state.pendingFirstSeenAtMs : Math.min(this.overflowFirstAtMs, state.pendingFirstSeenAtMs);
+      this.overflowLastAtMs = this.overflowLastAtMs === null ? state.pendingLastSeenAtMs : Math.max(this.overflowLastAtMs, state.pendingLastSeenAtMs);
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -9408,24 +9563,178 @@
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
+      prepared: /* @__PURE__ */ new WeakSet(),
+      preparing: false,
+      preparationTimer: null,
+      inFlightEvents: /* @__PURE__ */ new Map(),
+      beaconCommitted: false,
+      keepalivePending: false,
+      queuedBytes: 0,
+      sizes: /* @__PURE__ */ new WeakMap(),
       flushPromise: null,
+      flushScheduled: false,
+      flushRequestedDuringSend: false,
       timer: null,
       nextRetryAt: null,
       consecutiveFailures: 0,
       rejected: false,
-      lastEventAt: null
+      lastEventAt: null,
+      pressureCount: 0,
+      pressureFirstAt: null,
+      pressureLastAt: null,
+      lastPressureReportAt: null,
+      queueVersion: 0,
+      evictableVersion: -1,
+      evictableMask: 0
     };
+  }
+  var MAX_DEBUG_QUEUED_EVENTS = 512;
+  var MAX_ANALYTICS_QUEUED_EVENTS = 256;
+  var MAX_DEBUG_QUEUED_BYTES = 8 * 1024 * 1024;
+  var MAX_ANALYTICS_QUEUED_BYTES = 4 * 1024 * 1024;
+  var PRESSURE_REPORT_INTERVAL_MS = 3e4;
+  function recordDebugPressure(lane) {
+    var _a;
+    const now = Date.now();
+    lane.pressureCount = Math.min(Number.MAX_SAFE_INTEGER, lane.pressureCount + 1);
+    (_a = lane.pressureFirstAt) != null ? _a : lane.pressureFirstAt = now;
+    lane.pressureLastAt = now;
+  }
+  function recordDebugDrop(lane, event) {
+    if (event.event_type !== "error_suppressed" || event.payload.fingerprint !== "browser-queue-pressure") {
+      recordDebugPressure(lane);
+      return;
+    }
+    const count = event.payload.suppressed_count;
+    const first = Date.parse(event.payload.first_seen);
+    const last = Date.parse(event.payload.last_seen);
+    if (!Number.isSafeInteger(count) || count <= 0 || !Number.isFinite(first) || !Number.isFinite(last))
+      return;
+    lane.pressureCount = Math.min(Number.MAX_SAFE_INTEGER, lane.pressureCount + count);
+    lane.pressureFirstAt = lane.pressureFirstAt === null ? first : Math.min(lane.pressureFirstAt, first);
+    lane.pressureLastAt = lane.pressureLastAt === null ? last : Math.max(lane.pressureLastAt, last);
+    lane.lastPressureReportAt = null;
+  }
+  function invalidateAdmission(lane) {
+    lane.queueVersion = (lane.queueVersion + 1) % 1e9;
+  }
+  function hasEvictableEvent(lane, maxPriority) {
+    if (lane.evictableVersion !== lane.queueVersion) {
+      lane.evictableMask = 0;
+      for (const candidate of lane.events) {
+        if (!lane.inFlightEvents.has(candidate))
+          lane.evictableMask |= 1 << eventPriority(candidate);
+      }
+      lane.evictableVersion = lane.queueVersion;
+    }
+    return (lane.evictableMask & (1 << maxPriority + 1) - 1) !== 0;
+  }
+  function capturePriority(kind, level, status) {
+    if (kind === "frontend_exception" || kind === "backend_exception")
+      return 3;
+    if (kind === "error_suppressed")
+      return 2;
+    if (kind === "log_event")
+      return level === "error" || level === "critical" ? 2 : 0;
+    if (kind === "request_event" && status !== void 0 && status >= 400)
+      return 2;
+    return 1;
+  }
+  function eventPriority(event) {
+    return capturePriority(event.event_type, event.event_type === "log_event" ? event.payload.level : void 0, event.event_type === "request_event" ? event.payload.response_status : void 0);
+  }
+  function eventBytes(lane, event) {
+    const cached = lane.sizes.get(event);
+    if (cached !== void 0)
+      return cached;
+    try {
+      const json = JSON.stringify(event);
+      if (json === void 0)
+        return null;
+      const bytes = new TextEncoder().encode(json).byteLength;
+      lane.sizes.set(event, bytes);
+      return bytes;
+    } catch {
+      return null;
+    }
+  }
+  function retainSend(lane, events) {
+    var _a;
+    for (const event of events) {
+      lane.inFlightEvents.set(event, ((_a = lane.inFlightEvents.get(event)) != null ? _a : 0) + 1);
+    }
+    invalidateAdmission(lane);
+  }
+  function releaseSend(lane, events) {
+    var _a;
+    for (const event of events) {
+      const retained = (_a = lane.inFlightEvents.get(event)) != null ? _a : 0;
+      if (retained <= 1)
+        lane.inFlightEvents.delete(event);
+      else
+        lane.inFlightEvents.set(event, retained - 1);
+    }
+    invalidateAdmission(lane);
+  }
+  function admitEvent(lane, event, limit, maxBytes, preferRetained = false, onDrop) {
+    var _a;
+    const incomingPriority = eventPriority(event);
+    const allowEqualPriorityEviction = !preferRetained && incomingPriority < 2;
+    const maxVictimPriority = incomingPriority - (allowEqualPriorityEviction ? 0 : 1);
+    if (lane.events.length >= limit && !hasEvictableEvent(lane, maxVictimPriority)) {
+      onDrop == null ? void 0 : onDrop(event);
+      return false;
+    }
+    const bytes = eventBytes(lane, event);
+    if (bytes === null || bytes > maxBytes) {
+      onDrop == null ? void 0 : onDrop(event);
+      return false;
+    }
+    if (lane.queuedBytes + bytes > maxBytes && !hasEvictableEvent(lane, maxVictimPriority)) {
+      onDrop == null ? void 0 : onDrop(event);
+      return false;
+    }
+    while (lane.events.length >= limit || lane.queuedBytes + bytes > maxBytes) {
+      let victimIndex = -1;
+      let victimPriority = incomingPriority;
+      for (let index = 0; index < lane.events.length; index += 1) {
+        if (lane.inFlightEvents.has(lane.events[index]))
+          continue;
+        const priority = eventPriority(lane.events[index]);
+        if (priority < victimPriority || allowEqualPriorityEviction && priority === victimPriority && victimIndex < 0) {
+          victimIndex = index;
+          victimPriority = priority;
+        }
+      }
+      if (victimIndex < 0) {
+        onDrop == null ? void 0 : onDrop(event);
+        return false;
+      }
+      const [victim] = lane.events.splice(victimIndex, 1);
+      if (victim !== void 0) {
+        lane.queuedBytes -= (_a = lane.sizes.get(victim)) != null ? _a : 0;
+        invalidateAdmission(lane);
+        onDrop == null ? void 0 : onDrop(victim);
+      }
+    }
+    lane.events.push(event);
+    lane.queuedBytes += bytes;
+    invalidateAdmission(lane);
+    return true;
   }
   var BrowserEventTransport = class {
     constructor(callbacks) {
       __publicField(this, "callbacks");
       __publicField(this, "config", null);
+      __publicField(this, "flushCycle", null);
       __publicField(this, "debug", createLane());
       __publicField(this, "analytics", createLane());
+      __publicField(this, "retiredDebug", /* @__PURE__ */ new Set());
+      __publicField(this, "retiredAnalytics", /* @__PURE__ */ new Set());
       this.callbacks = callbacks;
     }
     configure(config2) {
@@ -9445,17 +9754,74 @@
       const values = [this.debug.lastEventAt, this.analytics.lastEventAt].filter((value) => value !== null);
       return values.length === 0 ? null : Math.max(...values);
     }
-    enqueueDebug(event) {
+    /** Reject known queue exhaustion before callers construct events or invoke hooks. */
+    canCaptureDebug(kind, level, status) {
+      const lane = this.debug;
+      if (this.config === null || lane.rejected || lane.beaconCommitted || this.retiredDebug.size > 0)
+        return false;
+      if (lane.events.length < MAX_DEBUG_QUEUED_EVENTS && lane.queuedBytes < MAX_DEBUG_QUEUED_BYTES)
+        return true;
+      const priority = capturePriority(kind, level, status);
+      if (hasEvictableEvent(lane, priority < 2 ? priority : priority - 1))
+        return true;
+      recordDebugPressure(lane);
+      return false;
+    }
+    enqueueDebug(event, needsPreparation = false) {
+      if (!needsPreparation)
+        this.debug.prepared.add(event);
       this.enqueue("debug", event);
+      if (needsPreparation)
+        this.schedulePreparation(this.debug);
+    }
+    schedulePreparation(lane) {
+      if (lane.preparationTimer !== null || this.debug !== lane)
+        return;
+      lane.preparationTimer = setTimeout(() => {
+        lane.preparationTimer = null;
+        if (this.debug !== lane)
+          return;
+        this.prepareDebugEvents(lane, 32);
+        if (lane.events.some((event) => !lane.prepared.has(event)))
+          this.schedulePreparation(lane);
+      }, 0);
     }
     enqueueAnalytics(event) {
       this.enqueue("analytics", event);
     }
-    async flush() {
-      await Promise.all([
-        this.flushLane("debug"),
-        this.flushLane("analytics")
-      ]);
+    flush() {
+      var _a, _b;
+      if (this.debug.events.length === 0 && this.analytics.events.length === 0 && this.debug.pressureCount === 0)
+        return Promise.resolve();
+      if (this.flushCycle !== null)
+        return this.flushCycle;
+      const deadline = boundedTransportTimeoutMs((_b = (_a = this.config) == null ? void 0 : _a.requestTimeoutMs) != null ? _b : 5e3);
+      let finish;
+      const result = new Promise((resolve) => {
+        finish = resolve;
+      });
+      this.flushCycle = result;
+      const timer = setTimeout(finish, deadline);
+      void (async () => {
+        await Promise.all([this.flushLaneToIdle("debug"), this.flushLaneToIdle("analytics")]);
+      })().catch(() => void 0).finally(() => {
+        clearTimeout(timer);
+        if (this.flushCycle === result)
+          this.flushCycle = null;
+        finish();
+      });
+      return result;
+    }
+    async flushLaneToIdle(laneName) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const lane = this.getLane(laneName);
+        const before = lane.events.length;
+        if (before === 0 && lane.pressureCount === 0)
+          return;
+        await this.flushLane(laneName);
+        if (this.getLane(laneName) !== lane || lane.events.length === 0 || lane.events.length >= before || lane.nextRetryAt !== null)
+          return;
+      }
     }
     scheduleDebug(delayMs) {
       this.schedule("debug", delayMs);
@@ -9466,7 +9832,19 @@
     }
     reset() {
       this.clearLaneTimer(this.debug);
+      if (this.debug.preparationTimer !== null)
+        clearTimeout(this.debug.preparationTimer);
       this.clearLaneTimer(this.analytics);
+      if (this.debug.inFlightEvents.size > 0)
+        this.retiredDebug.add(this.debug);
+      if (this.analytics.inFlightEvents.size > 0)
+        this.retiredAnalytics.add(this.analytics);
+      this.debug.events = [];
+      this.debug.queuedBytes = 0;
+      invalidateAdmission(this.debug);
+      this.analytics.events = [];
+      this.analytics.queuedBytes = 0;
+      invalidateAdmission(this.analytics);
       this.debug = createLane();
       this.analytics = createLane();
       this.config = null;
@@ -9474,12 +9852,18 @@
     enqueue(laneName, event) {
       const config2 = this.config;
       const lane = this.getLane(laneName);
-      if (config2 === null || lane.rejected) {
+      if (config2 === null || lane.rejected || lane.beaconCommitted || this.getRetired(laneName).size > 0) {
         return;
       }
-      lane.events.push(event);
-      if (lane.events.length >= config2.batchSize) {
+      admitEvent(lane, event, laneName === "debug" ? MAX_DEBUG_QUEUED_EVENTS : MAX_ANALYTICS_QUEUED_EVENTS, laneName === "debug" ? MAX_DEBUG_QUEUED_BYTES : MAX_ANALYTICS_QUEUED_BYTES, false, laneName === "debug" ? (dropped) => recordDebugDrop(lane, dropped) : void 0);
+      if (lane.events.length >= Math.min(config2.batchSize, 256)) {
+        if (lane.flushScheduled)
+          return;
+        lane.flushScheduled = true;
         queueMicrotask(() => {
+          if (this.getLane(laneName) !== lane)
+            return;
+          lane.flushScheduled = false;
           void this.flushLane(laneName);
         });
         return;
@@ -9487,21 +9871,48 @@
       this.schedule(laneName);
     }
     async flushLane(laneName) {
+      var _a, _b;
       const config2 = this.config;
       const lane = this.getLane(laneName);
-      if (config2 === null || lane.events.length === 0 || lane.rejected) {
+      if (config2 === null || lane.rejected || lane.keepalivePending || this.getRetired(laneName).size > 0) {
         return;
       }
       if (lane.flushPromise !== null) {
+        lane.flushRequestedDuringSend = true;
         return lane.flushPromise;
       }
       if (lane.nextRetryAt !== null && Date.now() < lane.nextRetryAt) {
         return;
       }
+      if (laneName === "debug") {
+        try {
+          (_b = (_a = this.callbacks).beforeDebugFlush) == null ? void 0 : _b.call(_a);
+        } catch {
+        }
+        this.enqueuePressureReport(lane, config2);
+      }
+      if (lane.events.length === 0)
+        return;
       this.clearLaneTimer(lane);
-      const events = [...lane.events];
-      lane.flushPromise = (async () => {
-        var _a;
+      if (laneName === "debug")
+        this.prepareDebugEvents(lane, Math.min(config2.batchSize, 256));
+      if (this.getLane(laneName) !== lane || lane.preparing)
+        return;
+      const events = lane.events.filter((event) => laneName !== "debug" || lane.prepared.has(event)).slice(0, Math.min(config2.batchSize, 256));
+      if (events.length === 0) {
+        if (lane.events.length > 0)
+          this.schedule(laneName, 0);
+        return;
+      }
+      retainSend(lane, events);
+      let acknowledged = false;
+      let finishSend;
+      const completion = new Promise((resolve) => {
+        finishSend = resolve;
+      });
+      lane.flushPromise = completion;
+      void (async () => {
+        var _a2, _b2;
         try {
           const response = await config2.transport({
             endpoint: config2.endpoint,
@@ -9510,8 +9921,11 @@
             transportMode: config2.transportMode,
             timeout_ms: config2.requestTimeoutMs
           });
+          if (this.getLane(laneName) !== lane)
+            return;
           if (response.status >= 200 && response.status < 300) {
             this.reconcileSuccessfulResponse(laneName, lane, events, response.body, response.retry_after_ms);
+            acknowledged = true;
             return;
           }
           lane.consecutiveFailures += 1;
@@ -9519,28 +9933,78 @@
             lane.rejected = true;
             lane.nextRetryAt = null;
             lane.events = [];
+            lane.queuedBytes = 0;
+            invalidateAdmission(lane);
             this.callbacks.onUnauthorized(laneName, response.status, config2.endpoint, response.body);
             return;
           }
           if (response.status === 429) {
-            lane.nextRetryAt = Date.now() + ((_a = response.retry_after_ms) != null ? _a : 1e3);
+            lane.nextRetryAt = Date.now() + ((_a2 = response.retry_after_ms) != null ? _a2 : 1e3);
           }
         } catch {
           lane.consecutiveFailures += 1;
         } finally {
+          releaseSend(lane, events);
+          if (lane.inFlightEvents.size === 0)
+            lane.beaconCommitted = false;
+          if (lane.inFlightEvents.size === 0)
+            this.getRetired(laneName).delete(lane);
           lane.flushPromise = null;
-          if (lane.events.length > 0 && !lane.rejected) {
-            const retryDelay = lane.nextRetryAt === null ? void 0 : Math.max(0, lane.nextRetryAt - Date.now());
-            this.schedule(laneName, retryDelay);
+          const flushRequestedDuringSend = lane.flushRequestedDuringSend;
+          lane.flushRequestedDuringSend = false;
+          if (this.getLane(laneName) === lane && !lane.rejected) {
+            if (lane.events.length > 0 || flushRequestedDuringSend) {
+              const retryDelay = lane.nextRetryAt === null ? flushRequestedDuringSend || acknowledged && lane.events.length >= Math.min(config2.batchSize, 256) ? 0 : void 0 : Math.max(0, lane.nextRetryAt - Date.now());
+              this.schedule(laneName, retryDelay);
+            } else if (laneName === "debug" && lane.pressureCount > 0) {
+              const nextReportAt = ((_b2 = lane.lastPressureReportAt) != null ? _b2 : 0) + PRESSURE_REPORT_INTERVAL_MS;
+              this.schedule(laneName, Math.max(0, nextReportAt - Date.now()));
+            }
           }
         }
-      })();
-      return lane.flushPromise;
+      })().catch(() => void 0).finally(finishSend);
+      return completion;
+    }
+    prepareDebugEvents(lane, limit) {
+      var _a, _b, _c, _d;
+      if (lane.preparing)
+        return;
+      lane.preparing = true;
+      try {
+        for (let prepared = 0; prepared < limit; prepared += 1) {
+          const original = lane.events.find((event) => !lane.prepared.has(event) && !lane.inFlightEvents.has(event));
+          if (original === void 0)
+            break;
+          let replacement = original;
+          try {
+            replacement = (_c = (_b = (_a = this.callbacks).prepareDebugEvent) == null ? void 0 : _b.call(_a, original)) != null ? _c : this.callbacks.prepareDebugEvent === void 0 ? original : null;
+          } catch {
+            replacement = null;
+          }
+          if (this.debug !== lane)
+            return;
+          const index = lane.events.indexOf(original);
+          if (index < 0)
+            continue;
+          lane.events.splice(index, 1);
+          lane.queuedBytes -= (_d = lane.sizes.get(original)) != null ? _d : 0;
+          invalidateAdmission(lane);
+          if (replacement === null)
+            continue;
+          lane.prepared.add(replacement);
+          if (admitEvent(lane, replacement, MAX_DEBUG_QUEUED_EVENTS, MAX_DEBUG_QUEUED_BYTES, true, (dropped) => recordDebugDrop(lane, dropped))) {
+            lane.events.pop();
+            lane.events.splice(Math.min(index, lane.events.length), 0, replacement);
+          }
+        }
+      } finally {
+        lane.preparing = false;
+      }
     }
     schedule(laneName, delayMs) {
       const config2 = this.config;
       const lane = this.getLane(laneName);
-      if (config2 === null || lane.rejected) {
+      if (config2 === null || lane.rejected || this.getRetired(laneName).size > 0) {
         return;
       }
       this.clearLaneTimer(lane);
@@ -9549,33 +10013,85 @@
         void this.flushLane(laneName);
       }, delayMs != null ? delayMs : config2.flushInterval);
     }
+    enqueuePressureReport(lane, config2) {
+      if (lane.pressureCount === 0 || lane.pressureFirstAt === null || lane.pressureLastAt === null)
+        return;
+      const now = Date.now();
+      if (lane.lastPressureReportAt !== null && now - lane.lastPressureReportAt < PRESSURE_REPORT_INTERVAL_MS)
+        return;
+      if (lane.events.length >= MAX_DEBUG_QUEUED_EVENTS)
+        return;
+      try {
+        const event = createBrowserSuppressionEvent(config2, {
+          fingerprint: "browser-queue-pressure",
+          suppressedCount: lane.pressureCount,
+          firstSeen: new Date(lane.pressureFirstAt).toISOString(),
+          lastSeen: new Date(lane.pressureLastAt).toISOString(),
+          windowSeconds: Math.max(1, Math.ceil((lane.pressureLastAt - lane.pressureFirstAt) / 1e3))
+        });
+        const bytes = eventBytes(lane, event);
+        if (bytes === null || lane.queuedBytes + bytes > MAX_DEBUG_QUEUED_BYTES)
+          return;
+        if (!admitEvent(lane, event, MAX_DEBUG_QUEUED_EVENTS, MAX_DEBUG_QUEUED_BYTES, true))
+          return;
+        lane.prepared.add(event);
+        lane.pressureCount = 0;
+        lane.pressureFirstAt = null;
+        lane.pressureLastAt = null;
+        lane.lastPressureReportAt = now;
+      } catch {
+      }
+    }
     flushLaneViaBeacon(laneName) {
       const config2 = this.config;
       const lane = this.getLane(laneName);
       const navigatorSource = getNavigatorSource();
-      if (config2 === null || lane.events.length === 0 || lane.rejected || navigatorSource === null) {
+      if (config2 === null || lane.events.length === 0 || lane.rejected || navigatorSource === null || lane.keepalivePending || this.getRetired(laneName).size > 0) {
         return;
       }
-      const pendingEvents = [...lane.events];
+      const pendingEvents = lane.events.filter((event) => laneName !== "debug" || lane.prepared.has(event) || this.callbacks.prepareDebugEvent === void 0);
+      if (pendingEvents.length === 0)
+        return;
       const body = buildBrowserTransportRequestBody(config2.transportMode, pendingEvents);
       const flushViaKeepalive = () => {
         if (config2.fetchImpl === null) {
           void this.flushLane(laneName);
           return;
         }
-        void config2.fetchImpl(config2.endpoint, {
+        if (typeof AbortController !== "function")
+          return;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), boundedTransportTimeoutMs(config2.requestTimeoutMs));
+        lane.keepalivePending = true;
+        retainSend(lane, pendingEvents);
+        void Promise.resolve().then(() => config2.fetchImpl(config2.endpoint, {
           method: "POST",
           headers: getTransportHeaders(config2),
           body,
-          keepalive: true
-        }).then((response) => {
+          keepalive: true,
+          signal: controller.signal
+        })).then(async (response) => {
+          if (this.getLane(laneName) !== lane)
+            return;
           if (response.status >= 200 && response.status < 300) {
-            void readResponseBody(response).then((responseBody) => {
-              this.reconcileSuccessfulResponse(laneName, lane, pendingEvents, responseBody, void 0);
-              this.clearLaneTimer(lane);
-            });
+            const responseBody = await readResponseBody(response);
+            if (controller.signal.aborted)
+              return;
+            this.reconcileSuccessfulResponse(laneName, lane, pendingEvents, responseBody, void 0);
+            this.clearLaneTimer(lane);
           }
-        }).catch(() => void 0);
+        }).catch(() => void 0).finally(() => {
+          clearTimeout(timeout);
+          releaseSend(lane, pendingEvents);
+          lane.keepalivePending = false;
+          if (lane.inFlightEvents.size === 0)
+            lane.beaconCommitted = false;
+          if (lane.inFlightEvents.size === 0)
+            this.getRetired(laneName).delete(lane);
+          if (this.getLane(laneName) === lane && lane.events.length > 0 && !lane.rejected) {
+            this.schedule(laneName);
+          }
+        });
       };
       if (typeof navigatorSource.sendBeacon !== "function") {
         flushViaKeepalive();
@@ -9584,6 +10100,9 @@
       const beaconBody = typeof Blob === "function" ? new Blob([body], { type: "application/json" }) : body;
       if (navigatorSource.sendBeacon(config2.endpoint, beaconBody)) {
         lane.events = [];
+        lane.queuedBytes = 0;
+        invalidateAdmission(lane);
+        lane.beaconCommitted = lane.inFlightEvents.size > 0;
         lane.nextRetryAt = null;
         this.clearLaneTimer(lane);
         return;
@@ -9593,7 +10112,12 @@
     getLane(name) {
       return name === "debug" ? this.debug : this.analytics;
     }
+    getRetired(name) {
+      return name === "debug" ? this.retiredDebug : this.retiredAnalytics;
+    }
     reconcileSuccessfulResponse(laneName, lane, events, body, retryAfterMs) {
+      if (this.getLane(laneName) !== lane)
+        return;
       const acknowledgement = decideBrowserAcknowledgement(body, events.length);
       if (acknowledgement.kind === "protocol_failure") {
         lane.consecutiveFailures += 1;
@@ -9605,14 +10129,14 @@
         this.callbacks.onDebugResponse(body);
       }
       if (acknowledgement.kind === "legacy") {
-        reconcileLeadingEvents(lane, events, []);
+        reconcileLeadingEvents(lane, events, [], laneName === "debug" ? (dropped) => recordDebugDrop(lane, dropped) : void 0);
         lane.nextRetryAt = null;
         lane.lastEventAt = Date.now();
         lane.consecutiveFailures = 0;
         return;
       }
       const retryableEvents = acknowledgement.retryableIndices.map((index) => events[index]).filter((event) => event !== void 0);
-      reconcileLeadingEvents(lane, events, retryableEvents);
+      reconcileLeadingEvents(lane, events, retryableEvents, laneName === "debug" ? (dropped) => recordDebugDrop(lane, dropped) : void 0);
       if (acknowledgement.terminalErrors.length > 0) {
         const reasons = [...new Set(acknowledgement.terminalErrors.map((error) => error.reason))].join(",");
         this.callbacks.onAcknowledgementDiagnostic(laneName, "terminal_rejection", reasons);
@@ -9635,12 +10159,17 @@
       }
     }
   };
-  function reconcileLeadingEvents(lane, events, retainedEvents) {
-    if (lane.events.length >= events.length && events.every((event, index) => {
-      var _a;
-      return ((_a = lane.events[index]) == null ? void 0 : _a.event_id) === event.event_id;
-    })) {
-      lane.events.splice(0, events.length, ...retainedEvents);
+  function reconcileLeadingEvents(lane, events, retainedEvents, onDrop) {
+    var _a, _b;
+    const sentEvents = new Set(events);
+    const queued = lane.events.filter((event) => !sentEvents.has(event));
+    lane.events = [];
+    lane.queuedBytes = 0;
+    invalidateAdmission(lane);
+    const limit = ((_a = events[0]) == null ? void 0 : _a.event_type) === "analytics_event" ? MAX_ANALYTICS_QUEUED_EVENTS : MAX_DEBUG_QUEUED_EVENTS;
+    const maxBytes = ((_b = events[0]) == null ? void 0 : _b.event_type) === "analytics_event" ? MAX_ANALYTICS_QUEUED_BYTES : MAX_DEBUG_QUEUED_BYTES;
+    for (const event of [...retainedEvents, ...queued]) {
+      admitEvent(lane, event, limit, maxBytes, true, onDrop);
     }
   }
   async function readResponseBody(response) {
@@ -9656,7 +10185,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -9745,7 +10274,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -9929,7 +10458,7 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
   function protectBrowserEvent(event, additionalKeys) {
     var _a, _b;
     for (const value of [
@@ -9959,7 +10488,7 @@
     return parsed.success ? parsed.data : null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@2.0.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -9978,6 +10507,7 @@
       __publicField(this, "sessionSampledIn", true);
       __publicField(this, "sessionEventCount", 0);
       __publicField(this, "reportedAcknowledgementDiagnostics", /* @__PURE__ */ new Set());
+      __publicField(this, "pendingEventOptions", /* @__PURE__ */ new WeakMap());
       __publicField(this, "suppressionTracker", new EventSuppressionTracker());
       __publicField(this, "probeController", new BrowserProbeController({
         getConfig: () => this.config,
@@ -9987,6 +10517,8 @@
         applyRemoteAnalytics: (config2) => this.analyticsController.applyRemoteSettings(config2)
       }));
       __publicField(this, "eventTransport", new BrowserEventTransport({
+        beforeDebugFlush: () => this.enqueueSuppressionAggregates(),
+        prepareDebugEvent: (event) => this.prepareDebugEvent(event),
         onDebugResponse: (payload) => this.probeController.updateFromIngestionResponse(payload),
         onUnauthorized: (lane, statusCode, endpoint, body) => {
           this.reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body);
@@ -10085,7 +10617,7 @@
     captureException(error, context = {}) {
       var _a, _b, _c;
       const config2 = this.config;
-      if (config2 === null) {
+      if (config2 === null || !this.eventTransport.canCaptureDebug("frontend_exception")) {
         return;
       }
       try {
@@ -10158,6 +10690,8 @@
       if (LOG_LEVEL_ORDER[level] < LOG_LEVEL_ORDER[config2.logLevel]) {
         return;
       }
+      if (!this.eventTransport.canCaptureDebug("log_event", level))
+        return;
       try {
         const protectedAttributes = sanitizeTelemetry({
           ...this.persistentContext,
@@ -10305,9 +10839,13 @@
           this.flushViaBeacon();
         };
         const onError = (event) => {
+          if (!this.eventTransport.canCaptureDebug("frontend_exception"))
+            return;
           captureNativeError(event, (error, context) => this.captureException(error, context));
         };
         const onUnhandledRejection = (event) => {
+          if (!this.eventTransport.canCaptureDebug("frontend_exception"))
+            return;
           captureNativeRejection(event, (error, context) => this.captureException(error, context));
         };
         windowSource.addEventListener("pagehide", onPageHide);
@@ -10416,6 +10954,8 @@
       if (config2 === null || this.eventTransport.debugRejected || !this.shouldCaptureBreadcrumb()) {
         return;
       }
+      if (config2.breadcrumbsOnErrorOnly !== true && !this.eventTransport.canCaptureDebug("frontend_breadcrumb"))
+        return;
       const protectedBreadcrumb = sanitizeTelemetry(breadcrumb, { additionalKeys: config2.redactFields });
       if (!protectedBreadcrumb.ok || protectedBreadcrumb.value === null || Array.isArray(protectedBreadcrumb.value) || typeof protectedBreadcrumb.value !== "object")
         return;
@@ -10483,7 +11023,7 @@
     }
     emitProbeEvent(label, data, directive) {
       const config2 = this.config;
-      if (config2 === null) {
+      if (config2 === null || !this.eventTransport.canCaptureDebug("probe_event")) {
         return;
       }
       this.enqueueEvent(this.createSdkEventEnvelope(config2, {
@@ -10518,6 +11058,8 @@
       if (!shouldCaptureRequestStatus(statusCode, this.remoteProbeState.requestFailurePreset, this.remoteProbeState.requestCaptureEvents, this.remoteProbeState.immediateClientErrorStatuses, typeof data["url"] === "string" ? data["url"] : void 0, typeof data["method"] === "string" ? data["method"] : void 0, this.remoteProbeState.immediateClientErrorPathRules)) {
         return;
       }
+      if (!this.eventTransport.canCaptureDebug("request_event", void 0, statusCode))
+        return;
       const rawUrl = typeof data["url"] === "string" && data["url"].length > 0 ? data["url"] : "/";
       const method = typeof data["method"] === "string" && data["method"].length > 0 ? data["method"] : "GET";
       const durationMs = typeof data["duration_ms"] === "number" && Number.isFinite(data["duration_ms"]) ? data["duration_ms"] : 0;
@@ -10570,68 +11112,70 @@
       return typeof locationSource.pathname === "string" ? locationSource.pathname : null;
     }
     enqueueEvent(event, countTowardSession = true) {
-      var _a, _b, _c, _d, _e;
-      const protectedInput = protectBrowserEvent(event, (_b = (_a = this.config) == null ? void 0 : _a.redactFields) != null ? _b : []);
-      if (protectedInput === null)
-        return;
-      const beforeSendEvent = applyBrowserBeforeSend(protectedInput, (_c = this.config) == null ? void 0 : _c.beforeSend);
-      if (beforeSendEvent === null) {
-        return;
-      }
-      const protectedResult = protectBrowserEvent(beforeSendEvent, (_e = (_d = this.config) == null ? void 0 : _d.redactFields) != null ? _e : []);
-      if (protectedResult === null)
-        return;
-      const captureRuleResult = applyBrowserCaptureRules({
-        config: this.config,
-        event: protectedResult,
-        currentRoute: this.getCurrentRoute(),
-        now: (/* @__PURE__ */ new Date()).toISOString()
-      });
-      if (captureRuleResult.breadcrumb !== null) {
-        this.addBreadcrumb(captureRuleResult.breadcrumb);
-      }
-      const resolvedEvent = captureRuleResult.event;
-      if (resolvedEvent === null) {
-        return;
-      }
-      if (!this.shouldCaptureBySampleRate(resolvedEvent)) {
-        return;
-      }
-      const suppressionKey = buildBrowserSuppressionKey(resolvedEvent);
-      if (suppressionKey !== null && !this.suppressionTracker.shouldCapture(suppressionKey, Date.now())) {
-        this.eventTransport.scheduleDebug();
-        return;
-      }
-      this.enqueueInternalEvent(resolvedEvent, countTowardSession, false);
+      this.admitDebugEvent(event, countTowardSession, true);
     }
     enqueueAnalyticsEvent(event) {
       this.eventTransport.enqueueAnalytics(event);
     }
-    enqueueInternalEvent(event, countTowardSession = true, applyBeforeSend = true) {
+    enqueueInternalEvent(event, countTowardSession = true) {
+      if (event.event_type !== "analytics_event")
+        this.admitDebugEvent(event, countTowardSession, false);
+    }
+    admitDebugEvent(event, countTowardSession, applyRules) {
       const config2 = this.config;
-      if (config2 === null || this.eventTransport.debugRejected) {
+      if (config2 === null || this.eventTransport.debugRejected)
         return;
-      }
-      if (applyBeforeSend && event.event_type !== "analytics_event") {
-        const protectedInput = protectBrowserEvent(event, config2.redactFields);
-        if (protectedInput === null)
-          return;
-        const beforeSendEvent = applyBrowserBeforeSend(protectedInput, config2.beforeSend);
-        if (beforeSendEvent === null) {
-          return;
+      const protectedInput = protectBrowserEvent(event, config2.redactFields);
+      if (protectedInput === null)
+        return;
+      this.pendingEventOptions.set(protectedInput, { applyRules, countTowardSession, capturedAt: Date.now() });
+      const resolved = config2.beforeSend === void 0 ? this.prepareDebugEvent(protectedInput) : protectedInput;
+      if (resolved !== null)
+        this.eventTransport.enqueueDebug(resolved, config2.beforeSend !== void 0);
+    }
+    prepareDebugEvent(event) {
+      var _a;
+      if (event.event_type === "analytics_event")
+        return event;
+      const options = this.pendingEventOptions.get(event);
+      if (options === void 0)
+        return event;
+      this.pendingEventOptions.delete(event);
+      const config2 = this.config;
+      if (config2 === null)
+        return null;
+      const replacement = applyBrowserBeforeSend(event, config2.beforeSend);
+      if (replacement === null || this.config !== config2)
+        return null;
+      const protectedResult = protectBrowserEvent(replacement, config2.redactFields);
+      if (protectedResult === null)
+        return null;
+      if (protectedResult.event_type === "log_event" && LOG_LEVEL_ORDER[normalizeLogLevel(protectedResult.payload.level)] < LOG_LEVEL_ORDER[config2.logLevel])
+        return null;
+      if (options.countTowardSession && protectedResult.event_type !== "frontend_exception" && !this.shouldCaptureNonExceptionEvent())
+        return null;
+      let resolvedEvent = protectedResult;
+      if (options.applyRules) {
+        const result = applyBrowserCaptureRules({
+          config: config2,
+          event: protectedResult,
+          currentRoute: protectedResult.event_type === "frontend_exception" ? (_a = protectedResult.payload.route) != null ? _a : null : null,
+          now: new Date(options.capturedAt).toISOString()
+        });
+        if (result.breadcrumb !== null)
+          this.addBreadcrumb(result.breadcrumb);
+        if (result.event === null || !this.shouldCaptureBySampleRate(result.event))
+          return null;
+        resolvedEvent = result.event;
+        const key = buildBrowserSuppressionKey(resolvedEvent);
+        if (key !== null && !this.suppressionTracker.shouldCapture(key, options.capturedAt)) {
+          this.eventTransport.scheduleDebug();
+          return null;
         }
-        event = beforeSendEvent;
       }
-      if (event.event_type !== "analytics_event") {
-        const protectedResult = protectBrowserEvent(event, config2.redactFields);
-        if (protectedResult === null)
-          return;
-        event = protectedResult;
-      }
-      this.eventTransport.enqueueDebug(event);
-      if (countTowardSession && event.event_type !== "frontend_exception") {
+      if (options.countTowardSession && resolvedEvent.event_type !== "frontend_exception")
         this.sessionEventCount += 1;
-      }
+      return resolvedEvent;
     }
     shouldCaptureBySampleRate(event) {
       const config2 = this.config;
@@ -10645,6 +11189,7 @@
     }
     flushViaBeacon() {
       this.analyticsController.prepareForUnload();
+      this.enqueueSuppressionAggregates();
       this.eventTransport.flushViaBeacon();
     }
     shouldCaptureNonExceptionEvent() {
@@ -10682,27 +11227,7 @@
         return;
       }
       for (const aggregate of this.suppressionTracker.drainAggregates(Date.now())) {
-        this.enqueueInternalEvent(this.createSdkEventEnvelope(config2, {
-          schema_version: SDK_SCHEMA_VERSION,
-          event_type: "error_suppressed",
-          ...this.getProjectTokenFields(config2),
-          sdk_name: SDK_NAME,
-          sdk_version: SDK_VERSION,
-          service: {
-            name: config2.service,
-            runtime: "browser",
-            framework: null,
-            environment: config2.environment
-          },
-          occurred_at: aggregate.lastSeen,
-          payload: {
-            fingerprint: aggregate.fingerprint,
-            suppressed_count: aggregate.suppressedCount,
-            window_seconds: aggregate.windowSeconds,
-            first_seen: aggregate.firstSeen,
-            last_seen: aggregate.lastSeen
-          }
-        }), false);
+        this.enqueueInternalEvent(createBrowserSuppressionEvent(config2, aggregate), false);
       }
     }
   };

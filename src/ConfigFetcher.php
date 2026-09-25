@@ -32,7 +32,7 @@ final class ConfigFetcher
         $response = \wp_remote_request($safeUrl, [
             'method' => $this->sanitizeMethod((string) ($request['method'] ?? 'GET')),
             'headers' => $headers,
-            'timeout' => 3,
+            'timeout' => 0.25,
         ]);
 
         if (function_exists('is_wp_error') && \is_wp_error($response)) {
@@ -45,6 +45,9 @@ final class ConfigFetcher
         $body = function_exists('wp_remote_retrieve_body')
             ? (string) \wp_remote_retrieve_body($response)
             : '';
+        if (strlen($body) > 128 * 1024) {
+            throw new RuntimeException('config_request_failed');
+        }
         $responseHeaders = function_exists('wp_remote_retrieve_headers')
             ? \wp_remote_retrieve_headers($response)
             : [];

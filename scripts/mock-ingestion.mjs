@@ -39,7 +39,22 @@ const server = createServer(async (request, response) => {
   }
 
   if (request.method === 'GET' && request.url?.startsWith('/v1/sdk/config')) {
-    sendJson(response, 404, { error: 'not_configured' });
+    if (request.headers.authorization !== 'Bearer dbundle_proj_smoke') {
+      sendJson(response, 401, { error: 'invalid_project_token' });
+      return;
+    }
+    sendJson(response, 200, {
+      probes_enabled: true,
+      remote_probes_enabled: false,
+      active_probes: [],
+      capture_policy: {
+        preset: 'minimal',
+        capture_logs: 'error',
+        capture_request_events: 'failures_only',
+        capture_breadcrumbs: 'local_only',
+        capture_probe_events: 'buffer_only',
+      },
+    });
     return;
   }
 

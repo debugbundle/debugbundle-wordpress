@@ -58,7 +58,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          coverage: none
+          coverage: xdebug
           tools: composer:v2
 
       - name: Set up Node.js
@@ -82,6 +82,7 @@ jobs:
         run: |
           composer test
           composer typecheck
+          make coverage
           pnpm build
 
       - name: Make release script executable
@@ -89,6 +90,12 @@ jobs:
 
       - name: Assemble release directory
         run: ./scripts/assemble-release.sh "${{ steps.release_version.outputs.value }}"
+
+      - name: Smoke exact release ZIP in WordPress
+        env:
+          VERSION: ${{ steps.release_version.outputs.value }}
+          DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT: '1'
+        run: make smoke-wordpress
 
       - name: Install Subversion and rsync
         run: |
