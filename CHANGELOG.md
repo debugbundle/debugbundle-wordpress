@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-09-26
+
+### Fixed
+
+- Adopt published PHP SDK 2.0.1 and Browser SDK 3.0.3 for canonical HTTP acknowledgements, bounded retry hints and response-relative PHP backoff. Preserve existing settings, relay routes and durable spool behavior.
+
 ## [2.0.1] - 2026-09-26
 
 ### Fixed

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@debugbundle/sdk-browser':
-        specifier: 3.0.2
-        version: 3.0.2
+        specifier: 3.0.3
+        version: 3.0.3
       esbuild:
         specifier: ^0.25.5
         version: 0.25.12
@@ -20,8 +20,8 @@ packages:
   '@debugbundle/redaction@2.1.0':
     resolution: {integrity: sha512-+IXVGehnYXwYE2niSRg0KVkPCmqm4FPhbHlz3XWCEIqrsPopSNcay14VMmdAPInsBy9FdVhP1J4CRWM8VCj8Cg==}
 
-  '@debugbundle/sdk-browser@3.0.2':
-    resolution: {integrity: sha512-a/8nADfVVuzJcjXCobRZuPU1m3FJbh5sL8sgGVjps4LGL++ZkaX7YvkOFrm2B4kP6uXo82zABHN9tjSF9PEYkQ==}
+  '@debugbundle/sdk-browser@3.0.3':
+    resolution: {integrity: sha512-25HRQLZYJ0VZS6A4zkpz26u1bQj57V8QI+737H+MpIYzKyfznm7NWLZ0CpgI+g+d0IiIGAwviUCL/hN3x/BXVg==}
 
   '@debugbundle/shared-types@2.1.0':
     resolution: {integrity: sha512-dB2XWLm+3VGd5dGQ4bM1PuUYkCB96iJlFrs+Mgio1MbVBu9GEQhk1h+HC4hVCyyiXvb9+NOClF8e648XPA1Cxg==}
@@ -194,7 +194,7 @@ snapshots:
 
   '@debugbundle/redaction@2.1.0': {}
 
-  '@debugbundle/sdk-browser@3.0.2':
+  '@debugbundle/sdk-browser@3.0.3':
     dependencies:
       '@debugbundle/redaction': 2.1.0
       '@debugbundle/shared-types': 2.1.0

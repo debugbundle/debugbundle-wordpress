@@ -6524,7 +6524,7 @@
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a, _b, _c, _d;
@@ -6539,10 +6539,10 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "3.0.2",
+    version: "3.0.3",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -6579,7 +6579,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -6603,7 +6603,7 @@
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key] : void 0;
@@ -6634,7 +6634,7 @@
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
   function getFetchSource() {
     const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
@@ -6643,16 +6643,16 @@
     return Number.isFinite(requested) ? Math.min(6e4, Math.max(1, Math.trunc(requested))) : DEFAULT_REQUEST_TIMEOUT_MS;
   }
   function parseRetryAfter(value) {
-    if (value === null)
+    if (value === null || value.trim() === "")
       return void 0;
     const seconds = Number(value);
     if (Number.isFinite(seconds))
-      return boundedRetryAfterMs(seconds * 1e3);
+      return boundedRetryAfterMs(Math.min(300, seconds) * 1e3);
     const parsed = Date.parse(value);
     return Number.isNaN(parsed) ? void 0 : boundedRetryAfterMs(parsed - Date.now());
   }
   function boundedRetryAfterMs(value) {
-    return value === void 0 || Number.isNaN(value) ? 1e3 : Math.min(3e5, Math.max(0, value));
+    return value === void 0 || !Number.isFinite(value) ? 1e3 : Math.min(3e5, Math.max(0, value));
   }
   function createFetchTransport() {
     const fetchImpl = getFetchSource();
@@ -6689,7 +6689,7 @@
     return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -7368,7 +7368,7 @@
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -7423,7 +7423,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -7697,7 +7697,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -8102,7 +8102,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -8129,7 +8129,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -8283,7 +8283,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -8311,7 +8311,7 @@
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -8862,7 +8862,7 @@
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input) {
     var _a;
     const { config: config2, event } = input;
@@ -8948,7 +8948,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -9333,7 +9333,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a;
     try {
@@ -9352,7 +9352,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -9521,7 +9521,7 @@
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -9566,7 +9566,7 @@
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   function createLane() {
     return {
       events: [],
@@ -9989,7 +9989,7 @@
         updateDetachedRetention(lane);
         invalidateAdmission(lane);
         this.callbacks.onUnauthorized(laneName, status, config2.endpoint, body);
-      } else if (status === 429) {
+      } else if (status === 429 || status >= 500 && retryAfterMs !== void 0) {
         lane.nextRetryAt = Date.now() + boundedRetryAfterMs(retryAfterMs);
       }
     }
@@ -10290,7 +10290,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -10379,7 +10379,7 @@
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var BrowserProbeController = class {
     constructor(host) {
       __publicField(this, "host");
@@ -10563,7 +10563,7 @@
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/privacy.js
   function protectBrowserEvent(event, additionalKeys) {
     var _a, _b;
     for (const value of [
@@ -10593,7 +10593,7 @@
     return parsed.success ? parsed.data : null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.2/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.0.3/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
