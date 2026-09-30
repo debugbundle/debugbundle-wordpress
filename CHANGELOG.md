@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+
+- Qualify mandatory analytics credential redaction in the PHP dependency and extracted browser asset. Keep staged plugin versions aligned with the checkout while retaining exact candidate artifact receipts and publication guards.
+
 ## [2.0.2] - 2026-09-26
 
 ### Fixed

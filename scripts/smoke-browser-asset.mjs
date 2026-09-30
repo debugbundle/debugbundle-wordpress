@@ -8,6 +8,7 @@ const plugin = resolve(process.argv[2]);
 const inline = readFileSync(process.argv[3], "utf8");
 const asset = readFileSync(resolve(plugin, "assets/dist/debugbundle-browser.js"), "utf8");
 const receipt = JSON.parse(readFileSync(resolve(plugin, "assets/dist/sdk-build.json"), "utf8"));
+const analyticsCredentials = ["anl", "anr", "ah"].map(kind => `dbundle_${kind}_ZIP_SYNTHETIC_CREDENTIAL`).join(" ");
 assert.equal(receipt.package, "@debugbundle/sdk-browser");
 assert.match(receipt.version, /^3\./);
 assert.equal(createHash("sha256").update(asset).digest("hex"), receipt.asset_sha256);
@@ -55,6 +56,7 @@ async function check(withHook) {
     config.beforeSend = event => {
       hookCalls++;
       assert.doesNotMatch(JSON.stringify(event), /ZIP_SOURCE_SECRET/);
+      assert.doesNotMatch(JSON.stringify(event), /dbundle_(?:anl|anr|ah)_/);
       if (event.payload.message === "drop this") return null;
       event.context = { marker: "zip-hook-kept", password: "ZIP_HOOK_SECRET" };
       return event;
@@ -64,7 +66,7 @@ async function check(withHook) {
   if (withHook) {
     const sdk = context.window.DebugBundleWordPress;
     assert.equal(typeof sdk?.captureLog, "function", "bundled entry did not initialize the SDK");
-    sdk.captureLog("kept", "error", { password: "ZIP_SOURCE_SECRET" });
+    sdk.captureLog(`kept ${analyticsCredentials}`, "error", { password: "ZIP_SOURCE_SECRET" });
     sdk.captureLog("drop this", "error");
     assert.equal(hookCalls, 0, "capture called the deferred hook inline");
     await sdk.flush();
@@ -72,7 +74,8 @@ async function check(withHook) {
     assert.equal(hookCalls, 2);
   } else {
     assert.equal(typeof listeners.get("error"), "function", "bundled entry did not register automatic errors");
-    runInContext('windowError = new Error("ZIP frontend failure");', context);
+    context.analyticsCredentials = analyticsCredentials;
+    runInContext('windowError = new Error("ZIP frontend failure " + analyticsCredentials);', context);
     listeners.get("error")({ error: context.windowError, message: "ZIP frontend failure" });
     assert.equal(requests.length, 0, "capture sent inline");
     // A deterministic timer pump exercises the real queued automatic flush;
@@ -95,6 +98,7 @@ async function check(withHook) {
   assert.equal(event.service.name, config.service);
   assert.equal(event.project_token, undefined);
   assert.doesNotMatch(JSON.stringify(request.batch), /ZIP_(?:SOURCE|HOOK|SERVER)_SECRET/);
+  assert.doesNotMatch(JSON.stringify(request.batch), /dbundle_(?:anl|anr|ah)_/);
   if (withHook) assert.equal(event.context.marker, "zip-hook-kept");
   else assert.equal(event.event_type, "frontend_exception");
   timers.clear();

@@ -34,6 +34,9 @@ def main():
     parser.add_argument("--browser-artifact", required=True, type=Path)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
+    plugin_version = json.loads((repo / "package.json").read_text())["version"]
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", plugin_version):
+        parser.error("The staged plugin must use the checkout's stable numeric version")
     php = args.php_sdk.resolve()
     browser = args.browser_artifact.resolve()
     if not browser.is_file() or not (php / "src/DebugBundleSdk.php").is_file():
@@ -71,18 +74,18 @@ def main():
     if browser_package["name"] != "@debugbundle/sdk-browser" or not browser_package["version"].startswith("3."):
         parser.error("Provide the built hardened browser 3.x tarball")
     shutil.copy2(browser, artifacts / browser.name)
-    receipt = {"kind": "staged-prepublication-only", "php_version": php_version,
+    receipt = {"kind": "staged-prepublication-only", "plugin_version": plugin_version, "php_version": php_version,
                "php_sha256": digest(php_zip), "browser_artifact": browser.name,
                "browser_sha256": digest(browser)}
     write_json(consumer / ".debugbundle-staged-candidate.json", receipt)
     composer = json.loads((consumer / "composer.json").read_text())
-    composer["require"]["debugbundle/sdk-php"] = "^2.0.0"
+    # Preserve the checkout's compatibility range; the canonical package repository
+    # and generated lock resolve only the exact candidate archive below.
     package = {key: php_package[key] for key in ("name", "version", "type", "require", "autoload", "license") if key in php_package}
     package["dist"] = {"type": "zip", "url": f"file:///stage/artifacts/{php_zip.name}", "shasum": digest(php_zip, "sha1")}
     composer["repositories"] = [{"type": "package", "canonical": True, "package": package}]
     write_json(consumer / "composer.json", composer)
     package_json = json.loads((consumer / "package.json").read_text())
-    package_json["version"] = "2.0.0"
     package_json["dependencies"]["@debugbundle/sdk-browser"] = f"file:../artifacts/{browser.name}"
     # Consume exact packed core dependencies, never an unpublished source link.
     overrides = {}
@@ -99,26 +102,31 @@ def main():
     package_json["pnpm"] = {"overrides": overrides}
     write_json(consumer / "package.json", package_json)
     write_json(consumer / ".debugbundle-staged-candidate.json", receipt)
-    for name in ("debugbundle.php", "readme.txt"):
-        value = (consumer / name).read_text().replace("1.5.0", "2.0.0")
-        if name == "debugbundle.php":
-            value = value.replace("DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '2.0.0'", f"DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '{browser_package['version']}'")
-        (consumer / name).write_text(value)
+    # Keep the checkout's plugin version; only the staged dependency constant changes.
+    entrypoint = consumer / "debugbundle.php"
+    value, count = re.subn(
+        r"(DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', ')[^']+(')",
+        lambda match: match[1] + browser_package["version"] + match[2],
+        entrypoint.read_text(),
+    )
+    if count != 1:
+        raise RuntimeError("Missing or ambiguous staged browser version constant")
+    entrypoint.write_text(value)
     changelog = consumer / "CHANGELOG.md"
-    changelog.write_text(changelog.read_text().replace("## [Unreleased]", "## [2.0.0] - Staged candidate"))
+    changelog.write_text(changelog.read_text().replace("## [Unreleased]", f"## [Staged candidate: {plugin_version}]"))
     mount = f"{stage}:/stage"
     run("docker", "run", "--rm", "-v", mount, "-w", "/stage/wordpress", "composer:2",
         "composer", "update", "debugbundle/sdk-php", "--with-all-dependencies", "--no-interaction", "--no-progress")
     run("docker", "run", "--rm", "-v", mount, "-w", "/stage/wordpress", "node:24-alpine", "sh", "-lc",
         "corepack enable && corepack pnpm install --frozen-lockfile=false && corepack pnpm build")
     run("docker", "run", "--rm", "-v", mount, "-w", "/stage/wordpress", "-e", "DEBUGBUNDLE_STAGED_ARTIFACT_CHECK=1",
-        "composer:2", "./scripts/assemble-release.sh", "2.0.0")
-    artifact = consumer / ".dist/debugbundle-wordpress-2.0.0.zip"
+        "composer:2", "./scripts/assemble-release.sh", plugin_version)
+    artifact = consumer / f".dist/debugbundle-wordpress-{plugin_version}.zip"
     with zipfile.ZipFile(artifact) as archive:
         assert json.loads(archive.read("debugbundle/STAGED-CANDIDATE.json")) == receipt
         assert php_version in archive.read("debugbundle/vendor/debugbundle/sdk-php/src/DebugBundleSdk.php").decode()
     receipt["wordpress_sha256"] = digest(artifact)
-    env = {**os.environ, "DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT": "1", "VERSION": "2.0.0"}
+    env = {**os.environ, "DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT": "1", "VERSION": plugin_version}
     env.pop("DEBUGBUNDLE_PHP_SDK_CHECKOUT", None)
     run("./scripts/smoke-wordpress.sh", cwd=consumer, env=env)
     receipt["smoke_passed"] = True

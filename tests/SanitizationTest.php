@@ -9,6 +9,15 @@ use PHPUnit\Framework\TestCase;
 
 final class SanitizationTest extends TestCase
 {
+    public function testInstalledBackendUsesTheSharedMandatoryPrivacyCorpus(): void
+    {
+        $fixture = json_decode((string) file_get_contents(__DIR__ . '/fixtures/privacy-conformance.json'), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('telemetry-privacy-v1', $fixture['policy']);
+        foreach ($fixture['cases'] as $case) {
+            self::assertSame($case['expected'], \DebugBundle\TelemetryPrivacy::protect($case['input']), $case['id']);
+        }
+    }
+
     public function testRequestHeadersFromServerSanitizesHeaderNamesAndValues(): void
     {
         $headers = Sanitization::requestHeadersFromServer([
