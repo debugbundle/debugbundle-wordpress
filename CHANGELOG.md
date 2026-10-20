@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-10-20
+
+### Fixed
+
+- Bundle published PHP SDK 2.0.2 so empty exception messages use the throwable class before WordPress filters and duplicate suppression, and absent exception request headers/query serialize as JSON objects. Nonempty messages, stack/class/handled evidence, privacy protection and filter outcomes retain their behavior. Browser SDK remains 3.0.3.
+- Verify empty-message delivery from the assembled plugin ZIP in disposable WordPress, alongside existing backend capture, browser relay, remote policy, suppression and spool retry checks.
+
 ## [2.0.2] - 2026-09-26
 
 ### Fixed

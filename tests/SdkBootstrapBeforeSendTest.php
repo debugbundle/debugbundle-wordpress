@@ -30,6 +30,7 @@ namespace DebugBundleWp\Tests {
     use DebugBundle\DebugBundleSdk;
     use DebugBundleWp\SdkBootstrap;
     use DebugBundleWp\Settings;
+    use PHPUnit\Framework\Attributes\DataProvider;
     use PHPUnit\Framework\Attributes\WithoutErrorHandler;
     use PHPUnit\Framework\TestCase;
 
@@ -92,6 +93,48 @@ namespace DebugBundleWp\Tests {
 
                 self::assertIsArray($result);
                 self::assertSame('filtered', $result['payload']['message']);
+            } finally {
+                $sdk->reset();
+            }
+        }
+
+        /** @return iterable<string, array{string, string}> */
+        public static function exceptionMessages(): iterable
+        {
+            yield 'empty message' => ['', \RuntimeException::class];
+            yield 'zero message' => ['0', '0'];
+            yield 'whitespace message' => [' ', ' '];
+        }
+
+        #[DataProvider('exceptionMessages')]
+        public function testExceptionEnvelopeIsValidBeforeTheWordPressFilter(
+            string $message,
+            string $expected
+        ): void {
+            $captured = [];
+            $GLOBALS['debugbundle_wp_test_filters']['debugbundle_before_send'] =
+                static function (array $event) use (&$captured): ?array {
+                    $captured[] = $event;
+                    return null;
+                };
+            $bootstrap = new SdkBootstrap(new Settings());
+            $bootstrap->register();
+            $sdk = (new \ReflectionProperty($bootstrap, 'sdk'))->getValue($bootstrap);
+            self::assertInstanceOf(DebugBundleSdk::class, $sdk);
+
+            try {
+                $error = new \RuntimeException($message);
+                $sdk->captureException($error);
+                self::assertCount(1, $captured);
+                $payload = $captured[0]['payload'];
+                self::assertSame($expected, $payload['message']);
+                self::assertSame(\RuntimeException::class, $payload['name']);
+                self::assertSame((string) $error, $payload['stack']);
+                self::assertTrue($payload['handled']);
+                foreach (['headers', 'query'] as $field) {
+                    self::assertInstanceOf(\stdClass::class, $payload['request'][$field]);
+                    self::assertSame([], get_object_vars($payload['request'][$field]));
+                }
             } finally {
                 $sdk->reset();
             }

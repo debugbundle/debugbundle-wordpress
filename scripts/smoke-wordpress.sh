@@ -12,7 +12,7 @@ MOCK_EVENTS_FILE="$REPO_DIR/.smoke/ingestion-events.ndjson"
 PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
 PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-}
 USE_ASSEMBLED_ARTIFACT=${DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT:-0}
-VERSION=${VERSION:-2.0.2}
+VERSION=${VERSION:-2.0.3}
 
 compose() {
   docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
@@ -197,6 +197,30 @@ if ($captured !== ["DebugBundle suppression smoke accepted"]) {
 ' --allow-root
 
 compose run --rm wpcli wp eval '
+$bootstrap = new \DebugBundleWp\SdkBootstrap(new \DebugBundleWp\Settings());
+$bootstrap->register();
+$sdk = (new ReflectionProperty($bootstrap, "sdk"))->getValue($bootstrap);
+$sdk->captureException(new RuntimeException());
+$bootstrap->recordBackendFlush();
+' --allow-root
+
+python3 - "$MOCK_EVENTS_FILE" <<'PY'
+import json
+import sys
+
+events = [event for line in open(sys.argv[1]) for event in json.loads(line)["events"]]
+matches = [event for event in events if event.get("event_type") == "backend_exception"
+           and event.get("payload", {}).get("message") == "RuntimeException"]
+assert len(matches) == 1, "Packaged PHP SDK did not deliver exactly one empty-message exception"
+event = matches[0]
+assert event["sdk_version"] == "2.0.2", "Packaged plugin must use the fixed published PHP SDK"
+assert event["payload"]["name"] == "RuntimeException" and event["payload"]["handled"] is True
+for field in ("headers", "query"):
+    assert event["payload"]["request"][field] == {}, "Missing request maps must remain JSON objects"
+print("Packaged empty-message exception delivery passed.")
+PY
+
+compose run --rm wpcli wp eval '
 $GLOBALS["debugbundle_smoke_filter_message"] = "DebugBundle WordPress backend filtered smoke event";
 add_filter("debugbundle_before_send", static function (array $event): array {
     if (($event["event_type"] ?? null) === "backend_exception") {
@@ -303,4 +327,4 @@ if ! grep -q '00000000-0000-4000-8000-000000000101' "$MOCK_EVENTS_FILE"; then
   exit 1
 fi
 
-echo "WordPress smoke passed: authenticated config policy, PHP suppression, admin and relay delivery, and spool retry."
+echo "WordPress smoke passed: authenticated config policy, PHP suppression, empty-message capture, admin and relay delivery, and spool retry."

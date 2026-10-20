@@ -3,12 +3,18 @@
 WordPress plugin for DebugBundle.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-1.5.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.3-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
 
 Automatic PHP error capture respects `@` and the current `error_reporting()` severity mask. Ordinary enabled errors, explicit capture and fatal shutdown handling remain available.
+
+Version 2.0.3 bundles PHP SDK 2.0.2. Empty exception messages use the throwable
+class before the `debugbundle_before_send` filter; missing request headers/query
+remain JSON objects. Nonempty messages, including `"0"` and whitespace, keep their
+existing meaning and mandatory redaction still applies. Installing the published
+plugin update on an existing site remains the site operator's decision.
 
 ## Requirements
 
