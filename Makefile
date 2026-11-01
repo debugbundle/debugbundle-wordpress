@@ -65,3 +65,9 @@ staged-runtime-check:
 .PHONY: evidence-performance
 evidence-performance:
 	DEBUGBUNDLE_EVIDENCE_PERFORMANCE=1 python3 scripts/check-staged-runtime.py --wordpress-version "$(WP_VERSION)" --php-version "$(PHP_VERSION)"
+
+.PHONY: release-registry-check
+# Qualify installed registry dependencies without a source overlay.
+release-registry-check:
+	docker build -q -f "$(PHP_SDK_CHECKOUT)/smoke/Dockerfile.coverage" -t debugbundle-php-coverage:local "$(PHP_SDK_CHECKOUT)"
+	docker run --rm -e XDEBUG_MODE=coverage -v "$(CURDIR):/app" -w /app debugbundle-php-coverage:local sh -lc 'composer install --no-interaction --prefer-dist && composer validate --strict && composer test && composer typecheck && vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml && php scripts/check_coverage.php coverage.xml && ./scripts/assemble-release.sh $(VERSION)'

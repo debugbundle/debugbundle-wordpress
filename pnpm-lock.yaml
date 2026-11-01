@@ -9,22 +9,22 @@ importers:
   .:
     dependencies:
       '@debugbundle/sdk-browser':
-        specifier: 3.0.3
-        version: 3.0.3
+        specifier: 3.2.0
+        version: 3.2.0
       esbuild:
         specifier: ^0.25.5
         version: 0.25.12
 
 packages:
 
-  '@debugbundle/redaction@2.1.0':
-    resolution: {integrity: sha512-+IXVGehnYXwYE2niSRg0KVkPCmqm4FPhbHlz3XWCEIqrsPopSNcay14VMmdAPInsBy9FdVhP1J4CRWM8VCj8Cg==}
+  '@debugbundle/redaction@2.7.0':
+    resolution: {integrity: sha512-9oJ1cXZl5qBs746KYRqgZV+ggLw8O8UONkPVK2A+8Z/TtRljqhw5GuhVLuCnml2TIU3vemuuSAiHVrcUmXRorg==}
 
-  '@debugbundle/sdk-browser@3.0.3':
-    resolution: {integrity: sha512-25HRQLZYJ0VZS6A4zkpz26u1bQj57V8QI+737H+MpIYzKyfznm7NWLZ0CpgI+g+d0IiIGAwviUCL/hN3x/BXVg==}
+  '@debugbundle/sdk-browser@3.2.0':
+    resolution: {integrity: sha512-t8TkvuPG9yF1ePYizUAtO8x4a0/ESm52GL/P3r15ESqMmbtrFA9njMwaOqBRwrBzFgGe9kDG94aVwBZtrIp60g==}
 
-  '@debugbundle/shared-types@2.1.0':
-    resolution: {integrity: sha512-dB2XWLm+3VGd5dGQ4bM1PuUYkCB96iJlFrs+Mgio1MbVBu9GEQhk1h+HC4hVCyyiXvb9+NOClF8e648XPA1Cxg==}
+  '@debugbundle/shared-types@3.0.0':
+    resolution: {integrity: sha512-aXm3r0V5/huk62jW9jQdcifDwGCsawidlJkYojIf4IoT/9ZBPwR0XLyvQa/Wlt23AmLbK8xxlbJmia2l/Yx7gQ==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -187,21 +187,21 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
-  '@debugbundle/redaction@2.1.0': {}
+  '@debugbundle/redaction@2.7.0': {}
 
-  '@debugbundle/sdk-browser@3.0.3':
+  '@debugbundle/sdk-browser@3.2.0':
     dependencies:
-      '@debugbundle/redaction': 2.1.0
-      '@debugbundle/shared-types': 2.1.0
+      '@debugbundle/redaction': 2.7.0
+      '@debugbundle/shared-types': 3.0.0
 
-  '@debugbundle/shared-types@2.1.0':
+  '@debugbundle/shared-types@3.0.0':
     dependencies:
-      zod: 3.25.76
+      zod: 4.6.7
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -310,4 +310,4 @@ snapshots:
       '@esbuild/win32-ia32': 0.25.12
       '@esbuild/win32-x64': 0.25.12
 
-  zod@3.25.76: {}
+  zod@4.6.7: {}
