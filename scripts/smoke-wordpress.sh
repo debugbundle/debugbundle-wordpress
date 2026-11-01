@@ -339,7 +339,7 @@ if [ -z "$PHP_SDK_DIR" ]; then
   compose run --rm wpcli wp cron event run debugbundle_refresh_sdk_config --allow-root
   if [ "${DEBUGBUNDLE_EVIDENCE_PERFORMANCE:-0}" = "1" ]; then
     compose run --rm -e DEBUGBUNDLE_EVIDENCE_PERFORMANCE=1 wpcli \
-      wp eval-file /debugbundle-smoke/evidence-performance.php --allow-root \
+      wp eval 'require "/debugbundle-smoke/evidence-performance.php";' --allow-root \
       > "$REPO_DIR/.smoke/evidence-performance.log"
     cat "$REPO_DIR/.smoke/evidence-performance.log"
     test "$(grep -c '"capture_ns_per_pair"' "$REPO_DIR/.smoke/evidence-performance.log")" = "12"
