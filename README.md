@@ -2,7 +2,7 @@
 
 WordPress plugin for DebugBundle.
 
-The unpublished evidence candidate is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
+Version 2.1.0 evidence is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
 ![Version](https://img.shields.io/badge/version-2.1.0-blue)
@@ -124,7 +124,7 @@ make smoke-wordpress
 
 The local smoke uses the published PHP SDK version pinned in `composer.lock`. CI may additionally set `DEBUGBUNDLE_PHP_SDK_CHECKOUT` to exercise a coordinated PHP SDK checkout before that dependency is published.
 
-For the unpublished evidence candidate, first qualify the staged ZIP, then run
+For local evidence qualification, first qualify the exact ZIP, then run
 `make evidence-performance WP_VERSION=7.1.1 PHP_VERSION=8.5`. It reuses that exact
 checksum-verified ZIP in a disposable WordPress installation. The wrapper creates
 the SDK and applies its real settings, filters, cached capability proof and request

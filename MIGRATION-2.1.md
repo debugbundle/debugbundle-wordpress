@@ -1,6 +1,6 @@
-# WordPress 2.1 evidence candidate
+# WordPress 2.1 evidence
 
-This unpublished candidate requires PHP SDK 2.1 and Browser SDK 3.2 in the
+Version 2.1.0 bundles PHP SDK 2.1 and Browser SDK 3.2 in the
 assembled plugin. Source tests using a mounted candidate do not qualify an
 installed ZIP. Existing settings, project tokens, REST routes, legacy relay
 responses and `debugbundle_before_send` filters retain their meaning.
@@ -72,5 +72,5 @@ rejected. Existing legacy spool data is protected again before retry.
 
 Deploy accepting DebugBundle readers/ingestion before publishing the PHP/browser
 dependencies and this plugin. Installing or updating an existing WordPress site
-is a separate operator action. Candidate ZIP, supported WordPress/PHP runtime
-qualification, final dependency locks and publication remain release gates.
+is a separate operator action. The 2.1.0 public ZIP passed supported WordPress/PHP
+runtime checks with final registry-resolved dependencies before distribution.
