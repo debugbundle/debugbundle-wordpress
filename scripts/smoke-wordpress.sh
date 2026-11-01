@@ -13,6 +13,7 @@ PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
 PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-}
 USE_ASSEMBLED_ARTIFACT=${DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT:-0}
 VERSION=${VERSION:-2.0.3}
+EXPECTED_WORDPRESS_VERSION=${WORDPRESS_SMOKE_VERSION:-7.1.1}
 
 compose() {
   docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
@@ -91,12 +92,13 @@ if [ -z "$PHP_SDK_DIR" ]; then
   docker run --rm -v "$REPO_DIR:/workspace:ro" -w /workspace composer:2 \
     php scripts/browser-asset-config.php /workspace/.smoke/plugin/debugbundle \
     > "$REPO_DIR/.smoke/browser-inline.js"
-  docker run --rm -v "$REPO_DIR:/workspace:ro" -w /workspace node:24-alpine \
-    node scripts/smoke-browser-asset.mjs .smoke/plugin/debugbundle .smoke/browser-inline.js
+  docker run --rm -v "$REPO_DIR:/workspace:ro" -v "$REPO_DIR/.smoke:/state" -w /workspace node:24-alpine \
+    node scripts/smoke-browser-asset.mjs .smoke/plugin/debugbundle .smoke/browser-inline.js /state/browser-evidence.json
 else
   echo "Source-overlay diagnostic smoke: Browser 3 release qualification is not being certified."
 fi
 browser_sdk_version=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$PLUGIN_STAGE_DIR/debugbundle/assets/dist/sdk-build.json")
+php_sdk_version=$(python3 -c 'import re, sys; print(re.search("SDK_VERSION = .([^\x27]+)", open(sys.argv[1]).read())[1])' "$PLUGIN_STAGE_DIR/debugbundle/vendor/debugbundle/sdk-php/src/DebugBundleSdk.php")
 DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR="$PLUGIN_STAGE_DIR/debugbundle"
 export DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR
 
@@ -112,8 +114,8 @@ compose run --rm wpcli wp core install \
   --skip-email
 
 wordpress_version=$(compose run --rm wpcli wp core version --allow-root)
-if [ "$wordpress_version" != "7.1.1" ]; then
-  echo "Expected WordPress 7.1.1 in the compatibility smoke, got $wordpress_version" >&2
+if [ "$wordpress_version" != "$EXPECTED_WORDPRESS_VERSION" ]; then
+  echo "Expected WordPress $EXPECTED_WORDPRESS_VERSION in the compatibility smoke, got $wordpress_version" >&2
   exit 1
 fi
 
@@ -204,7 +206,7 @@ $sdk->captureException(new RuntimeException());
 $bootstrap->recordBackendFlush();
 ' --allow-root
 
-python3 - "$MOCK_EVENTS_FILE" <<'PY'
+python3 - "$MOCK_EVENTS_FILE" "$php_sdk_version" <<'PY'
 import json
 import sys
 
@@ -213,7 +215,7 @@ matches = [event for event in events if event.get("event_type") == "backend_exce
            and event.get("payload", {}).get("message") == "RuntimeException"]
 assert len(matches) == 1, "Packaged PHP SDK did not deliver exactly one empty-message exception"
 event = matches[0]
-assert event["sdk_version"] == "2.0.2", "Packaged plugin must use the fixed published PHP SDK"
+assert event["sdk_version"] == sys.argv[2], "Delivered PHP SDK identity must match the exact packaged source"
 assert event["payload"]["name"] == "RuntimeException" and event["payload"]["handled"] is True
 for field in ("headers", "query"):
     assert event["payload"]["request"][field] == {}, "Missing request maps must remain JSON objects"
@@ -327,4 +329,54 @@ if ! grep -q '00000000-0000-4000-8000-000000000101' "$MOCK_EVENTS_FILE"; then
   exit 1
 fi
 
-echo "WordPress smoke passed: authenticated config policy, PHP suppression, empty-message capture, admin and relay delivery, and spool retry."
+if [ -z "$PHP_SDK_DIR" ]; then
+  # The fixture is installed only in the disposable WordPress smoke volume.
+  compose run --rm wpcli wp eval '
+  wp_mkdir_p(WPMU_PLUGIN_DIR);
+  if (!copy("/debugbundle-smoke/evidence-integration.php", WPMU_PLUGIN_DIR . "/debugbundle-evidence-smoke.php")) exit(1);
+  ' --allow-root
+  touch "$REPO_DIR/.smoke/evidence-enabled"
+  compose run --rm wpcli wp cron event run debugbundle_refresh_sdk_config --allow-root
+  if [ "${DEBUGBUNDLE_EVIDENCE_PERFORMANCE:-0}" = "1" ]; then
+    compose run --rm -e DEBUGBUNDLE_EVIDENCE_PERFORMANCE=1 wpcli \
+      wp eval-file /debugbundle-smoke/evidence-performance.php --allow-root \
+      > "$REPO_DIR/.smoke/evidence-performance.log"
+    cat "$REPO_DIR/.smoke/evidence-performance.log"
+    test "$(grep -c '"capture_ns_per_pair"' "$REPO_DIR/.smoke/evidence-performance.log")" = "12"
+    grep -q '^WordPress evidence performance comparison passed$' "$REPO_DIR/.smoke/evidence-performance.log"
+  fi
+  curl --fail --silent --show-error "$WP_URL/?debugbundle_evidence_smoke=1" > "$REPO_DIR/.smoke/native-evidence-response.txt"
+  grep -q 'DebugBundle native evidence captured' "$REPO_DIR/.smoke/native-evidence-response.txt"
+  response_file="$REPO_DIR/.smoke/evidence-response.json"
+  status_code=$(curl -sS -o "$response_file" -w "%{http_code}" -X POST "$RELAY_URL&debugbundle_evidence=1" \
+    -H "Origin: $WP_URL" -H "Content-Type: application/json" --data-binary "@$REPO_DIR/.smoke/browser-evidence.json")
+  test "$status_code" = "202"
+  python3 - "$response_file" <<'PY'
+import json, sys
+response = json.load(open(sys.argv[1]))
+assert response['accepted'] == 2 and response['rejected'] == 0, response
+assert 'recovery_v1' in response['evidence_capabilities']['features'], response
+PY
+  python3 "$SCRIPT_DIR/prepare-evidence-replays.py" "$REPO_DIR/.smoke"
+  touch "$REPO_DIR/.smoke/fail-ingestion"
+  for kind in spooled revoked; do
+    status_code=$(curl -sS -o "$response_file" -w "%{http_code}" -X POST "$RELAY_URL&debugbundle_evidence=1" \
+      -H "Origin: $WP_URL" -H "Content-Type: application/json" --data-binary "@$REPO_DIR/.smoke/$kind-evidence.json")
+    test "$status_code" = "202"
+    compose run --rm wpcli wp eval '
+    if ((new \DebugBundleWp\RelaySpool())->stats()["count"] < 1) exit(1);
+    ' --allow-root
+    rm -f "$REPO_DIR/.smoke/fail-ingestion"
+    if [ "$kind" = "revoked" ]; then
+      rm -f "$REPO_DIR/.smoke/evidence-enabled"
+      compose run --rm wpcli wp eval 'do_action("debugbundle_refresh_sdk_config");' --allow-root
+    fi
+    compose run --rm wpcli wp cron event run debugbundle_flush_relay_spool --allow-root
+    compose run --rm wpcli wp eval '
+    if ((new \DebugBundleWp\RelaySpool())->stats()["count"] !== 0) exit(1);
+    ' --allow-root
+    if [ "$kind" = "spooled" ]; then touch "$REPO_DIR/.smoke/fail-ingestion"; fi
+  done
+  compose run --rm wpcli wp eval 'require "/debugbundle-smoke/verify-evidence-delivery.php";' --allow-root
+fi
+echo "WordPress smoke passed: authenticated policy, PHP compatibility, exact browser asset, native and relayed evidence, durable retry, and policy revocation."

@@ -21,6 +21,25 @@ final class SettingsTest extends TestCase
         unset($GLOBALS['debugbundle_wp_test_options']);
     }
 
+    public function testEvidenceOptionsAreExplicitBooleanOnlyAndCannotChangeDestination(): void
+    {
+        $settings = new Settings();
+        self::assertFalse($settings->evidenceOptions()['captureRecoveryObservations']);
+        $GLOBALS['debugbundle_wp_test_filters']['debugbundle_evidence_options'] = static fn (): array => [
+            'captureRecoveryObservations' => true, 'captureExceptionEvidence' => false,
+            'captureResourceObservations' => 'false', 'endpoint' => 'https://other.example.test',
+        ];
+        try {
+            self::assertSame(['captureExceptionEvidence' => false, 'captureRecoveryObservations' => true, 'captureResourceObservations' => true], $settings->evidenceOptions());
+            $browser = $settings->frontendScriptConfig();
+            self::assertTrue($browser['captureRecoveryObservations']);
+            self::assertSame($settings->getRelayRoute(), $browser['endpoint']);
+            self::assertArrayNotHasKey('projectToken', $browser);
+        } finally {
+            unset($GLOBALS['debugbundle_wp_test_filters']['debugbundle_evidence_options']);
+        }
+    }
+
     public function testSanitizeClampsSampleRatesAndNormalizesFields(): void
     {
         $settings = new Settings();

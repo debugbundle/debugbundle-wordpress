@@ -33,6 +33,7 @@ final class BrowserRelayRouteTest extends TestCase
         ];
         $GLOBALS['debugbundle_wp_test_rest_routes'] = [];
         $GLOBALS['debugbundle_wp_test_actions'] = [];
+        $GLOBALS['debugbundle_wp_test_transients'] = [];
         $GLOBALS['debugbundle_wp_test_scheduled_hooks'] = [];
     }
 
@@ -78,6 +79,28 @@ final class BrowserRelayRouteTest extends TestCase
         ], '', 'OPTIONS'));
 
         self::assertSame(403, $response['status']);
+    }
+
+    public function testOptedInBrowserReceivesOnlyCurrentlyProvenDownstreamCapabilities(): void
+    {
+        $settings = new Settings();
+        $proof = ['version' => 1, 'features' => ['exception_evidence_v1']];
+        $GLOBALS['debugbundle_wp_test_remote_response']['body'] = json_encode([
+            'accepted' => 1, 'rejected' => 0, 'errors' => [], 'evidence_capabilities' => $proof,
+        ]);
+        $fixture = self::relayComplianceFixture('valid-browser-batch')['request'];
+        $request = $this->createWordPressRelayRequest($fixture['headers'], json_encode($fixture['bodyJson'], JSON_THROW_ON_ERROR), 'POST', ['debugbundle_evidence' => '1']);
+        $route = new BrowserRelayRoute($settings, 'debugbundle_test_cron');
+        $response = $route->handleRequest($request);
+        self::assertSame(202, $response['status']);
+        self::assertSame($proof, $response['body']['evidence_capabilities'] ?? null);
+        self::assertSame([], $response['body']['evidence_errors'] ?? null);
+        $GLOBALS['debugbundle_wp_test_remote_response']['body'] = '{"accepted":1,"rejected":0,"errors":[]}';
+        $response = $route->handleRequest($request);
+        self::assertSame([], $response['body']['evidence_capabilities']['features']);
+        $legacy = $route->handleRequest($this->createWordPressRelayRequestFromFixture($fixture));
+        self::assertArrayNotHasKey('evidence_capabilities', $legacy['body']);
+        self::assertArrayNotHasKey('evidence_errors', $legacy['body']);
     }
 
     public function testPartialAcknowledgementReplacesSpoolWithOnlyRetryableEvent(): void
@@ -139,6 +162,9 @@ final class BrowserRelayRouteTest extends TestCase
         $fixture = self::relayComplianceFixture('valid-browser-batch');
         $event = $fixture['request']['bodyJson']['batch'][0];
         $event['payload']['message'] = 'password=raw-canary-secret';
+        $event['context'] = ['password' => 'raw-context-secret',
+            'evidence_reference' => ['version' => 1, 'failure_ref' => '11111111-1111-4111-8111-111111111111',
+                'scope' => ['kind' => 'page', 'page_id' => '22222222-2222-4222-8222-222222222222']]];
         $spool = new \DebugBundleWp\RelaySpool();
         self::assertTrue($spool->ensureDirectory());
         file_put_contents($spool->path() . '/old.events.json', json_encode(['events' => [$event]], JSON_THROW_ON_ERROR));
@@ -150,6 +176,8 @@ final class BrowserRelayRouteTest extends TestCase
         self::assertCount(1, $files);
         self::assertStringNotContainsString('raw-canary-secret', (string) file_get_contents($files[0]));
         self::assertStringNotContainsString('raw-canary-secret', (string) ($GLOBALS['debugbundle_wp_test_last_remote_post']['args']['body'] ?? ''));
+        self::assertStringNotContainsString('raw-context-secret', (string) file_get_contents($files[0]));
+        self::assertStringNotContainsString('raw-context-secret', (string) ($GLOBALS['debugbundle_wp_test_last_remote_post']['args']['body'] ?? ''));
     }
 
     public function testUploadsSpoolIsMovedIntoPrivateStorageBeforeDelivery(): void
@@ -287,14 +315,15 @@ final class BrowserRelayRouteTest extends TestCase
     }
 
     /** @param array<string, string> $headers */
-    private function createWordPressRelayRequest(array $headers, string $body, string $method): object
+    private function createWordPressRelayRequest(array $headers, string $body, string $method, array $query = []): object
     {
-        return new class($headers, $body, $method) {
+        return new class($headers, $body, $method, $query) {
             /** @param array<string, string> $headers */
             public function __construct(
                 private readonly array $headers,
                 private readonly string $body,
                 private readonly string $method,
+                private readonly array $query,
             ) {
             }
 
@@ -312,6 +341,11 @@ final class BrowserRelayRouteTest extends TestCase
             public function get_method(): string
             {
                 return $this->method;
+            }
+
+            public function get_query_params(): array
+            {
+                return $this->query;
             }
         };
     }

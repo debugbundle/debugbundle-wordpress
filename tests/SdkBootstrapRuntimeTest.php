@@ -75,6 +75,42 @@ final class SdkBootstrapRuntimeTest extends TestCase
         $sdk->reset();
     }
 
+    public function testReadyActionExposesTheConfiguredSdkAndContainsApplicationFailure(): void
+    {
+        $observed = null;
+        \add_action('debugbundle_sdk_ready', static function (DebugBundleSdk $sdk) use (&$observed): void {
+            $observed = $sdk;
+            throw new \RuntimeException('fictional application callback');
+        });
+        $GLOBALS['debugbundle_wp_test_filters']['debugbundle_evidence_options'] = static fn (): array => ['captureRecoveryObservations' => true];
+        try {
+            $bootstrap = new SdkBootstrap(new Settings());
+            $bootstrap->register();
+            self::assertInstanceOf(DebugBundleSdk::class, $observed);
+            self::assertSame($observed, (new \ReflectionProperty($bootstrap, 'sdk'))->getValue($bootstrap));
+            self::assertTrue((new \ReflectionProperty($observed, 'captureRecoveryObservations'))->getValue($observed));
+            self::assertNotEmpty($GLOBALS['debugbundle_wp_test_actions']['init'][0]);
+            self::assertArrayNotHasKey('debugbundle_wp_test_last_remote_request', $GLOBALS);
+        } finally {
+            unset($GLOBALS['debugbundle_wp_test_filters']['debugbundle_evidence_options']);
+            if ($observed instanceof DebugBundleSdk) $observed->reset();
+        }
+    }
+
+    public function testFrontendOnlyInstallStillRefreshesPolicyThroughCronWithoutVisitorFetch(): void
+    {
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['backend_capture_enabled'] = false;
+        $GLOBALS['debugbundle_wp_test_options'][Settings::OPTION_NAME]['frontend_capture_enabled'] = true;
+        $GLOBALS['debugbundle_wp_test_remote_request_response'] = ['response' => ['code' => 200], 'body' => '{}'];
+        $bootstrap = new SdkBootstrap(new Settings());
+        $bootstrap->register();
+        self::assertNull((new \ReflectionProperty($bootstrap, 'sdk'))->getValue($bootstrap));
+        self::assertArrayNotHasKey('debugbundle_wp_test_last_remote_request', $GLOBALS);
+        self::assertArrayHasKey(SdkBootstrap::CONFIG_REFRESH_HOOK, $GLOBALS['debugbundle_wp_test_scheduled_hooks']);
+        $bootstrap->refreshConfig();
+        self::assertSame('https://api.example.test/v1/sdk/config', $GLOBALS['debugbundle_wp_test_last_remote_request']['url']);
+    }
+
     public function testScheduledRefreshPopulatesLocalPolicyCache(): void
     {
         $GLOBALS['debugbundle_wp_test_remote_request_response'] = [

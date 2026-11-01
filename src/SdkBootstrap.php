@@ -26,13 +26,19 @@ final class SdkBootstrap
 
     public function register(): void
     {
+        if ($this->settings->isBackendCaptureEnabled() || $this->settings->isFrontendCaptureEnabled()) {
+            $this->scheduleConfigRefresh();
+        }
         if (!$this->settings->isBackendCaptureEnabled()) {
             return;
         }
 
         try {
+            $evidence = $this->settings->evidenceOptions();
             $this->sdk = new DebugBundleSdk();
             $this->sdk->init([
+                'captureExceptionEvidence' => $evidence['captureExceptionEvidence'],
+                'captureRecoveryObservations' => $evidence['captureRecoveryObservations'],
                 'projectToken' => $this->settings->getProjectToken(),
                 'endpoint' => $this->settings->getEndpoint(),
                 'service' => $this->settings->getService(),
@@ -62,11 +68,16 @@ final class SdkBootstrap
         // so a fatal error during a later WordPress shutdown callback can join the batch.
         register_shutdown_function([$this, 'recordBackendFlush']);
         $this->scheduleConfigRefresh();
+        try {
+            if (function_exists('do_action')) \do_action('debugbundle_sdk_ready', $this->sdk);
+        } catch (\Throwable) {
+            // Application integrations cannot disable the already-registered capture lifecycle.
+        }
     }
 
     public function refreshConfig(): void
     {
-        if ($this->settings->isBackendCaptureEnabled()) {
+        if ($this->settings->isBackendCaptureEnabled() || $this->settings->isFrontendCaptureEnabled()) {
             $this->configCache->refresh($this->settings->getEndpoint(), $this->settings->getProjectToken());
             $this->scheduleConfigRefresh();
         }

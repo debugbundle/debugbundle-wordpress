@@ -47,7 +47,7 @@ if [ -f src/CachedConfigFetcher.php ]; then
       2.*) ;;
       *) echo "Bounded request-end delivery requires a WordPress 2.x major release." >&2; exit 1 ;;
     esac
-    require_grep '"debugbundle/sdk-php":[[:space:]]*"\^2\.0' composer.json "WordPress 2.x must require the PHP 2.x SDK"
+    require_grep '"debugbundle/sdk-php":[[:space:]]*"\^2\.' composer.json "WordPress 2.x must require the PHP 2.x SDK"
     require_grep '"version":[[:space:]]*"v?2\.' composer.lock "WordPress 2.x must lock the published PHP 2.x SDK"
   fi
 fi
@@ -80,6 +80,7 @@ cp uninstall.php .dist/debugbundle/
 cp readme.txt .dist/debugbundle/
 cp README.md .dist/debugbundle/
 cp MIGRATION-2.0.md .dist/debugbundle/
+if [ -f MIGRATION-2.1.md ]; then cp MIGRATION-2.1.md .dist/debugbundle/; fi
 cp CHANGELOG.md .dist/debugbundle/
 cp SECURITY.md .dist/debugbundle/
 cp LICENSE .dist/debugbundle/
@@ -104,6 +105,15 @@ composer install \
   --no-interaction \
   --no-progress \
   --prefer-dist
+
+if [ -f src/RelayEvidencePolicy.php ] && {
+  [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/EvidenceWire.php ] ||
+  [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/IngestionWire.php ] ||
+  [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/CanonicalEventSchema.php ];
+}; then
+  echo "The evidence candidate requires the coordinated PHP 2.1 SDK artifact and lock." >&2
+  exit 1
+fi
 
 # A source overlay is useful for local tests, but cannot certify a shipped dependency lock.
 if [ ! -r .dist/debugbundle/vendor/debugbundle/sdk-php/src/TelemetryPrivacy.php ]; then

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DebugBundleWp;
 
+use DebugBundle\IngestionWire;
+
 final class RelaySpool
 {
     private const MAX_TOTAL_BYTES = 10485760;
@@ -66,7 +68,7 @@ final class RelaySpool
         }
 
         try {
-            $payload = json_encode(['events' => $events], JSON_THROW_ON_ERROR);
+            $payload = IngestionWire::body($events);
             $filePath = sprintf('%s/%d-%s.events.json', $this->path(), (int) floor(microtime(true) * 1000), bin2hex(random_bytes(4)));
         } catch (\Throwable) {
             return null;
@@ -77,6 +79,36 @@ final class RelaySpool
 
         $this->prune();
         return $filePath;
+    }
+
+    /** Retain every prepared chunk before acknowledging any batch to the browser.
+     * @param list<array<string, mixed>> $events
+     * @return list<string>|null
+     */
+    public function writeBatches(array $events): ?array
+    {
+        $written = [];
+        try {
+            $safe = Sanitization::protectRelayEvents($events);
+            if ($safe === null || $safe === []) return null;
+            $prepared = [];
+            foreach ($safe as $event) {
+                $fitted = IngestionWire::fit($event);
+                if ($fitted === null) return null;
+                $prepared[] = $fitted;
+            }
+            foreach (IngestionWire::chunks($prepared) as $chunk) {
+                $file = $this->write($chunk);
+                if ($file === null) throw new \RuntimeException('relay_spool_unavailable');
+                $written[] = $file;
+            }
+            // Capacity pruning must not silently acknowledge an earlier chunk removed by a later write.
+            foreach ($written as $file) if (!is_file($file)) throw new \RuntimeException('relay_spool_unavailable');
+            return $written;
+        } catch (\Throwable) {
+            foreach ($written as $file) $this->delete($file);
+            return null;
+        }
     }
 
     /** @return list<array<string, mixed>>|null */
@@ -90,7 +122,7 @@ final class RelaySpool
             if ($safe === null || $safe === []) {
                 return null;
             }
-            $replacement = json_encode(['events' => $safe], JSON_THROW_ON_ERROR);
+            $replacement = IngestionWire::body($safe);
             if (strlen($replacement) > 262144) {
                 return null;
             }

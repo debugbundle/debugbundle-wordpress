@@ -5,6 +5,12 @@ import { dirname, resolve } from 'node:path';
 const port = Number.parseInt(process.env.DEBUGBUNDLE_MOCK_INGESTION_PORT ?? '18081', 10);
 const eventsFile = resolve(process.env.DEBUGBUNDLE_MOCK_EVENTS_FILE ?? '.smoke/ingestion-events.ndjson');
 const failFile = process.env.DEBUGBUNDLE_MOCK_FAIL_FILE ? resolve(process.env.DEBUGBUNDLE_MOCK_FAIL_FILE) : null;
+const evidenceFile = resolve(dirname(eventsFile), 'evidence-enabled');
+const features = ['exception_evidence_v1', 'resource_observations_v1', 'recovery_v1', 'evidence_provenance_v1'];
+
+async function evidenceEnabled() {
+  try { await access(evidenceFile); return true; } catch { return false; }
+}
 
 async function shouldFail() {
   if (!failFile) {
@@ -33,6 +39,7 @@ function sendJson(response, statusCode, body) {
 }
 
 const server = createServer(async (request, response) => {
+  const url = new URL(request.url, 'http://mock-ingestion:18081');
   if (request.method === 'GET' && request.url === '/health') {
     sendJson(response, 200, { ok: true });
     return;
@@ -43,22 +50,26 @@ const server = createServer(async (request, response) => {
       sendJson(response, 401, { error: 'invalid_project_token' });
       return;
     }
+    const evidence = await evidenceEnabled();
     sendJson(response, 200, {
+      evidence_capabilities: { version: 1, features: evidence ? features : [] },
       probes_enabled: true,
       remote_probes_enabled: false,
       active_probes: [],
       capture_policy: {
-        preset: 'minimal',
+        preset: evidence ? 'balanced' : 'minimal',
         capture_logs: 'error',
         capture_request_events: 'failures_only',
         capture_breadcrumbs: 'local_only',
         capture_probe_events: 'buffer_only',
+        capture_diagnostic_context: evidence,
       },
     });
     return;
   }
 
-  if (request.method !== 'POST' || request.url !== '/v1/events') {
+  if (request.method !== 'POST' || url.pathname !== '/v1/events'
+      || !['', '?debugbundle_evidence=1'].includes(url.search)) {
     sendJson(response, 404, { error: 'not_found' });
     return;
   }
@@ -84,7 +95,8 @@ const server = createServer(async (request, response) => {
     events,
   }) + '\n');
 
-  sendJson(response, 202, { accepted: events.length, rejected: 0, errors: [] });
+  sendJson(response, 202, { accepted: events.length, rejected: 0, errors: [],
+    evidence_capabilities: { version: 1, features: await evidenceEnabled() ? features : [] } });
 });
 
 server.listen(port, '0.0.0.0');

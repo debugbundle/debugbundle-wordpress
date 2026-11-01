@@ -15,7 +15,7 @@ services:
       - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:7.1.1-php8.2-apache
+    image: ${WORDPRESS_SMOKE_IMAGE:-wordpress:7.1.1-php8.2-apache}
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +41,8 @@ services:
       - wordpress_data:/var/www/html
       - private_tmp:/tmp
       - ${DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR:-.}:/var/www/html/wp-content/plugins/debugbundle
+      - ./scripts:/debugbundle-smoke:ro
+      - ./.smoke:/debugbundle-smoke-state:ro
 
   mock-ingestion:
     image: node:24-alpine
@@ -62,7 +64,7 @@ services:
       - ./:/workspace
 
   wpcli:
-    image: wordpress:cli-php8.2
+    image: ${WORDPRESS_SMOKE_CLI_IMAGE:-wordpress:cli-php8.2}
     user: "33:33"
     depends_on:
       db:
@@ -80,6 +82,8 @@ services:
       - wordpress_data:/var/www/html
       - private_tmp:/tmp
       - ${DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR:-.}:/var/www/html/wp-content/plugins/debugbundle
+      - ./scripts:/debugbundle-smoke:ro
+      - ./.smoke:/debugbundle-smoke-state:ro
 
 volumes:
   db_data:

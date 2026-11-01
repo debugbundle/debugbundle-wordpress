@@ -56,3 +56,12 @@ coverage-php-sdk:
 .PHONY: staged-release-check
 staged-release-check:
 	python3 scripts/check-staged-release.py --php-sdk "$(PHP_SDK_CHECKOUT)" --browser-artifact "$(BROWSER_ARTIFACT)"
+
+.PHONY: staged-runtime-check
+staged-runtime-check:
+	python3 scripts/check-staged-runtime.py --wordpress-version "$(WP_VERSION)" --php-version "$(PHP_VERSION)"
+
+# Use the already qualified staged ZIP; only the disposable harness is refreshed.
+.PHONY: evidence-performance
+evidence-performance:
+	DEBUGBUNDLE_EVIDENCE_PERFORMANCE=1 python3 scripts/check-staged-runtime.py --wordpress-version "$(WP_VERSION)" --php-version "$(PHP_VERSION)"

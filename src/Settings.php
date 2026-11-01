@@ -187,6 +187,7 @@ final class Settings
     public function frontendScriptConfig(): array
     {
         return [
+            ...$this->evidenceOptions(),
             'endpoint' => $this->getRelayRoute(),
             'service' => $this->getBrowserService(),
             'environment' => $this->getEnvironment(),
@@ -202,6 +203,23 @@ final class Settings
                 'urlDenyPatterns' => [$this->getRelayRoute()],
             ],
         ];
+    }
+
+    /** Trusted application opt-in; the filter cannot replace tokens, endpoints or SDK callbacks.
+     * @return array{captureExceptionEvidence:bool,captureRecoveryObservations:bool,captureResourceObservations:bool}
+     */
+    public function evidenceOptions(): array
+    {
+        $defaults = ['captureExceptionEvidence' => true, 'captureRecoveryObservations' => false, 'captureResourceObservations' => true];
+        try {
+            $filtered = function_exists('apply_filters') ? \apply_filters('debugbundle_evidence_options', $defaults) : $defaults;
+            if (is_array($filtered)) foreach ($defaults as $key => $value) {
+                if (isset($filtered[$key]) && is_bool($filtered[$key])) $defaults[$key] = $filtered[$key];
+            }
+        } catch (\Throwable) {
+            // Optional application configuration must not interrupt WordPress rendering.
+        }
+        return $defaults;
     }
 
     /** @return array<string, mixed> */

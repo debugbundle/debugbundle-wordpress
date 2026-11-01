@@ -38,6 +38,33 @@ final class RelaySpoolTest extends TestCase
         self::assertStringContainsString('Require all denied', (string) file_get_contents($directory . '/.htaccess'));
     }
 
+    public function testExpandedBatchesArePartitionedBeforeDurableAcceptance(): void
+    {
+        $events = [];
+        for ($index = 0; $index < 3; $index++) {
+            $events[] = ['event_id' => 'evt-' . $index, 'service' => ['name' => 'wp', 'environment' => 'test'],
+                'payload' => ['message' => 'fictional'], 'context' => array_fill_keys(range(1, 12), str_repeat('x', 8000))];
+        }
+        $spool = new RelaySpool();
+        $files = $spool->writeBatches($events);
+        self::assertIsArray($files); self::assertCount(2, $files);
+        $retained = [];
+        foreach ($files as $file) {
+            self::assertLessThanOrEqual(262144, filesize($file));
+            array_push($retained, ...$spool->readProtected($file));
+        }
+        self::assertSame($events, $retained);
+    }
+
+    public function testUnretainableBatchNeverLeavesPartialSpoolAcceptance(): void
+    {
+        $spool = new RelaySpool();
+        $event = ['event_id' => 'evt', 'service' => ['name' => 'wp', 'environment' => 'test'],
+            'payload' => ['message' => 'fictional'], 'context' => array_fill_keys(range(1, 40), str_repeat('x', 8000))];
+        self::assertNull($spool->writeBatches([$event]));
+        self::assertSame([], $spool->files());
+    }
+
     public function testPrivateSpoolRejectsAReplacedDirectorySymlink(): void
     {
         $spool = new RelaySpool();

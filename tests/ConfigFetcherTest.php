@@ -10,6 +10,23 @@ use RuntimeException;
 
 final class ConfigFetcherTest extends TestCase
 {
+	public function testConfigurationReadIsBoundedAndRejectsEncodedResponses(): void
+	{
+		$GLOBALS['debugbundle_wp_test_remote_request_response'] = [
+			'response' => ['code' => 200], 'body' => '{}', 'headers' => ['Content-Encoding' => 'gzip'],
+		];
+		try {
+			(new ConfigFetcher())('https://api.example.test/v1/sdk/config', []);
+			self::fail('Encoded configuration must not supply capability proof.');
+		} catch (RuntimeException $exception) {
+			self::assertSame('config_request_failed', $exception->getMessage());
+		}
+		$args = $GLOBALS['debugbundle_wp_test_last_remote_request']['args'];
+		self::assertSame(131073, $args['limit_response_size']);
+		self::assertSame(0, $args['redirection']);
+		self::assertFalse($args['decompress']);
+		self::assertSame('identity', $args['headers']['Accept-Encoding']);
+	}
 	protected function setUp(): void
 	{
 		unset($GLOBALS['debugbundle_wp_test_remote_request_response']);
@@ -41,7 +58,7 @@ final class ConfigFetcherTest extends TestCase
 		self::assertSame('https://api.debugbundle.com/v1/sdk/config', $GLOBALS['debugbundle_wp_test_last_remote_request']['url']);
 		self::assertSame('GET', $GLOBALS['debugbundle_wp_test_last_remote_request']['args']['method']);
 		self::assertSame(
-			['X-DebugBundle-Service' => 'wordpress site'],
+			['X-DebugBundle-Service' => 'wordpress site', 'Accept-Encoding' => 'identity'],
 			$GLOBALS['debugbundle_wp_test_last_remote_request']['args']['headers']
 		);
 	}

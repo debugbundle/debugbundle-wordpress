@@ -67,13 +67,21 @@ final class BrowserRelayRoute
         $body = method_exists($request, 'get_body') ? (string) $request->get_body() : file_get_contents('php://input');
         $method = method_exists($request, 'get_method') ? (string) $request->get_method() : Sanitization::requestMethod('POST');
         $flattenedHeaders = $this->flattenHeaders($headers);
+        $query = method_exists($request, 'get_query_params') ? $request->get_query_params() : [];
+        $discoveryUrl = is_array($query) && ($query['debugbundle_evidence'] ?? null) === '1'
+            ? '/?debugbundle_evidence=1' : '/';
+        $evidence = new RelayEvidencePolicy($this->settings);
 
         if (strtoupper($method) === 'OPTIONS') {
             $origin = $this->sourceOrigin($flattenedHeaders);
             if ($origin === null || !$this->isAllowedOrigin($origin, $flattenedHeaders['host'] ?? null)) {
                 return $this->response(null, 403);
             }
-            return $this->response(null, 204, $this->corsHeaders($origin));
+            $cors = $this->corsHeaders($origin);
+            if (str_contains(strtolower($flattenedHeaders['access-control-request-headers'] ?? ''), 'x-debugbundle-evidence')) {
+                $cors['Access-Control-Allow-Headers'] .= ', x-debugbundle-evidence';
+            }
+            return $this->response(null, 204, $cors);
         }
 
         $ipAddress = Sanitization::ipAddress();
@@ -91,6 +99,7 @@ final class BrowserRelayRoute
             'rateLimitPerMinute' => 60,
             'service' => $this->settings->getBrowserService(),
             'environment' => $this->settings->getEnvironment(),
+            'evidenceCapabilities' => $evidence->capabilities(),
             'onAccept' => function (BrowserRelayAcceptedBatch $batch) use (&$acceptedEvents): void {
                 foreach ($batch->events as $event) {
                     $acceptedEvents[] = $this->completeBrowserEventEnvelope($event);
@@ -100,6 +109,7 @@ final class BrowserRelayRoute
 
         $relayResponse = $handler->handle([
             'method' => $method,
+            'url' => $discoveryUrl,
             'headers' => $flattenedHeaders,
             'body' => is_string($body) ? $body : '',
             'ipAddress' => $ipAddress,
@@ -114,15 +124,28 @@ final class BrowserRelayRoute
         }
 
         if ($acceptedEvents !== []) {
-            $spoolFile = $this->spool->write($acceptedEvents);
-            if ($spoolFile === null) {
+            $deadline = hrtime(true) + 5_000_000_000;
+            $spoolFiles = $this->spool->writeBatches($acceptedEvents);
+            if ($spoolFiles === null) {
                 return $this->response(['accepted' => 0, 'rejected' => count($acceptedEvents), 'errors' => ['relay_privacy_unavailable']], 503, $responseHeaders);
             }
-            $result = $this->forwarder->forward($acceptedEvents);
-            $this->reconcileSpoolFile($spoolFile, $result);
+            foreach ($spoolFiles as $spoolFile) {
+                $retained = $this->spool->readProtected($spoolFile);
+                if ($retained === null) {
+                    $this->scheduleFlush();
+                    return $this->response(['accepted' => 0, 'rejected' => count($acceptedEvents), 'errors' => ['relay_spool_unavailable']], 503, $responseHeaders);
+                }
+                $result = $this->forwarder->forward($retained, $deadline);
+                $this->reconcileSpoolFile($spoolFile, $result);
+            }
         }
 
-        return $this->response($relayResponse->body ?? null, $relayResponse->status, $responseHeaders);
+        $responseBody = $relayResponse->body;
+        if ($responseBody !== null && \DebugBundle\Relay\RelayEvidencePath::requested($discoveryUrl, $flattenedHeaders)) {
+            // Forwarding may have learned or revoked downstream proof after local acceptance.
+            $responseBody['evidence_capabilities'] = $evidence->capabilities();
+        }
+        return $this->response($responseBody, $relayResponse->status, $responseHeaders);
     }
 
     public function flushSpool(): void
@@ -157,7 +180,7 @@ final class BrowserRelayRoute
             return;
         }
 
-        $replacement = $this->spool->write($result->retryEvents);
+        $replacement = $this->spool->writeBatches($result->retryEvents);
         if ($replacement !== null) {
             $this->spool->delete($filePath);
         }

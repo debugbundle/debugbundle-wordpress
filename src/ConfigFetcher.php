@@ -29,10 +29,14 @@ final class ConfigFetcher
             }
         }
 
+        $headers['Accept-Encoding'] = 'identity';
         $response = \wp_remote_request($safeUrl, [
             'method' => $this->sanitizeMethod((string) ($request['method'] ?? 'GET')),
             'headers' => $headers,
             'timeout' => 0.25,
+            'redirection' => 0,
+            'limit_response_size' => 131073,
+            'decompress' => false,
         ]);
 
         if (function_exists('is_wp_error') && \is_wp_error($response)) {
@@ -71,6 +75,10 @@ final class ConfigFetcher
                     }
                 }
             }
+        }
+
+        if (!in_array(strtolower(trim($normalizedHeaders['content-encoding'] ?? 'identity')), ['', 'identity'], true)) {
+            throw new RuntimeException('config_request_failed');
         }
 
         $payload = null;

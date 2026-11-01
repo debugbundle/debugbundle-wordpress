@@ -136,6 +136,15 @@ if (!function_exists('apply_filters')) {
 	}
 }
 
+if (!function_exists('do_action')) {
+	function do_action(string $hook, mixed ...$args): void
+	{
+		$priorities = $GLOBALS['debugbundle_wp_test_actions'][$hook] ?? [];
+		ksort($priorities);
+		foreach ($priorities as $callbacks) foreach ($callbacks as $callback) $callback(...$args);
+	}
+}
+
 if (!function_exists('register_activation_hook')) {
 	function register_activation_hook(string $file, callable $callback): void
 	{
@@ -277,6 +286,8 @@ if (!function_exists('wp_remote_post')) {
 	function wp_remote_post(string $url, array $args = []): mixed
 	{
 		$GLOBALS['debugbundle_wp_test_last_remote_post'] = ['url' => $url, 'args' => $args];
+		$callback = $GLOBALS['debugbundle_wp_test_remote_post_callback'] ?? null;
+		if (is_callable($callback)) return $callback($url, $args);
 		return $GLOBALS['debugbundle_wp_test_remote_response'] ?? [
 			'response' => ['code' => 202],
 			'body' => json_encode(['accepted' => 1, 'rejected' => 0, 'errors' => []]),

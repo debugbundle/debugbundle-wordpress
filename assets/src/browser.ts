@@ -14,9 +14,8 @@ if (config && typeof config === "object") {
     const sdk = createDebugBundleBrowserSdk();
     sdk.init(config as Parameters<typeof sdk.init>[0]);
 
-    if ((config as Record<string, unknown>).debug === true) {
-      window.DebugBundleWordPress = sdk;
-    }
+    // Applications can explicitly associate failures/recovery without enabling debug logging.
+    window.DebugBundleWordPress = sdk;
   } catch {
     // Intentionally fail closed: the plugin must never break the page.
   }

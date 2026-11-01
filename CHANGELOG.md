@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- Add inherited PHP/browser structured evidence and explicit recovery integration through restricted `debugbundle_evidence_options`, `debugbundle_sdk_ready` and the existing browser SDK global.
+- Negotiate complete-path relay capabilities without changing legacy responses. Refresh local policy through cron for frontend-only installs; acknowledgement proof cannot renew expired capture permission.
+- Protect legacy spool context, partition actual JSON bytes before retention/forwarding, recheck current proof/policy on retries and bound config/acknowledgement response reads.
+- Requires the coordinated PHP 2.1 and Browser 3.2 candidate artifacts; ZIP/runtime qualification and publication remain pending.
+
 ## [2.0.3] - 2026-10-20
 
 ### Fixed

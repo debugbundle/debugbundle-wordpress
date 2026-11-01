@@ -2,6 +2,8 @@
 
 WordPress plugin for DebugBundle.
 
+The unpublished evidence candidate is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
+
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
 ![Version](https://img.shields.io/badge/version-2.0.3-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
@@ -123,6 +125,20 @@ make smoke-wordpress
 
 The local smoke uses the published PHP SDK version pinned in `composer.lock`. CI may additionally set `DEBUGBUNDLE_PHP_SDK_CHECKOUT` to exercise a coordinated PHP SDK checkout before that dependency is published.
 
+For the unpublished evidence candidate, first qualify the staged ZIP, then run
+`make evidence-performance WP_VERSION=7.1.1 PHP_VERSION=8.5`. It reuses that exact
+checksum-verified ZIP in a disposable WordPress installation. The wrapper creates
+the SDK and applies its real settings, filters, cached capability proof and request
+lifecycle. Only the transport is replaced for timing; no external ingestion occurs.
+Twenty native two-node errors and recovery calls are compared with evidence off/on
+and empty/full queues, after one warm-up and across three measured repetitions.
+Caller time and PHP live/peak allocation are reported separately from request-end
+flush time, retained wire bytes and pending diagnostic ownership. Live/peak values
+are not cumulative allocation counts. The harness requires all twelve output rows,
+explicit success and preserved original errors; five-minute failure-window metadata
+may remain after queued observations are released. This proves staged local behavior,
+not final registry locks, publication or installation on an existing site.
+
 ## Packaging
 
 Build a local release ZIP:
@@ -165,3 +181,22 @@ Report vulnerabilities through GitHub private vulnerability reporting for the pl
 ## License
 
 GPL-2.0-or-later. See `LICENSE`.
+
+## Probe checkpoint guidance
+
+Application instrumentation supplies probe labels and bounded data. Deploy a new
+checkpoint before activating it. Remote activation affects future matching calls
+when policy permits; it does not inject code or recover unretained measurements.
+Built-in runtime/error/device collectors keep their documented SDK settings.
+
+Use fixed labels and allowlisted technical states: `media.preview.checkpoint`
+(stage/input kind/attempt), `auth.session.checkpoint` (observed session presence
+and result), `job.dependency.checkpoint` (named dependency/attempt/result), or
+`cache.preview.checkpoint` (hit/miss/coarse age bucket). Omit customer identifiers,
+tokens/cookies, cache keys, URLs and raw payloads. HTTP 200 or attempt completion
+alone does not establish semantic recovery.
+
+Empty probe data means no matching retained observation for the selected sample
+window. It does not confirm activation delivery to every SDK or execution of a
+label. Check the deployed SDK/wrapper version, instrumentation, scope, expiry,
+policy, sampling and delivery receipts. See the [probe recipes](https://debugbundle.com/docs/probes#bounded-checkpoint-recipes).

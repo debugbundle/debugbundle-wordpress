@@ -29,6 +29,7 @@ final class Sanitization
                 $protected = TelemetryPrivacy::protect([
                     'service' => $event['service'],
                     'payload' => $event['payload'],
+                    ...(array_key_exists('context', $event) ? ['context' => $event['context']] : []),
                 ]);
                 if (!is_array($protected) || !is_array($protected['service'] ?? null)
                     || !is_array($protected['payload'] ?? null)) {
@@ -36,6 +37,9 @@ final class Sanitization
                 }
                 $event['service'] = $protected['service'];
                 $event['payload'] = $protected['payload'];
+                if (array_key_exists('context', $event)) {
+                    $event['context'] = $protected['context'] ?? null;
+                }
                 if (isset($event['correlation']) && is_array($event['correlation'])) {
                     foreach ($event['correlation'] as $key => $value) {
                         if (is_string($value)) {

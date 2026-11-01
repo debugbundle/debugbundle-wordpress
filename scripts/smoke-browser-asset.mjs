@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, webcrypto } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createContext, runInContext } from "node:vm";
 
@@ -13,7 +13,7 @@ assert.match(receipt.version, /^3\./);
 assert.equal(createHash("sha256").update(asset).digest("hex"), receipt.asset_sha256);
 assert.doesNotMatch(inline, /ZIP_SERVER_SECRET|projectToken|project_token/);
 
-async function check(withHook) {
+async function check(withHook, withEvidence = false) {
   const listeners = new Map();
   const timers = new Map();
   const requests = [];
@@ -36,7 +36,8 @@ async function check(withHook) {
     fetch: async (url, init) => {
       const batch = JSON.parse(init.body).batch;
       requests.push({ url, headers: new Headers(init.headers), batch });
-      return { ok: true, status: 202, headers: new Headers(), json: async () => ({ accepted: batch.length, rejected: 0, errors: [] }) };
+      return { ok: true, status: 202, headers: new Headers(), json: async () => ({ accepted: batch.length, rejected: 0, errors: [],
+        ...(withEvidence ? { evidence_capabilities: { version: 1, features: ["exception_evidence_v1", "recovery_v1", "resource_observations_v1", "evidence_provenance_v1"] } } : {}) }) };
     },
   });
   runInContext(inline, context, { timeout: 1000 });
@@ -47,6 +48,8 @@ async function check(withHook) {
   assert.equal(config.sessionSampleRate, 1);
   assert.equal(config.maxEventsPerSession, 100);
   assert.equal(config.networkFilter.urlDenyPatterns[0], config.endpoint);
+  assert.equal(config.captureRecoveryObservations, false);
+  if (withEvidence) config.captureRecoveryObservations = true;
   let hookCalls = 0;
   if (withHook) {
     // Exercise the optional entry-point debug handle and callback without
@@ -61,6 +64,7 @@ async function check(withHook) {
     };
   }
   runInContext(asset, context, { timeout: 2000 });
+  assert.equal(typeof context.window.DebugBundleWordPress?.captureRecovery, "function", "explicit recovery requires no debug mode");
   if (withHook) {
     const sdk = context.window.DebugBundleWordPress;
     assert.equal(typeof sdk?.captureLog, "function", "bundled entry did not initialize the SDK");
@@ -86,7 +90,7 @@ async function check(withHook) {
   }
   assert.equal(requests.length, 1, "expected one relay batch from the extracted ZIP asset");
   const request = requests[0];
-  assert.equal(request.url, config.endpoint);
+  assert.equal(request.url, config.endpoint + "?debugbundle_evidence=1");
   assert.equal(request.headers.get("authorization"), null);
   assert.equal(request.batch.length, 1);
   const event = request.batch[0];
@@ -97,9 +101,30 @@ async function check(withHook) {
   assert.doesNotMatch(JSON.stringify(request.batch), /ZIP_(?:SOURCE|HOOK|SERVER)_SECRET/);
   if (withHook) assert.equal(event.context.marker, "zip-hook-kept");
   else assert.equal(event.event_type, "frontend_exception");
+  if (withEvidence) {
+    const sdk = context.window.DebugBundleWordPress;
+    await sdk.flush();
+    const failureRef = "11111111-1111-4111-8111-111111111111";
+    runInContext('evidenceError = new Error("independent ZIP failure");', context);
+    sdk.captureException(context.evidenceError, { failureRef });
+    sdk.captureRecovery({ failureRef, attemptId: "22222222-2222-4222-8222-222222222222", state: "attempt_completed", statusCode: 200 });
+    await sdk.flush();
+    const emitted = requests.slice(1).flatMap(item => item.batch);
+    const failure = emitted.find(item => item.event_type === "frontend_exception");
+    const observation = emitted.find(item => item.event_type === "diagnostic_context");
+    assert.equal(failure?.payload.exception_evidence?.runtime, "browser");
+    assert.equal(failure?.context.evidence_reference.failure_ref, failureRef);
+    assert.equal(observation?.payload.failure_ref, failureRef);
+    assert.equal(observation?.payload.state, "attempt_completed");
+    assert.equal(observation?.payload.status_code, 200);
+    assert.deepEqual(observation?.payload.scope, failure?.context.evidence_reference.scope);
+    if (process.argv[4]) writeFileSync(process.argv[4], JSON.stringify({ batch: emitted }));
+    sdk.dispose();
+  }
   timers.clear();
 }
 
 await check(false);
 await check(true);
+await check(false, true);
 console.log(`Extracted WordPress Browser ${receipt.version} asset smoke passed: PHP config, queued delivery, hook drop/privacy and credential-free relay.`);
