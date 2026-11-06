@@ -32,7 +32,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--php-sdk", required=True, type=Path)
     parser.add_argument("--browser-artifact", required=True, type=Path)
-    parser.add_argument("--version", default="2.1.0")
+    parser.add_argument("--version", default="2.1.1")
+    parser.add_argument("--core-dependencies", choices=("candidate", "published"), default="candidate",
+                        help="Use packed local core candidates, or the Browser artifact's exact published dependency pins")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     php = args.php_sdk.resolve()
@@ -90,10 +92,16 @@ def main():
     package_json["dependencies"]["@debugbundle/sdk-browser"] = f"file:../artifacts/{browser.name}"
     # Consume exact packed core dependencies, never an unpublished source link.
     overrides = {}
+    receipt["core_dependencies"] = args.core_dependencies
     for name in ("redaction", "shared-types"):
         root = repo.parents[1]
         dependency_version = json.loads((root / f"packages/{name}/package.json").read_text())["version"]
         declared = browser_package["dependencies"][f"@debugbundle/{name}"]
+        if args.core_dependencies == "published":
+            if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", declared):
+                raise RuntimeError(f"Browser must pin an exact published {name} version, got {declared}")
+            receipt[f"{name}_version"] = declared
+            continue
         if declared != dependency_version:
             raise RuntimeError(f"Browser declares {name} {declared}, expected candidate {dependency_version}")
         archive = root / f".tmp/apache-packages/debugbundle-{name}-{dependency_version}.tgz"

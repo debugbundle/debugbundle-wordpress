@@ -3,7 +3,7 @@ Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -102,6 +102,9 @@ No. The plugin requires a saved project token before it can forward backend or b
 Yes for normal WordPress sites. The plugin vendors the PHP SDK, bundles the browser SDK, and registers the WordPress REST browser relay for you.
 
 == Changelog ==
+
+= 2.1.1 =
+* Bundle PHP SDK 2.1.1 and Browser SDK 3.2.1, preserving native Monolog causes and accepted-capture identity while retaining existing plugin settings.
 
 = 2.1.0 =
 * Bundle PHP 2.1.0 and Browser 3.2.0 with bounded structured evidence, passive browser diagnostics, complete-path relay negotiation and explicit recovery. Existing settings and spool state remain compatible.

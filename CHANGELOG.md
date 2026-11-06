@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-11-06
+
+- Qualify the staged ZIP with the corrected PHP archive and exact Browser pins; permit an explicit published-core dependency mode without requiring an unrelated core-package upgrade. Staged artifacts remain marked as unpublished.
+
+- Compatibility note: the next plugin distribution must bundle the corrected PHP logger exception capture. Plugin source and existing installations are unchanged; local tests qualify the corrected PHP checkout.
+- Not published. Existing event schemas remain compatible; complete exception inputs may create new future fingerprints. Consumer upgrades require a separately authorised release and installation.
+
 ## [2.1.0] - 2026-11-01
 
 - Add inherited PHP/browser structured evidence and explicit recovery integration through restricted `debugbundle_evidence_options`, `debugbundle_sdk_ready` and the existing browser SDK global.

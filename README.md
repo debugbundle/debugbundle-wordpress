@@ -1,11 +1,13 @@
 # DebugBundle WordPress Plugin
 
+Patch 2.1.1 bundles PHP SDK 2.1.1 and Browser SDK 3.2.1 with corrected native exception logging. Existing sites require an explicit plugin upgrade.
+
 WordPress plugin for DebugBundle.
 
 Version 2.1.0 evidence is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.1-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.

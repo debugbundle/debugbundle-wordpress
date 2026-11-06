@@ -23446,7 +23446,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/privacy.js
   function protectBrowserEvent(event, additionalKeys) {
     var _a5, _b;
     const fallback = () => {
@@ -23494,7 +23494,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return fallback();
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
   var WINDOW = 3e4;
   var MAX_BYTES2 = 32 * 1024;
   var identities = /* @__PURE__ */ new WeakMap();
@@ -23753,7 +23753,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
   function browserEvidenceEndpoint(endpoint) {
     const hashAt = endpoint.indexOf("#"), clean = hashAt < 0 ? endpoint : endpoint.slice(0, hashAt);
     return `${clean}${clean.includes("?") ? "&" : "?"}debugbundle_evidence=1`;
@@ -23941,10 +23941,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "3.2.0",
+    version: "3.2.1",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -23981,7 +23981,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -24005,7 +24005,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
   function createBrowserDiagnosticEvent(config3, payload, correlation, service) {
     const event = createEventEnvelope({
       schema_version: SDK_SCHEMA_VERSION,
@@ -24023,7 +24023,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return event;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a5, _b, _c, _d;
@@ -24038,7 +24038,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key2) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key2] : void 0;
@@ -24069,7 +24069,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/response-json.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/response-json.js
   async function readBoundedBrowserJson(response, signal) {
     var _a5, _b;
     const maximumBytes = 256 * 1024;
@@ -24121,7 +24121,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
   function getFetchSource() {
     const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
@@ -24176,7 +24176,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -24858,7 +24858,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
   var NativeError = Error;
   var nativeStackDescriptor;
   var nativePrototypes = /* @__PURE__ */ new Set([
@@ -25018,7 +25018,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return (parsed == null ? void 0 : parsed.success) ? parsed.data : void 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
   function createBrowserExceptionEvent(input2) {
     var _a5, _b, _c;
     const { error: error62, context, config: config3, device, breadcrumbs, probeData, route, correlation, evidence } = input2;
@@ -25076,7 +25076,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return event;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -25131,7 +25131,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -25405,7 +25405,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -25816,7 +25816,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -25843,7 +25843,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -25997,7 +25997,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl2(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -26025,7 +26025,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -26576,7 +26576,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input2) {
     var _a5;
     const { config: config3, event } = input2;
@@ -26662,7 +26662,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -27047,7 +27047,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a5;
     try {
@@ -27066,7 +27066,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -27235,7 +27235,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
   function createLane() {
     return {
       events: [],
@@ -27470,7 +27470,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     invalidateAdmission(lane);
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -27517,7 +27517,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   var BrowserEventTransport = class {
     constructor(callbacks) {
       __publicField(this, "callbacks");
@@ -28107,7 +28107,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -28196,7 +28196,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var evidencePolicySchema = ResolvedCapturePolicySchema.partial();
   function validEvidenceConfig(payload, status) {
     if (status < 200 || status >= 300 || payload === null || typeof payload !== "object" || Array.isArray(payload))
@@ -28418,7 +28418,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.0/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.1/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);

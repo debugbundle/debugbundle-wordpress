@@ -23,6 +23,11 @@ release-artifact:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION is required" >&2; exit 1; fi
 	./scripts/assemble-release.sh $(VERSION)
 
+.PHONY: release-artifact-docker
+release-artifact-docker:
+	test -n "$(VERSION)"
+	docker run --rm -v "$(CURDIR):/app" -w /app debugbundle-php-coverage:local sh -lc './scripts/assemble-release.sh $(VERSION)'
+
 wordpress-org-assets:
 	./scripts/generate-wordpress-org-assets.sh
 
@@ -54,8 +59,9 @@ coverage-php-sdk:
 	docker run --rm -e XDEBUG_MODE=coverage -v "$(CURDIR):/app" -v "$(PHP_SDK_CHECKOUT):/app/vendor/debugbundle/sdk-php:ro" -w /app debugbundle-php-coverage:local sh -c 'vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml && php scripts/check_coverage.php coverage.xml'
 
 .PHONY: staged-release-check
+CORE_DEPENDENCIES ?= candidate
 staged-release-check:
-	python3 scripts/check-staged-release.py --php-sdk "$(PHP_SDK_CHECKOUT)" --browser-artifact "$(BROWSER_ARTIFACT)"
+	python3 scripts/check-staged-release.py --php-sdk "$(PHP_SDK_CHECKOUT)" --browser-artifact "$(BROWSER_ARTIFACT)" --core-dependencies "$(CORE_DEPENDENCIES)"
 
 .PHONY: staged-runtime-check
 staged-runtime-check:
@@ -67,6 +73,11 @@ evidence-performance:
 	DEBUGBUNDLE_EVIDENCE_PERFORMANCE=1 python3 scripts/check-staged-runtime.py --wordpress-version "$(WP_VERSION)" --php-version "$(PHP_VERSION)"
 
 .PHONY: release-registry-check
+.PHONY: release-update-dependencies
+release-update-dependencies:
+	docker run --rm -v "$(CURDIR):/app" -w /app debugbundle-php-coverage:local sh -lc 'composer update debugbundle/sdk-php --with-dependencies --minimal-changes --no-interaction --prefer-dist'
+	docker run --rm -e CI=true -v "$(CURDIR):/app" -w /app node:24-alpine sh -lc 'corepack enable && corepack prepare pnpm@10.32.1 --activate && pnpm install --no-frozen-lockfile && pnpm build:browser'
+
 # Qualify installed registry dependencies without a source overlay.
 release-registry-check:
 	docker build -q -f "$(PHP_SDK_CHECKOUT)/smoke/Dockerfile.coverage" -t debugbundle-php-coverage:local "$(PHP_SDK_CHECKOUT)"
