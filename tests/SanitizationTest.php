@@ -9,6 +9,19 @@ use PHPUnit\Framework\TestCase;
 
 final class SanitizationTest extends TestCase
 {
+    public function testRelayProtectsAcceptanceSecretsBeforeReturningEvents(): void
+    {
+        foreach (['invite', 'org_invite', 'org_transfer'] as $kind) {
+            $event = ['event_type' => 'message_event', 'event_id' => '11111111-1111-4111-8111-111111111111',
+                'sdk_name' => '@debugbundle/sdk-browser', 'sdk_version' => '3.2.1',
+                'service' => ['name' => 'browser', 'environment' => 'test'],
+                'payload' => ['message' => 'Accept dbundle_' . $kind . '_SYNTHETIC_SECRET retry']];
+            $protected = Sanitization::protectRelayEvents([$event]);
+            self::assertNotNull($protected);
+            self::assertSame('Accept [REDACTED] retry', $protected[0]['payload']['message']);
+        }
+    }
+
     public function testRequestHeadersFromServerSanitizesHeaderNamesAndValues(): void
     {
         $headers = Sanitization::requestHeadersFromServer([

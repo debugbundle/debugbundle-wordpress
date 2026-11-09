@@ -82,3 +82,8 @@ release-update-dependencies:
 release-registry-check:
 	docker build -q -f "$(PHP_SDK_CHECKOUT)/smoke/Dockerfile.coverage" -t debugbundle-php-coverage:local "$(PHP_SDK_CHECKOUT)"
 	docker run --rm -e XDEBUG_MODE=coverage -v "$(CURDIR):/app" -w /app debugbundle-php-coverage:local sh -lc 'composer install --no-interaction --prefer-dist && composer validate --strict && composer test && composer typecheck && vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-clover coverage.xml && php scripts/check_coverage.php coverage.xml && ./scripts/assemble-release.sh $(VERSION)'
+
+# Execute the exact staged asset with current qualification assertions.
+.PHONY: staged-browser-check
+staged-browser-check:
+	docker run --rm -v "$(CURDIR):/workspace:ro" -w /workspace node:24-alpine node scripts/smoke-browser-asset.mjs .tmp/staged-release/wordpress/.smoke/plugin/debugbundle .tmp/staged-release/wordpress/.smoke/browser-inline.js

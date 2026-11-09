@@ -1,13 +1,13 @@
 # DebugBundle WordPress Plugin
 
-Patch 2.1.1 bundles PHP SDK 2.1.1 and Browser SDK 3.2.1 with corrected native exception logging. Existing sites require an explicit plugin upgrade.
+Patch 2.1.2 protects invitation and organisation-transfer credentials in captured text while preserving public APIs and event schemas. Upgrade the DebugBundle distribution to adopt the protection.
 
 WordPress plugin for DebugBundle.
 
 Version 2.1.0 evidence is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-2.1.1-blue)
+![Version](https://img.shields.io/badge/version-2.1.2-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
@@ -201,3 +201,12 @@ Empty probe data means no matching retained observation for the selected sample
 window. It does not confirm activation delivery to every SDK or execution of a
 label. Check the deployed SDK/wrapper version, instrumentation, scope, expiry,
 policy, sampling and delivery receipts. See the [probe recipes](https://debugbundle.com/docs/probes#bounded-checkpoint-recipes).
+
+
+### Unreleased acceptance-credential privacy
+
+The source candidate also scrubs standalone `dbundle_invite_`,
+`dbundle_org_invite_` and `dbundle_org_transfer_` acceptance secrets before
+SDK-owned retention or transmission. See the [shared qualification record](https://github.com/debugbundle/debugbundle/blob/main/spec/business-credential-redaction.md).
+Published packages keep their released behaviour until the coordinated dependency
+and distribution checks are completed and a new version is published.

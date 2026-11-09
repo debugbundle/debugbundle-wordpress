@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-11-09
+
+- Redact standalone organisation invitation and ownership-transfer credentials from free text before retention or transport, using the shared 27-case privacy corpus. Preserve capture APIs, event schemas and supported platform floors.
+- Existing installations adopt this protection when explicitly upgraded.
+- Bundle PHP SDK 2.1.2 and Browser SDK 3.2.2; retain existing plugin settings.
+
 ## [2.1.1] - 2026-11-06
 
 - Qualify the staged ZIP with the corrected PHP archive and exact Browser pins; permit an explicit published-core dependency mode without requiring an unrelated core-package upgrade. Staged artifacts remain marked as unpublished.
