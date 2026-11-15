@@ -8,6 +8,9 @@ use DebugBundle\TelemetryPrivacy;
 
 final class Sanitization
 {
+    /** WordPress-specific fields shared by native capture and local diagnostics. */
+    public const REDACT_FIELDS = ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'];
+
     /** @param list<array<string, mixed>> $events
      *  @return list<array<string, mixed>>|null
      */

@@ -1,13 +1,13 @@
 # DebugBundle WordPress Plugin
 
-Patch 2.1.3 protects invitation and organisation-transfer credentials in captured text while preserving public APIs and event schemas. Upgrade the DebugBundle distribution to adopt the protection.
+Patch 2.1.4 protects invitation and organisation-transfer credentials in captured text while preserving public APIs and event schemas. Upgrade the DebugBundle distribution to adopt the protection.
 
 WordPress plugin for DebugBundle.
 
 Version 2.1.0 evidence is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-2.1.3-blue)
+![Version](https://img.shields.io/badge/version-2.1.4-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
@@ -221,3 +221,15 @@ The SDK scrubs standalone `dbundle_invite_`,
 `dbundle_org_invite_` and `dbundle_org_transfer_` acceptance secrets before
 SDK-owned retention or transmission. See the [shared qualification record](https://github.com/debugbundle/debugbundle/blob/main/spec/business-credential-redaction.md).
 Existing installations receive this protection when upgraded to a version that includes it.
+
+### Hook size limits (staged correction)
+
+The PHP and Browser SDK candidates preserve owner hook replacements when optional
+exception evidence exceeds 32 KiB. The staged ZIP verifies both paths, including
+privacy after hooks. Delivering this correction requires new PHP/Browser SDK
+releases followed by a plugin release with those versions bundled. Installed
+WordPress sites are not changed by preparing or publishing that plugin.
+
+### Internal SDK diagnostics
+
+Internal plugin diagnostics stay in the existing local admin status transients, with the same seven-day TTL. They apply mandatory sanitisation and the native capture WordPress/WooCommerce nonce fields before a 500-byte UTF-8 limit; detail over 4 KiB is withheld. Existing diagnostics from earlier versions receive the same read protection without rewriting stored data. Failed reads return an empty status. Failed or recursive diagnostic storage is best effort and cannot escape an SDK error handler. The plugin adds no separate maintainer-reporting request. Its PHP request-end delivery exception and normal configured ingestion/configuration/relay behaviour remain as documented.

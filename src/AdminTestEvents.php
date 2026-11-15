@@ -50,7 +50,7 @@ final class AdminTestEvents
                 'sampleRate' => 1.0,
                 'batchSize' => 1,
                 'logLevel' => 'warning',
-                'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
+                'redactFields' => Sanitization::REDACT_FIELDS,
                 'beforeSend' => static function (array $event): mixed {
                     return function_exists('apply_filters')
                         ? \apply_filters('debugbundle_before_send', $event)

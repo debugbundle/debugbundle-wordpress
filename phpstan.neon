@@ -7,3 +7,4 @@ parameters:
     - stubs/wordpress.php
   scanFiles:
     - stubs/wordpress.php
+    - scripts/wordpress-health.php

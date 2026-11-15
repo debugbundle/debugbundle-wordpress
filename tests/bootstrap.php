@@ -270,6 +270,9 @@ if (!function_exists('wp_json_encode')) {
 if (!function_exists('get_transient')) {
 	function get_transient(string $key): mixed
 	{
+		if (isset($GLOBALS['debugbundle_wp_test_transient_read_callback'])) {
+			($GLOBALS['debugbundle_wp_test_transient_read_callback'])($key);
+		}
 		return $GLOBALS['debugbundle_wp_test_transients'][$key] ?? false;
 	}
 }
@@ -277,6 +280,9 @@ if (!function_exists('get_transient')) {
 if (!function_exists('set_transient')) {
 	function set_transient(string $key, mixed $value, int $expiration): bool
 	{
+		if (isset($GLOBALS['debugbundle_wp_test_transient_callback'])) {
+			($GLOBALS['debugbundle_wp_test_transient_callback'])($key, $value);
+		}
 		$GLOBALS['debugbundle_wp_test_transients'][$key] = $value;
 		return true;
 	}

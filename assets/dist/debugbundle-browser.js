@@ -210,11 +210,11 @@
     }
     return result;
   }
-  function sanitizeValue(value, state2, depth, allowStructured) {
+  function sanitizeValue(value, state2, depth2, allowStructured) {
     state2.nodes += 1;
     if (state2.nodes > MAX_NODES)
       throw new BudgetExceeded();
-    if (depth > MAX_DEPTH)
+    if (depth2 > MAX_DEPTH)
       return mask(state2);
     if (typeof value === "string")
       return sanitizeString(value, state2, allowStructured);
@@ -235,7 +235,7 @@
           const descriptor2 = Object.getOwnPropertyDescriptor(value, String(index));
           if (descriptor2 === void 0 || !("value" in descriptor2))
             throw new TypeError("unsafe_input");
-          return sanitizeValue(descriptor2.value, state2, depth + 1, allowStructured);
+          return sanitizeValue(descriptor2.value, state2, depth2 + 1, allowStructured);
         });
       }
       if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
@@ -261,7 +261,7 @@
         const descriptor2 = Object.getOwnPropertyDescriptor(value, key2);
         if (descriptor2 === void 0 || !("value" in descriptor2))
           throw new TypeError("unsafe_input");
-        const safeValue = isSensitiveKey(key2, state2.keys) ? mask(state2) : sanitizeValue(descriptor2.value, state2, depth + 1, allowStructured);
+        const safeValue = isSensitiveKey(key2, state2.keys) ? mask(state2) : sanitizeValue(descriptor2.value, state2, depth2 + 1, allowStructured);
         Object.defineProperty(result, key2, {
           value: safeValue,
           enumerable: true,
@@ -302,6 +302,21 @@
     } catch (error62) {
       return { ok: false, reason: error62 instanceof BudgetExceeded ? "budget_exceeded" : "unsafe_input" };
     }
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  function sanitizeBrowserStack(stack) {
+    return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
+      var _a5, _b, _c, _d;
+      const suffix = (_d = (_c = (_a5 = source.match(/:\d+(?::\d+)?[),]*$/)) == null ? void 0 : _a5[0]) != null ? _c : (_b = source.match(/[),]+$/)) == null ? void 0 : _b[0]) != null ? _d : "";
+      const location = suffix.length === 0 ? source : source.slice(0, -suffix.length);
+      try {
+        const parsed = new URL(location);
+        return `${parsed.origin}${parsed.pathname}${suffix}`;
+      } catch {
+        return `[unavailable-url]${suffix}`;
+      }
+    });
   }
 
   // node_modules/.pnpm/zod@4.6.7/node_modules/zod/v4/classic/external.js
@@ -5701,10 +5716,10 @@ ${content.join("\n")}
             return payload;
           }
           handoff = bucket;
-          const depth = open.length;
+          const depth2 = open.length;
           const result = base(payload, ctx);
           handoff = void 0;
-          const entry = open.length > depth ? open.pop() : void 0;
+          const entry = open.length > depth2 ? open.pop() : void 0;
           if (result instanceof Promise) {
             return result.then((r) => {
               if (entry)
@@ -20455,13 +20470,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
     const reached = /* @__PURE__ */ new Set();
     const active = /* @__PURE__ */ new Set();
-    const visit2 = (id, depth) => {
-      if (depth > EXCEPTION_EVIDENCE_LIMITS.depth || active.has(id))
+    const visit2 = (id, depth2) => {
+      if (depth2 > EXCEPTION_EVIDENCE_LIMITS.depth || active.has(id))
         return false;
       active.add(id);
       reached.add(id);
       for (const edge of nodes.get(id).relationships) {
-        if (!visit2(edge.target_id, depth + 1))
+        if (!visit2(edge.target_id, depth2 + 1))
           return false;
       }
       active.delete(id);
@@ -23446,55 +23461,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/privacy.js
-  function protectBrowserEvent(event, additionalKeys) {
-    var _a5, _b;
-    const fallback = () => {
-      var _a6;
-      const reduced = withoutOptionalExceptionEvidence(event, true);
-      if (reduced === null)
-        return null;
-      return (_a6 = protectBrowserEvent(reduced, additionalKeys)) != null ? _a6 : protectBrowserEvent(withoutOptionalExceptionEvidence(event, false), additionalKeys);
-    };
-    for (const value of [
-      event.schema_version,
-      event.sdk_name,
-      event.sdk_version,
-      ...Object.values((_a5 = event.correlation) != null ? _a5 : {})
-    ]) {
-      if (typeof value !== "string")
-        continue;
-      const checked = sanitizeTelemetry(value, { additionalKeys });
-      if (!checked.ok || checked.value !== value)
-        return null;
-    }
-    const graph = event.event_type === "backend_exception" || event.event_type === "frontend_exception" ? event.payload.exception_evidence : void 0;
-    const payload = graph === void 0 ? event.payload : { ...event.payload, exception_evidence: { ...graph, nodes: graph.nodes.map((node2) => ({
-      ...node2,
-      stack: node2.stack === null ? null : sanitizeBrowserStackUrls(node2.stack),
-      frames: node2.frames.map((frame2) => ({ ...frame2, file: frame2.file === null ? null : sanitizeBrowserStackUrls(frame2.file) }))
-    })) } };
-    const result = sanitizeTelemetry({ payload, service: event.service, context: (_b = event.context) != null ? _b : {} }, {
-      additionalKeys
-    });
-    if (!result.ok)
-      return fallback();
-    const protectedFields = Object(result.value);
-    const parsed = EventEnvelopeSchema.safeParse({
-      ...event,
-      payload: protectedFields["payload"],
-      service: protectedFields["service"],
-      ...event.context === void 0 ? {} : { context: protectedFields["context"] }
-    });
-    if (parsed.success) {
-      const fitted = fitEventToIngestionWire(parsed.data);
-      if (fitted !== null)
-        return fitted;
-    }
-    return fallback();
-  }
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
   var WINDOW = 3e4;
   var MAX_BYTES2 = 32 * 1024;
   var identities = /* @__PURE__ */ new WeakMap();
@@ -23532,7 +23499,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (typeof constructor !== "function")
       return void 0;
     let prototype = constructor.prototype;
-    for (let depth = 0; prototype !== null && depth < 4; depth++) {
+    for (let depth2 = 0; prototype !== null && depth2 < 4; depth2++) {
       const descriptor2 = Object.getOwnPropertyDescriptor(prototype, key2);
       if (descriptor2 == null ? void 0 : descriptor2.get) {
         try {
@@ -23753,198 +23720,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
-  function browserEvidenceEndpoint(endpoint) {
-    const hashAt = endpoint.indexOf("#"), clean = hashAt < 0 ? endpoint : endpoint.slice(0, hashAt);
-    return `${clean}${clean.includes("?") ? "&" : "?"}debugbundle_evidence=1`;
-  }
-  function own2(value, key2) {
-    if (value === null || typeof value !== "object")
-      return void 0;
-    const descriptor2 = Object.getOwnPropertyDescriptor(value, key2);
-    return descriptor2 && "value" in descriptor2 ? descriptor2.value : void 0;
-  }
-  function secureUuid() {
-    if (typeof globalThis.crypto.randomUUID === "function")
-      return globalThis.crypto.randomUUID();
-    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
-    bytes[6] = bytes[6] & 15 | 64;
-    bytes[8] = bytes[8] & 63 | 128;
-    const hex3 = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-    return `${hex3.slice(0, 8)}-${hex3.slice(8, 12)}-${hex3.slice(12, 16)}-${hex3.slice(16, 20)}-${hex3.slice(20)}`;
-  }
-  var BrowserEvidenceController = class {
-    constructor() {
-      __publicField(this, "proof", new EvidenceDeliveryState());
-      __publicField(this, "budget", new DiagnosticCaptureBudget());
-      __publicField(this, "identities", /* @__PURE__ */ new WeakMap());
-      __publicField(this, "config", null);
-      __publicField(this, "policy", null);
-      __publicField(this, "late", null);
-      __publicField(this, "enqueue", null);
-      __publicField(this, "resources", new PassiveResourceCollector(this.budget, (source, payload) => {
-        var _a5, _b;
-        const config3 = this.config, policy = this.policy;
-        if (config3 === null || policy === null || !this.allowedResources(config3, policy))
-          return;
-        try {
-          const raw = (_a5 = this.late) == null ? void 0 : _a5.call(this, source, payload), event = raw ? protectBrowserEvent(raw, config3.redactFields) : null;
-          if ((event == null ? void 0 : event.event_type) === "diagnostic_context" && this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
-            (_b = this.enqueue) == null ? void 0 : _b.call(this, event);
-        } catch {
-        }
-      }));
-      __publicField(this, "pageId", null);
-    }
-    configure(config3) {
-      this.reset();
-      this.proof = new EvidenceDeliveryState(own2(config3, "evidenceCapabilities"));
-    }
-    setLateCapture(create, enqueue) {
-      this.late = create;
-      this.enqueue = enqueue;
-    }
-    reset() {
-      this.resources.reset();
-      this.proof = new EvidenceDeliveryState();
-      this.budget.clear();
-      this.pageId = null;
-      this.config = null;
-      this.policy = null;
-      this.late = null;
-      this.enqueue = null;
-    }
-    update(config3, policy) {
-      this.config = config3;
-      this.policy = policy;
-      this.resources.enable(config3 !== null && this.allowedResources(config3, policy));
-    }
-    observe(payload, required2, valid = true) {
-      const supplied = payload !== null && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload, "evidence_capabilities");
-      const changed = required2 || supplied ? this.proof.observe(valid ? own2(payload, "evidence_capabilities") : void 0) : false;
-      if (this.policy !== null)
-        this.update(this.config, this.policy);
-      return changed;
-    }
-    reference(input2) {
-      var _a5;
-      const failure2 = EvidenceReferenceIdSchema.safeParse(own2(input2, "failureRef"));
-      if (!failure2.success)
-        return null;
-      let scope = own2(input2, "evidenceScope");
-      if (scope === void 0) {
-        try {
-          (_a5 = this.pageId) != null ? _a5 : this.pageId = secureUuid();
-        } catch {
-          return null;
-        }
-        scope = { kind: "page", page_id: this.pageId };
-      }
-      const parsed = EvidenceReferenceSchema.safeParse({ version: 1, failure_ref: failure2.data, scope });
-      return parsed.success ? parsed.data : null;
-    }
-    allowed(config3, policy) {
-      return config3.captureRecoveryObservations === true && this.proof.supports("recovery_v1") && policy.requestFailurePreset !== "minimal" && policy.captureDiagnosticContext !== false;
-    }
-    allowedResources(config3, policy) {
-      return config3.captureResourceObservations !== false && this.proof.supports("resource_observations_v1") && policy.requestFailurePreset !== "minimal" && policy.captureDiagnosticContext !== false;
-    }
-    inheritIdentity(original, event) {
-      var _a5, _b, _c, _d;
-      const before = original.event_type === "frontend_exception" ? (_b = (_a5 = original.payload.browser_event) == null ? void 0 : _a5.target) == null ? void 0 : _b.source_url : null;
-      const after = event.event_type === "frontend_exception" ? (_d = (_c = event.payload.browser_event) == null ? void 0 : _c.target) == null ? void 0 : _d.source_url : null;
-      this.identities.set(event, before === after && this.identities.get(original) === true);
-    }
-    prepareException(event, context, config3, policy) {
-      var _a5, _b, _c;
-      this.update(config3, policy);
-      if (event.event_type !== "frontend_exception" || !this.allowedResources(config3, policy) || ((_a5 = event.payload.browser_event) == null ? void 0 : _a5.kind) !== "resource_error")
-        return;
-      const target = (_b = context.browser_event) == null ? void 0 : _b.target, url2 = safeResourceUrl((_c = event.payload.browser_event.target) == null ? void 0 : _c.source_url);
-      if (url2 === null)
-        return;
-      let reference = this.reference(context);
-      if (reference === null) {
-        try {
-          reference = this.reference({ failureRef: secureUuid() });
-        } catch {
-        }
-      }
-      if (reference === null)
-        return;
-      const identitySafe = url2.identitySafe && target !== null && target !== void 0 && resourceIdentitySafe(target);
-      this.identities.set(event, identitySafe);
-      event.context = { ...event.context, evidence_reference: reference };
-      event.payload.resource_observations = this.resources.snapshot(url2.url, Date.parse(event.occurred_at), identitySafe, event.event_id);
-    }
-    captureRecovery(input2, config3, policy, create, enqueue) {
-      if (!this.allowed(config3, policy))
-        return;
-      const reference = this.reference(input2);
-      if (reference === null)
-        return;
-      const optional2 = (local, wire) => {
-        const value = own2(input2, local);
-        return value === void 0 ? {} : { [wire]: value };
-      };
-      const parsed = DiagnosticContextPayloadSchema.safeParse({
-        ...reference,
-        kind: "recovery",
-        attempt_id: own2(input2, "attemptId"),
-        state: own2(input2, "state"),
-        ...optional2("operation", "operation"),
-        ...optional2("statusCode", "status_code"),
-        ...optional2("durationMs", "duration_ms")
-      });
-      if (!parsed.success)
-        return;
-      const event = protectBrowserEvent(create(parsed.data), config3.redactFields);
-      if ((event == null ? void 0 : event.event_type) !== "diagnostic_context" || !this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
-        return;
-      enqueue(event);
-    }
-    release(event) {
-      if (event.event_type === "diagnostic_context")
-        this.budget.release([event.event_id]);
-    }
-    reconcile(original, replacement, config3, policy) {
-      var _a5, _b, _c;
-      this.update(config3, policy);
-      const event = replacement === null ? null : stripUnsupportedEvidence(replacement, this.proof.descriptor);
-      if ((event == null ? void 0 : event.event_type) === "diagnostic_context") {
-        if (config3 === null || !(event.payload.kind === "recovery" ? this.allowed(config3, policy) : this.allowedResources(config3, policy)) || !(original.event_type === "diagnostic_context" ? this.budget.replace(original.event_id, event.event_id, event.payload, this.bytes(event), Date.now()) : this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))) {
-          this.release(original);
-          return null;
-        }
-      } else {
-        this.release(original);
-        const reference = EvidenceReferenceSchema.safeParse((_a5 = event == null ? void 0 : event.context) == null ? void 0 : _a5["evidence_reference"]);
-        if (event !== null && reference.success && this.budget.registerFailure(reference.data, event.event_id, Date.parse(event.occurred_at))) {
-          this.inheritIdentity(original, event);
-          const url2 = event.event_type === "frontend_exception" && ((_b = event.payload.browser_event) == null ? void 0 : _b.kind) === "resource_error" ? safeResourceUrl((_c = event.payload.browser_event.target) == null ? void 0 : _c.source_url) : null;
-          if (config3 !== null && url2 !== null && this.allowedResources(config3, policy))
-            this.resources.watch({
-              event_id: event.event_id,
-              occurred_at: event.occurred_at,
-              reference: reference.data,
-              service: event.service,
-              correlation: event.correlation,
-              source_url: url2.url,
-              identitySafe: this.identities.get(event) === true
-            });
-        }
-      }
-      return event;
-    }
-    bytes(event) {
-      return new TextEncoder().encode(JSON.stringify(event)).byteLength;
-    }
-  };
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "3.2.3",
+    version: "3.2.4",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -23981,7 +23760,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -24005,40 +23784,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
-  function createBrowserDiagnosticEvent(config3, payload, correlation, service) {
-    const event = createEventEnvelope({
-      schema_version: SDK_SCHEMA_VERSION,
-      event_type: "diagnostic_context",
-      ...config3.projectToken === null ? {} : { project_token: config3.projectToken },
-      sdk_name: SDK_NAME,
-      sdk_version: SDK_VERSION,
-      service: service != null ? service : { name: config3.service, runtime: "browser", framework: null, environment: config3.environment },
-      occurred_at: (/* @__PURE__ */ new Date()).toISOString(),
-      correlation,
-      payload
-    });
-    if (config3.projectToken === null)
-      delete event.project_token;
-    return event;
-  }
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
-  function sanitizeBrowserStack(stack) {
-    return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
-      var _a5, _b, _c, _d;
-      const suffix = (_d = (_c = (_a5 = source.match(/:\d+(?::\d+)?[),]*$/)) == null ? void 0 : _a5[0]) != null ? _c : (_b = source.match(/[),]+$/)) == null ? void 0 : _b[0]) != null ? _d : "";
-      const location = suffix.length === 0 ? source : source.slice(0, -suffix.length);
-      try {
-        const parsed = new URL(location);
-        return `${parsed.origin}${parsed.pathname}${suffix}`;
-      } catch {
-        return `[unavailable-url]${suffix}`;
-      }
-    });
-  }
-
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key2) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key2] : void 0;
@@ -24069,7 +23815,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/response-json.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/response-json.js
   async function readBoundedBrowserJson(response, signal) {
     var _a5, _b;
     const maximumBytes = 256 * 1024;
@@ -24121,7 +23867,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
   function getFetchSource() {
     const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
@@ -24176,7 +23922,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -24858,7 +24604,333 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/internal-diagnostics.js
+  var depth = 0;
+  var inBrowserDiagnostic = () => depth > 0;
+  var diagnosticCode = (value) => value.length <= 64 && !value.startsWith("dbundle_") && /^[a-z][a-z0-9_]*$/.test(value) ? value : "unknown_rejection";
+  var BrowserInternalDiagnostics = class {
+    constructor() {
+      __publicField(this, "seen", /* @__PURE__ */ new Set());
+      __publicField(this, "at", 0);
+      __publicField(this, "count", 0);
+      __publicField(this, "pending", false);
+    }
+    reset() {
+      this.seen.clear();
+      this.at = 0;
+      this.count = 0;
+    }
+    unauthorized(lane, status, endpoint, body, fields) {
+      try {
+        const descriptor2 = body !== null && typeof body === "object" ? Object.getOwnPropertyDescriptor(body, "error") : void 0;
+        const error62 = descriptor2 !== void 0 && "value" in descriptor2 ? descriptor2.value : void 0;
+        const detail = typeof error62 === "string" && error62.length > 0 ? ` (${diagnosticCode(error62)})` : "";
+        this.emit("error", `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} disabled after ingestion returned ${status} for ${endpoint.length <= 2048 ? endpoint : "configured endpoint"}. Check the project token or relay configuration${detail}.`, fields);
+      } catch {
+      }
+    }
+    acknowledgement(lane, code, detail, fields) {
+      const safe = detail.split(",", 5).map(diagnosticCode).join(",");
+      const key2 = `${lane}:${code}:${safe}`;
+      this.emit("warn", code === "invalid" ? `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} retained events after an invalid ingestion acknowledgement (${safe}).` : `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} removed terminally rejected events (${safe}).`, fields, key2);
+    }
+    emit(level, message, fields, key2) {
+      var _a5;
+      if (inBrowserDiagnostic() || this.pending)
+        return;
+      depth++;
+      try {
+        const now = Date.now();
+        if (now - this.at >= 6e4) {
+          this.at = now;
+          this.count = 0;
+          this.seen.clear();
+        }
+        if (this.count >= 10 || key2 !== void 0 && this.seen.has(key2))
+          return;
+        this.count++;
+        if (key2 !== void 0)
+          this.seen.add(key2);
+        const safe = sanitizeTelemetry(message, { additionalKeys: fields });
+        if (!safe.ok || typeof safe.value !== "string")
+          return;
+        const consoleSource = getConsoleSource();
+        const sink = (_a5 = consoleSource == null ? void 0 : consoleSource[level]) != null ? _a5 : consoleSource == null ? void 0 : consoleSource.warn;
+        const result = sink == null ? void 0 : sink.call(consoleSource, safe.value);
+        if (result !== null && typeof result === "object") {
+          this.pending = true;
+          try {
+            void Promise.prototype.then.call(result, () => {
+              this.pending = false;
+            }, () => {
+              this.pending = false;
+            });
+          } catch {
+            this.pending = false;
+          }
+        }
+      } catch {
+      } finally {
+        depth--;
+      }
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  function protectBrowserEvent(event, additionalKeys) {
+    var _a5, _b;
+    const fallback = () => {
+      var _a6;
+      const reduced = withoutOptionalExceptionEvidence(event, true);
+      if (reduced === null)
+        return null;
+      return (_a6 = protectBrowserEvent(reduced, additionalKeys)) != null ? _a6 : protectBrowserEvent(withoutOptionalExceptionEvidence(event, false), additionalKeys);
+    };
+    for (const value of [
+      event.schema_version,
+      event.sdk_name,
+      event.sdk_version,
+      ...Object.values((_a5 = event.correlation) != null ? _a5 : {})
+    ]) {
+      if (typeof value !== "string")
+        continue;
+      const checked = sanitizeTelemetry(value, { additionalKeys });
+      if (!checked.ok || checked.value !== value)
+        return null;
+    }
+    const graph = event.event_type === "backend_exception" || event.event_type === "frontend_exception" ? event.payload.exception_evidence : void 0;
+    const payload = graph === void 0 ? event.payload : { ...event.payload, exception_evidence: { ...graph, nodes: graph.nodes.map((node2) => ({
+      ...node2,
+      stack: node2.stack === null ? null : sanitizeBrowserStackUrls(node2.stack),
+      frames: node2.frames.map((frame2) => ({ ...frame2, file: frame2.file === null ? null : sanitizeBrowserStackUrls(frame2.file) }))
+    })) } };
+    const result = sanitizeTelemetry({ payload, service: event.service, context: (_b = event.context) != null ? _b : {} }, {
+      additionalKeys
+    });
+    if (!result.ok)
+      return fallback();
+    const protectedFields = Object(result.value);
+    const parsed = EventEnvelopeSchema.safeParse({
+      ...event,
+      payload: protectedFields["payload"],
+      service: protectedFields["service"],
+      ...event.context === void 0 ? {} : { context: protectedFields["context"] }
+    });
+    if (parsed.success) {
+      const fitted = fitEventToIngestionWire(parsed.data);
+      if (fitted !== null)
+        return fitted;
+    }
+    return fallback();
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
+  function browserEvidenceEndpoint(endpoint) {
+    const hashAt = endpoint.indexOf("#"), clean = hashAt < 0 ? endpoint : endpoint.slice(0, hashAt);
+    return `${clean}${clean.includes("?") ? "&" : "?"}debugbundle_evidence=1`;
+  }
+  function own2(value, key2) {
+    if (value === null || typeof value !== "object")
+      return void 0;
+    const descriptor2 = Object.getOwnPropertyDescriptor(value, key2);
+    return descriptor2 && "value" in descriptor2 ? descriptor2.value : void 0;
+  }
+  function secureUuid() {
+    if (typeof globalThis.crypto.randomUUID === "function")
+      return globalThis.crypto.randomUUID();
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = bytes[6] & 15 | 64;
+    bytes[8] = bytes[8] & 63 | 128;
+    const hex3 = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${hex3.slice(0, 8)}-${hex3.slice(8, 12)}-${hex3.slice(12, 16)}-${hex3.slice(16, 20)}-${hex3.slice(20)}`;
+  }
+  var BrowserEvidenceController = class {
+    constructor() {
+      __publicField(this, "proof", new EvidenceDeliveryState());
+      __publicField(this, "budget", new DiagnosticCaptureBudget());
+      __publicField(this, "identities", /* @__PURE__ */ new WeakMap());
+      __publicField(this, "config", null);
+      __publicField(this, "policy", null);
+      __publicField(this, "late", null);
+      __publicField(this, "enqueue", null);
+      __publicField(this, "resources", new PassiveResourceCollector(this.budget, (source, payload) => {
+        var _a5, _b;
+        const config3 = this.config, policy = this.policy;
+        if (config3 === null || policy === null || !this.allowedResources(config3, policy))
+          return;
+        try {
+          const raw = (_a5 = this.late) == null ? void 0 : _a5.call(this, source, payload), event = raw ? protectBrowserEvent(raw, config3.redactFields) : null;
+          if ((event == null ? void 0 : event.event_type) === "diagnostic_context" && this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
+            (_b = this.enqueue) == null ? void 0 : _b.call(this, event);
+        } catch {
+        }
+      }));
+      __publicField(this, "pageId", null);
+    }
+    configure(config3) {
+      this.reset();
+      this.proof = new EvidenceDeliveryState(own2(config3, "evidenceCapabilities"));
+    }
+    setLateCapture(create, enqueue) {
+      this.late = create;
+      this.enqueue = enqueue;
+    }
+    reset() {
+      this.resources.reset();
+      this.proof = new EvidenceDeliveryState();
+      this.budget.clear();
+      this.pageId = null;
+      this.config = null;
+      this.policy = null;
+      this.late = null;
+      this.enqueue = null;
+    }
+    update(config3, policy) {
+      this.config = config3;
+      this.policy = policy;
+      this.resources.enable(config3 !== null && this.allowedResources(config3, policy));
+    }
+    observe(payload, required2, valid = true) {
+      const supplied = payload !== null && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload, "evidence_capabilities");
+      const changed = required2 || supplied ? this.proof.observe(valid ? own2(payload, "evidence_capabilities") : void 0) : false;
+      if (this.policy !== null)
+        this.update(this.config, this.policy);
+      return changed;
+    }
+    reference(input2) {
+      var _a5;
+      const failure2 = EvidenceReferenceIdSchema.safeParse(own2(input2, "failureRef"));
+      if (!failure2.success)
+        return null;
+      let scope = own2(input2, "evidenceScope");
+      if (scope === void 0) {
+        try {
+          (_a5 = this.pageId) != null ? _a5 : this.pageId = secureUuid();
+        } catch {
+          return null;
+        }
+        scope = { kind: "page", page_id: this.pageId };
+      }
+      const parsed = EvidenceReferenceSchema.safeParse({ version: 1, failure_ref: failure2.data, scope });
+      return parsed.success ? parsed.data : null;
+    }
+    allowed(config3, policy) {
+      return config3.captureRecoveryObservations === true && this.proof.supports("recovery_v1") && policy.requestFailurePreset !== "minimal" && policy.captureDiagnosticContext !== false;
+    }
+    allowedResources(config3, policy) {
+      return config3.captureResourceObservations !== false && this.proof.supports("resource_observations_v1") && policy.requestFailurePreset !== "minimal" && policy.captureDiagnosticContext !== false;
+    }
+    inheritIdentity(original, event) {
+      var _a5, _b, _c, _d;
+      const before = original.event_type === "frontend_exception" ? (_b = (_a5 = original.payload.browser_event) == null ? void 0 : _a5.target) == null ? void 0 : _b.source_url : null;
+      const after = event.event_type === "frontend_exception" ? (_d = (_c = event.payload.browser_event) == null ? void 0 : _c.target) == null ? void 0 : _d.source_url : null;
+      this.identities.set(event, before === after && this.identities.get(original) === true);
+    }
+    prepareException(event, context, config3, policy) {
+      var _a5, _b, _c;
+      this.update(config3, policy);
+      if (event.event_type !== "frontend_exception" || !this.allowedResources(config3, policy) || ((_a5 = event.payload.browser_event) == null ? void 0 : _a5.kind) !== "resource_error")
+        return;
+      const target = (_b = context.browser_event) == null ? void 0 : _b.target, url2 = safeResourceUrl((_c = event.payload.browser_event.target) == null ? void 0 : _c.source_url);
+      if (url2 === null)
+        return;
+      let reference = this.reference(context);
+      if (reference === null) {
+        try {
+          reference = this.reference({ failureRef: secureUuid() });
+        } catch {
+        }
+      }
+      if (reference === null)
+        return;
+      const identitySafe = url2.identitySafe && target !== null && target !== void 0 && resourceIdentitySafe(target);
+      this.identities.set(event, identitySafe);
+      event.context = { ...event.context, evidence_reference: reference };
+      event.payload.resource_observations = this.resources.snapshot(url2.url, Date.parse(event.occurred_at), identitySafe, event.event_id);
+    }
+    captureRecovery(input2, config3, policy, create, enqueue) {
+      if (!this.allowed(config3, policy))
+        return;
+      const reference = this.reference(input2);
+      if (reference === null)
+        return;
+      const optional2 = (local, wire) => {
+        const value = own2(input2, local);
+        return value === void 0 ? {} : { [wire]: value };
+      };
+      const parsed = DiagnosticContextPayloadSchema.safeParse({
+        ...reference,
+        kind: "recovery",
+        attempt_id: own2(input2, "attemptId"),
+        state: own2(input2, "state"),
+        ...optional2("operation", "operation"),
+        ...optional2("statusCode", "status_code"),
+        ...optional2("durationMs", "duration_ms")
+      });
+      if (!parsed.success)
+        return;
+      const event = protectBrowserEvent(create(parsed.data), config3.redactFields);
+      if ((event == null ? void 0 : event.event_type) !== "diagnostic_context" || !this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
+        return;
+      enqueue(event);
+    }
+    release(event) {
+      if (event.event_type === "diagnostic_context")
+        this.budget.release([event.event_id]);
+    }
+    reconcile(original, replacement, config3, policy) {
+      var _a5, _b, _c;
+      this.update(config3, policy);
+      const event = replacement === null ? null : stripUnsupportedEvidence(replacement, this.proof.descriptor);
+      if ((event == null ? void 0 : event.event_type) === "diagnostic_context") {
+        if (config3 === null || !(event.payload.kind === "recovery" ? this.allowed(config3, policy) : this.allowedResources(config3, policy)) || !(original.event_type === "diagnostic_context" ? this.budget.replace(original.event_id, event.event_id, event.payload, this.bytes(event), Date.now()) : this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))) {
+          this.release(original);
+          return null;
+        }
+      } else {
+        this.release(original);
+        const reference = EvidenceReferenceSchema.safeParse((_a5 = event == null ? void 0 : event.context) == null ? void 0 : _a5["evidence_reference"]);
+        if (event !== null && reference.success && this.budget.registerFailure(reference.data, event.event_id, Date.parse(event.occurred_at))) {
+          this.inheritIdentity(original, event);
+          const url2 = event.event_type === "frontend_exception" && ((_b = event.payload.browser_event) == null ? void 0 : _b.kind) === "resource_error" ? safeResourceUrl((_c = event.payload.browser_event.target) == null ? void 0 : _c.source_url) : null;
+          if (config3 !== null && url2 !== null && this.allowedResources(config3, policy))
+            this.resources.watch({
+              event_id: event.event_id,
+              occurred_at: event.occurred_at,
+              reference: reference.data,
+              service: event.service,
+              correlation: event.correlation,
+              source_url: url2.url,
+              identitySafe: this.identities.get(event) === true
+            });
+        }
+      }
+      return event;
+    }
+    bytes(event) {
+      return new TextEncoder().encode(JSON.stringify(event)).byteLength;
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
+  function createBrowserDiagnosticEvent(config3, payload, correlation, service) {
+    const event = createEventEnvelope({
+      schema_version: SDK_SCHEMA_VERSION,
+      event_type: "diagnostic_context",
+      ...config3.projectToken === null ? {} : { project_token: config3.projectToken },
+      sdk_name: SDK_NAME,
+      sdk_version: SDK_VERSION,
+      service: service != null ? service : { name: config3.service, runtime: "browser", framework: null, environment: config3.environment },
+      occurred_at: (/* @__PURE__ */ new Date()).toISOString(),
+      correlation,
+      payload
+    });
+    if (config3.projectToken === null)
+      delete event.project_token;
+    return event;
+  }
+
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
   var NativeError = Error;
   var nativeStackDescriptor;
   var nativePrototypes = /* @__PURE__ */ new Set([
@@ -24895,7 +24967,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       if (direct)
         return stringData(value);
       let prototype = Object.getPrototypeOf(value);
-      for (let depth = 0; prototype !== null && depth < 4; depth++) {
+      for (let depth2 = 0; prototype !== null && depth2 < 4; depth2++) {
         if (!nativePrototypes.has(prototype)) {
           unsafe = true;
           return void 0;
@@ -24913,7 +24985,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         truncated = true;
       return result;
     };
-    const visit2 = (value, depth, ancestors, root = false) => {
+    const visit2 = (value, depth2, ancestors, root = false) => {
       if (!root && !native(value)) {
         unsupported = true;
         return null;
@@ -24922,7 +24994,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         truncated = true;
         return null;
       }
-      if (depth > 4 || nodes.length >= 8) {
+      if (depth2 > 4 || nodes.length >= 8) {
         truncated = true;
         return null;
       }
@@ -24981,7 +25053,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       next.add(value);
       const cause = own3(value, "cause");
       if (cause !== void 0) {
-        const target = visit2(cause, depth + 1, next);
+        const target = visit2(cause, depth2 + 1, next);
         if (target !== null)
           node2.relationships.push({ kind: "cause", target_id: target });
       }
@@ -25018,7 +25090,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return (parsed == null ? void 0 : parsed.success) ? parsed.data : void 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
   function createBrowserExceptionEvent(input2) {
     var _a5, _b, _c;
     const { error: error62, context, config: config3, device, breadcrumbs, probeData, route, correlation, evidence } = input2;
@@ -25076,7 +25148,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return event;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -25131,7 +25203,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -25405,7 +25477,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -25816,7 +25888,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -25836,14 +25908,32 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       if (result === void 0) {
         return event;
       }
-      const parsed = EventEnvelopeSchema.safeParse(result);
+      const parsed = parseHookReplacement(result);
       return parsed.success ? parsed.data : event;
     } catch {
       return event;
     }
   }
+  function parseHookReplacement(result) {
+    var _a5;
+    const parsed = EventEnvelopeSchema.safeParse(result);
+    if (parsed.success || !parsed.error.issues.every((issue2) => issue2.code === "custom" && [
+      "Added exception evidence exceeds its UTF-8 byte budget",
+      "Exception evidence exceeds its total UTF-8 JSON byte budget",
+      "Resource observations exceed byte budget"
+    ].includes(issue2.message)))
+      return parsed;
+    const reduced = withoutOptionalExceptionEvidence(result, true);
+    if (reduced === null)
+      return parsed;
+    if (EvidenceReferenceSchema.safeParse((_a5 = reduced.context) == null ? void 0 : _a5["evidence_reference"]).success) {
+      reduced.context = { ...reduced.context };
+      delete reduced.context["evidence_reference"];
+    }
+    return EventEnvelopeSchema.safeParse(reduced);
+  }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -25997,7 +26087,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl2(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -26025,7 +26115,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -26576,7 +26666,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input2) {
     var _a5;
     const { config: config3, event } = input2;
@@ -26662,7 +26752,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -26847,7 +26937,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (typeof consoleSource.error === "function") {
       originalConsoleError = consoleSource.error.bind(consoleSource);
       consoleSource.error = (...args) => {
-        originalConsoleError == null ? void 0 : originalConsoleError(...args);
+        const result = originalConsoleError == null ? void 0 : originalConsoleError(...args);
+        if (inBrowserDiagnostic())
+          return result;
         addBreadcrumb({
           ts: (/* @__PURE__ */ new Date()).toISOString(),
           breadcrumb_type: "console_log",
@@ -26856,12 +26948,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             message: stringifyConsoleArgs(args)
           }
         });
+        return result;
       };
     }
     if (typeof consoleSource.warn === "function") {
       originalConsoleWarn = consoleSource.warn.bind(consoleSource);
       consoleSource.warn = (...args) => {
-        originalConsoleWarn == null ? void 0 : originalConsoleWarn(...args);
+        const result = originalConsoleWarn == null ? void 0 : originalConsoleWarn(...args);
+        if (inBrowserDiagnostic())
+          return result;
         addBreadcrumb({
           ts: (/* @__PURE__ */ new Date()).toISOString(),
           breadcrumb_type: "console_log",
@@ -26870,6 +26965,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             message: stringifyConsoleArgs(args)
           }
         });
+        return result;
       };
     }
     return {
@@ -27047,7 +27143,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
   function captureNativeError(event, capture) {
     var _a5;
     try {
@@ -27066,7 +27162,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -27235,7 +27331,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
   function createLane() {
     return {
       events: [],
@@ -27470,7 +27566,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     invalidateAdmission(lane);
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -27517,7 +27613,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   var BrowserEventTransport = class {
     constructor(callbacks) {
       __publicField(this, "callbacks");
@@ -27564,6 +27660,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       return false;
     }
     enqueueDebug(event, needsPreparation = false) {
+      if (inBrowserDiagnostic())
+        return;
       if (!needsPreparation)
         this.debug.prepared.add(event);
       this.enqueue("debug", event);
@@ -27583,6 +27681,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }, 0);
     }
     enqueueAnalytics(event) {
+      if (inBrowserDiagnostic())
+        return;
       this.enqueue("analytics", event);
     }
     /** Consent withdrawal drops unsent analytics and prevents stale sender results from scheduling retries. */
@@ -28079,7 +28179,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         }
       reconcileLeadingEvents(lane, events, retryableEvents, replacements, released);
       if (acknowledgement.terminalErrors.length > 0) {
-        const reasons = [...new Set(acknowledgement.terminalErrors.map((error62) => error62.reason))].join(",");
+        const reasons = [...new Set(acknowledgement.terminalErrors.slice(0, 5).map((error62) => diagnosticCode(error62.reason)))].join(",");
         this.callbacks.onAcknowledgementDiagnostic(laneName, "terminal_rejection", reasons);
       }
       if (acknowledgement.accepted > 0) {
@@ -28107,7 +28207,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -28196,7 +28296,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var evidencePolicySchema = ResolvedCapturePolicySchema.partial();
   function validEvidenceConfig(payload, status) {
     if (status < 200 || status >= 300 || payload === null || typeof payload !== "object" || Array.isArray(payload))
@@ -28418,7 +28518,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.3/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -28437,7 +28537,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       __publicField(this, "originalConsoleWarn", null);
       __publicField(this, "sessionSampledIn", true);
       __publicField(this, "sessionEventCount", 0);
-      __publicField(this, "reportedAcknowledgementDiagnostics", /* @__PURE__ */ new Set());
+      __publicField(this, "internalDiagnostics", new BrowserInternalDiagnostics());
       __publicField(this, "pendingEventOptions", /* @__PURE__ */ new WeakMap());
       __publicField(this, "suppressionTracker", new EventSuppressionTracker());
       __publicField(this, "probeController", new BrowserProbeController({
@@ -28465,10 +28565,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             this.evidence.release(event);
         },
         onUnauthorized: (lane, statusCode, endpoint, body) => {
-          this.reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body);
+          var _a5, _b;
+          this.internalDiagnostics.unauthorized(lane, statusCode, endpoint, body, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : []);
         },
         onAcknowledgementDiagnostic: (lane, code, detail) => {
-          this.reportAcknowledgementDiagnostic(lane, code, detail);
+          var _a5, _b;
+          this.internalDiagnostics.acknowledgement(lane, code, detail, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : []);
         }
       }));
       __publicField(this, "analyticsController", new BrowserAnalyticsController({
@@ -28568,6 +28670,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
     }
     captureException(error62, context = {}) {
+      if (inBrowserDiagnostic())
+        return;
       const config3 = this.config;
       if (config3 === null || !this.eventTransport.canCaptureDebug("frontend_exception")) {
         return;
@@ -28598,6 +28702,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.captureException(error62, context);
     }
     captureRecovery(input2) {
+      if (inBrowserDiagnostic())
+        return;
       const config3 = this.config;
       if (config3 === null || !this.shouldCaptureNonExceptionEvent() || !this.eventTransport.canCaptureDebug("diagnostic_context"))
         return;
@@ -28607,6 +28713,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
     }
     captureLog(message, level, context = {}) {
+      if (inBrowserDiagnostic())
+        return;
       const config3 = this.config;
       if (config3 === null || !this.shouldCaptureNonExceptionEvent()) {
         return;
@@ -28651,6 +28759,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
     }
     captureRequest(request, response, context) {
+      if (inBrowserDiagnostic())
+        return;
       void request;
       void response;
       void context;
@@ -28673,9 +28783,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
     }
     probe(label, data) {
+      if (inBrowserDiagnostic())
+        return;
       this.probeController.capture(label, data);
     }
     async flush() {
+      if (inBrowserDiagnostic())
+        return;
       await this.analyticsInitialization;
       this.enqueueSuppressionAggregates();
       await this.eventTransport.flush();
@@ -28692,7 +28806,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.config = null;
       this.sessionSampledIn = true;
       this.sessionEventCount = 0;
-      this.reportedAcknowledgementDiagnostics.clear();
+      this.internalDiagnostics.reset();
       this.suppressionTracker.reset();
       this.probeController.reset();
       this.analyticsController.reset();
@@ -28725,34 +28839,6 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         globalThis["XMLHttpRequest"] = this.originalXmlHttpRequest;
         this.originalXmlHttpRequest = null;
       }
-    }
-    reportUnauthorizedTransportFailure(lane, statusCode, endpoint, body) {
-      var _a5;
-      const consoleSource = getConsoleSource();
-      if (consoleSource === null) {
-        return;
-      }
-      const bodyRecord = normalizeUnknownRecord(body);
-      const errorCode = typeof bodyRecord["error"] === "string" && bodyRecord["error"].length > 0 ? bodyRecord["error"] : null;
-      const detail = errorCode === null ? "" : ` (${errorCode})`;
-      const laneLabel = lane === "debug" ? "browser SDK" : "browser analytics";
-      const message = `DebugBundle ${laneLabel} disabled after ingestion returned ${statusCode} for ${endpoint}. Check the project token or relay configuration${detail}.`;
-      if (typeof consoleSource.error === "function") {
-        consoleSource.error(message);
-        return;
-      }
-      (_a5 = consoleSource.warn) == null ? void 0 : _a5.call(consoleSource, message);
-    }
-    reportAcknowledgementDiagnostic(lane, code, detail) {
-      var _a5;
-      const key2 = `${lane}:${code}:${detail}`;
-      if (this.reportedAcknowledgementDiagnostics.has(key2)) {
-        return;
-      }
-      this.reportedAcknowledgementDiagnostics.add(key2);
-      const consoleSource = getConsoleSource();
-      const laneLabel = lane === "debug" ? "browser SDK" : "browser analytics";
-      (_a5 = consoleSource == null ? void 0 : consoleSource.warn) == null ? void 0 : _a5.call(consoleSource, code === "invalid" ? `DebugBundle ${laneLabel} retained events after an invalid ingestion acknowledgement (${detail}).` : `DebugBundle ${laneLabel} removed terminally rejected events (${detail}).`);
     }
     installBrowserHooks() {
       const windowSource = getWindowSource();
@@ -28875,6 +28961,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       };
     }
     addBreadcrumb(breadcrumb) {
+      if (inBrowserDiagnostic())
+        return;
       const config3 = this.config;
       if (config3 === null || this.eventTransport.debugRejected || !this.shouldCaptureBreadcrumb()) {
         return;

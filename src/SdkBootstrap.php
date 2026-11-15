@@ -46,7 +46,7 @@ final class SdkBootstrap
                 'sampleRate' => $this->settings->getSampleRate(),
                 'logLevel' => $this->settings->getLogLevel(),
                 'configFetcher' => $this->configCache,
-                'redactFields' => ['wpnonce', '_wpnonce', 'woocommerce-login-nonce', 'woocommerce-register-nonce', 'woocommerce-reset-password-nonce'],
+                'redactFields' => Sanitization::REDACT_FIELDS,
                 'beforeSend' => static function (array $event): mixed {
                     return function_exists('apply_filters')
                         ? \apply_filters('debugbundle_before_send', $event)

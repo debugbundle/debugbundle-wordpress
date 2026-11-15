@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-11-15
+
+- Sanitise and bound local admin diagnostics, including the same WordPress/WooCommerce nonce fields used by native capture, and contain failed or recursive transient writes inside SDK error handlers. Protect legacy diagnostic values on read without rewriting them, and contain storage read failures. Keep existing status keys, TTL and delivery semantics.
+
+- Add exact-ZIP PHP and Browser hook budget regressions. The staged candidate uses the corrected local SDK archives; published dependency pins remain unchanged until the coordinated SDK/plugin patch release.
+
 ## [2.1.3] - 2026-11-15
 
 - Bundle the qualified PHP SDK 2.1.3 and Browser SDK 3.2.3 documentation patches.

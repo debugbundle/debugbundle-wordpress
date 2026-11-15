@@ -13,7 +13,7 @@ assert.match(receipt.version, /^3\./);
 assert.equal(createHash("sha256").update(asset).digest("hex"), receipt.asset_sha256);
 assert.doesNotMatch(inline, /ZIP_SERVER_SECRET|projectToken|project_token/);
 
-async function check(withHook, withEvidence = false) {
+async function check(withHook, withEvidence = false, withBudget = false, malformed = false) {
   const listeners = new Map();
   const timers = new Map();
   const requests = [];
@@ -60,6 +60,15 @@ async function check(withHook, withEvidence = false) {
       assert.doesNotMatch(JSON.stringify(event), /ZIP_SOURCE_SECRET|dbundle_(?:org_(?:invite|transfer)|invite)_0123456789abcdefghijklmnopqrstuv/);
       if (event.payload.message === "drop this") return null;
       event.context = { marker: "zip-hook-kept", password: "ZIP_HOOK_SECRET" };
+      if (withBudget) {
+        const node = id => ({ id, name: "Error", message: "m".repeat(2000), stack: "x".repeat(16000),
+          trace_origin: "runtime_reported", parsing_status: "unavailable", frames: [],
+          relationships: id === 0 ? [{ kind: "cause", target_id: 1 }] : [] });
+        event.event_type = "frontend_exception";
+        event.payload = { name: "Error", message: "zip owner replacement", stack: "Error: safe", browser: { name: "fixture", version: "1" },
+          exception_evidence: { version: 1, runtime: "browser", root_id: 0, nodes: [node(0), node(1)], truncated: false, unavailable_reason: null } };
+        if (malformed) event.payload.exception_evidence.root_id = 7;
+      }
       return event;
     };
   }
@@ -99,8 +108,18 @@ async function check(withHook, withEvidence = false) {
   assert.equal(event.service.name, config.service);
   assert.equal(event.project_token, undefined);
   assert.doesNotMatch(JSON.stringify(request.batch), /ZIP_(?:SOURCE|HOOK|SERVER)_SECRET|dbundle_(?:org_(?:invite|transfer)|invite)_0123456789abcdefghijklmnopqrstuv/);
-  if (withHook) assert.equal(event.context.marker, "zip-hook-kept");
-  else assert.equal(event.event_type, "frontend_exception");
+  if (withHook && !malformed) assert.equal(event.context.marker, "zip-hook-kept");
+  if (!withHook) assert.equal(event.event_type, "frontend_exception");
+  if (withBudget && !malformed) {
+    assert.equal(event.payload.message, "zip owner replacement", "budget restored owner-removed text");
+    assert.equal(event.payload.exception_evidence, undefined);
+    assert.equal(event.context.evidence_limits.exception_evidence, "budget_exceeded");
+  }
+  if (malformed) {
+    assert.equal(event.event_type, "log_event");
+    assert.match(event.payload.message, /^kept /);
+    assert.equal(event.context?.marker, undefined, "invalid replacement leaked modified context");
+  }
   if (withEvidence) {
     const sdk = context.window.DebugBundleWordPress;
     await sdk.flush();
@@ -126,5 +145,7 @@ async function check(withHook, withEvidence = false) {
 
 await check(false);
 await check(true);
+await check(true, false, true);
+await check(true, false, true, true);
 await check(false, true);
 console.log(`Extracted WordPress Browser ${receipt.version} asset smoke passed: PHP config, queued delivery, hook drop/privacy and credential-free relay.`);

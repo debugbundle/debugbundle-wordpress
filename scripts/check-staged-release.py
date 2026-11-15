@@ -32,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--php-sdk", required=True, type=Path)
     parser.add_argument("--browser-artifact", required=True, type=Path)
-    parser.add_argument("--version", default="2.1.3")
+    parser.add_argument("--version", default="2.1.4")
     parser.add_argument("--core-dependencies", choices=("candidate", "published", "redaction-candidate"), default="candidate",
                         help="Use packed core candidates, exact published pins, or only candidate redaction with the published shared-types pin")
     args = parser.parse_args()

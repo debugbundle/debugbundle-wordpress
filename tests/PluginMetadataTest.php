@@ -13,11 +13,11 @@ final class PluginMetadataTest extends TestCase
         $plugin = (string) file_get_contents(dirname(__DIR__) . '/debugbundle.php');
         $readme = (string) file_get_contents(dirname(__DIR__) . '/readme.txt');
 
-        self::assertStringContainsString('Version:           2.1.3', $plugin);
-        self::assertStringContainsString("define('DEBUGBUNDLE_WORDPRESS_VERSION', '2.1.3');", $plugin);
+        self::assertStringContainsString('Version:           2.1.4', $plugin);
+        self::assertStringContainsString("define('DEBUGBUNDLE_WORDPRESS_VERSION', '2.1.4');", $plugin);
         self::assertStringContainsString("define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '3.2.3');", $plugin);
         self::assertStringContainsString('Tested up to: 7.1', $readme);
-        self::assertStringContainsString('Stable tag: 2.1.3', $readme);
+        self::assertStringContainsString('Stable tag: 2.1.4', $readme);
     }
 
     public function testReadmeDeclaresSubmitterAndExternalServiceDisclosure(): void

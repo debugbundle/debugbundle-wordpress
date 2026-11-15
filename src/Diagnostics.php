@@ -11,6 +11,7 @@ final class Diagnostics
     private const LAST_RELAY_FLUSH = 'debugbundle_last_relay_flush_at';
     private const LAST_RELAY_ERROR = 'debugbundle_last_relay_error';
     private const LAST_RELAY_INGESTION_RESULT = 'debugbundle_last_relay_ingestion_result';
+    private static bool $recording = false;
 
     public function __construct(private readonly RelaySpool $spool = new RelaySpool())
     {
@@ -43,7 +44,7 @@ final class Diagnostics
 
     public static function recordBackendError(string $message): void
     {
-        self::setStatus(self::LAST_BACKEND_ERROR, substr($message, 0, 500));
+        self::setStatus(self::LAST_BACKEND_ERROR, $message);
     }
 
     public static function recordRelayFlush(): void
@@ -53,12 +54,12 @@ final class Diagnostics
 
     public static function recordRelayError(string $message): void
     {
-        self::setStatus(self::LAST_RELAY_ERROR, substr($message, 0, 500));
+        self::setStatus(self::LAST_RELAY_ERROR, $message);
     }
 
     public static function recordRelayIngestionResult(int $accepted, int $rejected, string $errors): void
     {
-        self::setStatus(self::LAST_RELAY_INGESTION_RESULT, substr(sprintf('accepted=%d rejected=%d errors=%s', $accepted, $rejected, $errors), 0, 500));
+        self::setStatus(self::LAST_RELAY_INGESTION_RESULT, sprintf('accepted=%d rejected=%d errors=%s', $accepted, $rejected, $errors));
     }
 
     private function phpSdkVersion(): string
@@ -79,15 +80,35 @@ final class Diagnostics
             return '';
         }
 
-        $value = \get_transient($key);
-        return is_string($value) ? $value : '';
+        try {
+            $value = \get_transient($key);
+            // Protect legacy values at the read boundary without rewriting data.
+            return is_string($value) ? self::safeValue($value) : '';
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private static function setStatus(string $key, string $value): void
     {
-        if (function_exists('set_transient')) {
-            \set_transient($key, $value, 604800);
+        if (self::$recording || !function_exists('set_transient')) return;
+        self::$recording = true;
+        try {
+            \set_transient($key, self::safeValue($value), 604800);
+        } catch (\Throwable) {
+            // Diagnostic privacy/storage failures cannot escape an error handler.
+        } finally {
+            self::$recording = false;
         }
+    }
+
+    private static function safeValue(string $value): string
+    {
+        // Sanitize before truncation so a cut credential is never unchecked.
+        $safe = strlen($value) <= 4096 ? \DebugBundle\TelemetryPrivacy::protect($value, array_fill_keys(Sanitization::REDACT_FIELDS, true)) : 'diagnostic_details_withheld';
+        $safe = is_string($safe) ? substr($safe, 0, 500) : 'diagnostic_details_withheld';
+        for ($i = 0; $i < 4 && preg_match('//u', $safe) !== 1; $i++) $safe = substr($safe, 0, -1);
+        return $safe;
     }
 
     private static function formatTimestamp(?float $timestampMs): string

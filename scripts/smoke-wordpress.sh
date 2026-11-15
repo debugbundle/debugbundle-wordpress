@@ -5,14 +5,14 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 COMPOSE_FILE="$REPO_DIR/docker-compose.smoke.yml"
-PROJECT_NAME="debugbundle-wordpress-smoke"
+PROJECT_NAME=${WORDPRESS_SMOKE_PROJECT_NAME:-debugbundle-wordpress-smoke}
 WP_URL="http://127.0.0.1:18080"
 RELAY_URL="$WP_URL/?rest_route=/debugbundle/v1/browser"
 MOCK_EVENTS_FILE="$REPO_DIR/.smoke/ingestion-events.ndjson"
 PLUGIN_STAGE_DIR="$REPO_DIR/.smoke/plugin"
 PHP_SDK_DIR=${DEBUGBUNDLE_PHP_SDK_CHECKOUT:-}
 USE_ASSEMBLED_ARTIFACT=${DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT:-0}
-VERSION=${VERSION:-2.1.3}
+VERSION=${VERSION:-2.1.4}
 EXPECTED_WORDPRESS_VERSION=${WORDPRESS_SMOKE_VERSION:-7.1.1}
 
 compose() {
@@ -77,6 +77,10 @@ prepare_plugin() {
 }
 
 cleanup() {
+  smoke_exit_code=$?
+  if [ "$smoke_exit_code" -ne 0 ]; then
+    compose logs --tail=40 wordpress db >&2 || true
+  fi
   compose down -v --remove-orphans >/dev/null 2>&1 || true
 }
 
@@ -144,6 +148,27 @@ rm -f "$response_file"
 
 settings_json='{"enabled":true,"project_token":"dbundle_proj_smoke","environment":"development","service":"wordpress-smoke","endpoint":"http://mock-ingestion:18081/v1/events","backend_capture_enabled":true,"frontend_capture_enabled":true,"sample_rate":1,"browser_session_sample_rate":1,"browser_max_events_per_session":100,"browser_capture_console":false,"log_level":"warning","delete_on_uninstall":false,"settings_version":1}'
 compose run --rm wpcli wp option update debugbundle_settings "$settings_json" --format=json --allow-root
+
+compose run --rm wpcli wp eval '
+\DebugBundleWp\Diagnostics::recordBackendError("token=synthetic-diagnostic-private-value");
+$value = get_transient("debugbundle_last_backend_error");
+if (!is_string($value) || str_contains($value, "synthetic-diagnostic-private-value")) {
+    fwrite(STDERR, "Packaged plugin retained raw internal diagnostic text" . PHP_EOL);
+    exit(1);
+}
+set_transient("debugbundle_last_backend_error", "token=legacy-diagnostic-private-value", 604800);
+$status = (new \DebugBundleWp\Diagnostics())->status();
+if (str_contains($status["last_backend_error"], "legacy-diagnostic-private-value")) exit(1);
+if (get_transient("debugbundle_last_backend_error") !== "token=legacy-diagnostic-private-value") exit(1);
+\DebugBundleWp\Diagnostics::recordBackendError("diagnostic_upgrade_verified");
+foreach (["wpnonce", "_wpnonce", "woocommerce-login-nonce", "woocommerce-register-nonce", "woocommerce-reset-password-nonce"] as $field) {
+    \DebugBundleWp\Diagnostics::recordBackendError($field . "=synthetic-private-nonce");
+    if (str_contains(get_transient("debugbundle_last_backend_error"), "synthetic-private-nonce")) exit(1);
+}
+\DebugBundleWp\Diagnostics::recordRelayError(str_repeat("x", 5000));
+if (get_transient("debugbundle_last_relay_error") !== "diagnostic_details_withheld") exit(1);
+echo "Packaged plugin local diagnostic privacy and bounds passed." . PHP_EOL;
+' --allow-root
 
 compose run --rm wpcli wp eval '
 $bootstrap = new \DebugBundleWp\SdkBootstrap(new \DebugBundleWp\Settings());
@@ -227,9 +252,22 @@ $GLOBALS["debugbundle_smoke_filter_message"] = "DebugBundle WordPress backend fi
 add_filter("debugbundle_before_send", static function (array $event): array {
     if (($event["event_type"] ?? null) === "backend_exception") {
         $event["payload"]["message"] = $GLOBALS["debugbundle_smoke_filter_message"];
+        $node = static fn (int $id): array => ["id" => $id, "name" => "Error", "message" => str_repeat("m", 2000),
+            "stack" => str_repeat("x", 16000), "trace_origin" => "runtime_reported", "parsing_status" => "unavailable",
+            "frames" => [], "relationships" => $id === 0 ? [["kind" => "cause", "target_id" => 1]] : []];
+        $event["payload"]["exception_evidence"] = ["version" => 1, "runtime" => "php", "root_id" => 0,
+            "nodes" => [$node(0), $node(1)], "truncated" => false, "unavailable_reason" => null];
+        if (!empty($GLOBALS["debugbundle_smoke_invalid_graph"])) $event["payload"]["exception_evidence"]["root_id"] = 7;
     }
     return $event;
 });
+$result = (new \DebugBundleWp\AdminTestEvents(new \DebugBundleWp\Settings()))->sendBackend();
+if (!$result->success) {
+    fwrite(STDERR, $result->message . PHP_EOL);
+    exit(1);
+}
+$GLOBALS["debugbundle_smoke_invalid_graph"] = true;
+$GLOBALS["debugbundle_smoke_filter_message"] = "malformed hook replacement must not ship";
 $result = (new \DebugBundleWp\AdminTestEvents(new \DebugBundleWp\Settings()))->sendBackend();
 if (!$result->success) {
     fwrite(STDERR, $result->message . PHP_EOL);
@@ -273,6 +311,19 @@ if ! grep -q 'DebugBundle WordPress backend filtered smoke event' "$MOCK_EVENTS_
   cat "$MOCK_EVENTS_FILE" >&2
   exit 1
 fi
+
+python3 - "$MOCK_EVENTS_FILE" <<'PY'
+import json
+import sys
+events = [event for line in open(sys.argv[1]) for event in json.loads(line)["events"]]
+matches = [event for event in events if event.get("payload", {}).get("message") == "DebugBundle WordPress backend filtered smoke event"]
+assert len(matches) == 1, "Expected one owner replacement after optional evidence reduction"
+assert "exception_evidence" not in matches[0]["payload"]
+assert matches[0]["context"]["evidence_limits"]["exception_evidence"] == "budget_exceeded"
+assert sum(event.get("payload", {}).get("message") == "DebugBundle WordPress backend test event" for event in events) == 1
+assert all(event.get("payload", {}).get("message") != "malformed hook replacement must not ship" for event in events)
+print("Packaged WordPress PHP hook budget reduction passed.")
+PY
 
 if ! grep -q '"event_type":"frontend_exception"' "$MOCK_EVENTS_FILE"; then
   echo "Expected mock ingestion to receive a frontend_exception event" >&2
