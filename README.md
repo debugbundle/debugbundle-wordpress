@@ -1,13 +1,13 @@
 # DebugBundle WordPress Plugin
 
-Patch 2.1.2 protects invitation and organisation-transfer credentials in captured text while preserving public APIs and event schemas. Upgrade the DebugBundle distribution to adopt the protection.
+Patch 2.1.3 protects invitation and organisation-transfer credentials in captured text while preserving public APIs and event schemas. Upgrade the DebugBundle distribution to adopt the protection.
 
 WordPress plugin for DebugBundle.
 
 Version 2.1.0 evidence is documented in [MIGRATION-2.1.md](MIGRATION-2.1.md), including explicit recovery, capability negotiation and compatible spool retries.
 
 ![CI](https://img.shields.io/github/actions/workflow/status/debugbundle/debugbundle-wordpress/ci.yml?branch=main&label=ci)
-![Version](https://img.shields.io/badge/version-2.1.2-blue)
+![Version](https://img.shields.io/badge/version-2.1.3-blue)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)
 
 Use this plugin to capture backend PHP/WordPress incidents and user-facing browser incidents from a WordPress site. Browser events are sent through a same-origin WordPress REST relay so the DebugBundle project token stays server-side.
@@ -19,30 +19,26 @@ evidence, passive resource diagnostics and explicit recovery. Existing capture,
 settings and relay/spool interfaces remain compatible. See [the migration notes](MIGRATION-2.1.md)
 for activation and runtime limits.
 
-## Requirements
+## Installation
+
+<a id="requirements"></a>
+
+<a id="install"></a>
 
 - WordPress 6.5 or newer (tested through WordPress 7.1)
 - PHP 8.2 or newer
 
-## Installation
-
 1. Install **DebugBundle** from the [WordPress.org plugin directory](https://wordpress.org/plugins/debugbundle/).
-2. Activate the plugin.
-3. Open **Settings -> DebugBundle**.
-4. Paste your DebugBundle project token and save.
-5. Use the backend and frontend test-event buttons to verify delivery.
 
 Manual ZIP installs are available from the [`debugbundle-wordpress` GitHub releases](https://github.com/debugbundle/debugbundle-wordpress/releases) page when a host or deployment process cannot install from WordPress.org.
 
-The plugin can also read the project token from `wp-config.php`:
+## Initialize
 
-```php
-define('DEBUGBUNDLE_PROJECT_TOKEN', 'dbundle_proj_xxxxxxxxxxxx');
-```
+Activate the plugin, then open **Settings -> DebugBundle**, save your project token, environment and service, and enable the capture paths you need. The plugin initializes its bundled PHP and browser SDKs; no application `init()` call is required.
 
-Version 2.0 reads remote capture policy from a local cache on visitor requests. WP-Cron refreshes it using the project token; the cache is scoped by endpoint and token hash, and an unavailable cache falls back to the minimal capture policy. WP-Cron must run for remote policy changes to arrive.
+## Integrations
 
-## What It Captures
+### What It Captures
 
 - Backend PHP errors, exceptions, shutdown failures, request context, logs, runtime facts, and probes through `debugbundle/sdk-php`
 - Frontend exceptions, breadcrumbs, first-party request failures, device context, and probes through `@debugbundle/sdk-browser`
@@ -51,7 +47,13 @@ Version 2.0 reads remote capture policy from a local cache on visitor requests. 
 
 The first release focuses on public-site capture. It does not capture `wp-admin` traffic by default.
 
-## Settings
+## First-event verification
+
+Use the backend and frontend test-event buttons in **Settings -> DebugBundle** from an administrator session. Confirm both service identities in received events or incidents in DebugBundle. Saving settings or an empty relay spool is not a delivery receipt; check the delivery diagnostics and inspect the matching incident.
+
+## Configuration
+
+<a id="settings"></a>
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
@@ -69,6 +71,14 @@ The first release focuses on public-site capture. It does not capture `wp-admin`
 | Browser max events per session | `100` | Limit non-exception browser events per session. |
 | Log level | `warning` | Minimum backend log severity. |
 | Delete settings on uninstall | disabled | Remove saved settings when the plugin is uninstalled. |
+
+The plugin can also read the project token from `wp-config.php`:
+
+```php
+define('DEBUGBUNDLE_PROJECT_TOKEN', 'dbundle_proj_xxxxxxxxxxxx');
+```
+
+Version 2.0 reads remote capture policy from a local cache on visitor requests. WP-Cron refreshes it using the project token; the cache is scoped by endpoint and token hash, and an unavailable cache falls back to the minimal capture policy. WP-Cron must run for remote policy changes to arrive.
 
 ## External Service Behavior
 
@@ -203,10 +213,11 @@ label. Check the deployed SDK/wrapper version, instrumentation, scope, expiry,
 policy, sampling and delivery receipts. See the [probe recipes](https://debugbundle.com/docs/probes#bounded-checkpoint-recipes).
 
 
-### Unreleased acceptance-credential privacy
+<a id="unreleased-acceptance-credential-privacy"></a>
 
-The source candidate also scrubs standalone `dbundle_invite_`,
+### Acceptance-credential privacy
+
+The SDK scrubs standalone `dbundle_invite_`,
 `dbundle_org_invite_` and `dbundle_org_transfer_` acceptance secrets before
 SDK-owned retention or transmission. See the [shared qualification record](https://github.com/debugbundle/debugbundle/blob/main/spec/business-credential-redaction.md).
-Published packages keep their released behaviour until the coordinated dependency
-and distribution checks are completed and a new version is published.
+Existing installations receive this protection when upgraded to a version that includes it.

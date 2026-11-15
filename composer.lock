@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f0f0f6e4562f3578dcec53826f2b8e96",
+    "content-hash": "d243f7d1032e30dfd8ec7d0b85544ddb",
     "packages": [
         {
             "name": "debugbundle/sdk-php",
-            "version": "v2.1.2",
+            "version": "v2.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/debugbundle/debugbundle-php.git",
-                "reference": "7a9dec787a2703c50108d6f8a30067ed547f8c04"
+                "reference": "6d7d16eaf45dbeeededd86599fe86c149836b895"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/debugbundle/debugbundle-php/zipball/7a9dec787a2703c50108d6f8a30067ed547f8c04",
-                "reference": "7a9dec787a2703c50108d6f8a30067ed547f8c04",
+                "url": "https://api.github.com/repos/debugbundle/debugbundle-php/zipball/6d7d16eaf45dbeeededd86599fe86c149836b895",
+                "reference": "6d7d16eaf45dbeeededd86599fe86c149836b895",
                 "shasum": ""
             },
             "require": {
@@ -63,7 +63,7 @@
                 "issues": "https://github.com/debugbundle/debugbundle-php/issues",
                 "source": "https://github.com/debugbundle/debugbundle-php"
             },
-            "time": "2026-11-09T12:40:40+00:00"
+            "time": "2026-11-15T01:03:57+00:00"
         },
         {
             "name": "monolog/monolog",
