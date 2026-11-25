@@ -68,4 +68,53 @@ final class SanitizationTest extends TestCase
 
         self::assertSame(['content-length' => '42'], $headers);
     }
+
+    public function testRelayPreservesValidatedBrowserResourceTagAndEvidenceReferenceWhileRedactingSecrets(): void
+    {
+        $failureRef = '11111111-1111-4111-8111-111111111111';
+        $pageId = '22222222-2222-4222-8222-222222222222';
+        $event = [
+            'event_type' => 'frontend_exception',
+            'event_id' => '33333333-3333-4333-8333-333333333333',
+            'sdk_name' => '@debugbundle/sdk-browser',
+            'sdk_version' => '3.2.4',
+            'service' => ['name' => 'wp-browser', 'environment' => 'production'],
+            'payload' => [
+                'name' => 'Error',
+                'message' => 'Browser resource load error',
+                'stack' => 'unavailable',
+                'browser_event' => [
+                    'kind' => 'resource_error',
+                    'opaque' => true,
+                    'target' => [
+                        'tag_name' => 'script',
+                        'source_url' => 'https://cdn.example.com/app.js?token=SECRET_VALUE',
+                    ],
+                    'page' => [
+                        'url' => 'https://shop.example.com/checkout?session_id=SECRET_SESS',
+                        'referrer' => null,
+                        'ready_state' => 'complete',
+                        'visibility_state' => 'unloaded',
+                    ],
+                ],
+            ],
+            'context' => [
+                'evidence_reference' => [
+                    'version' => 1,
+                    'failure_ref' => $failureRef,
+                    'scope' => ['kind' => 'page', 'page_id' => $pageId],
+                ],
+                'password' => 'top-secret-password',
+            ],
+        ];
+
+        $protected = Sanitization::protectRelayEvents([$event]);
+        self::assertNotNull($protected);
+        self::assertSame('script', $protected[0]['payload']['browser_event']['target']['tag_name']);
+        self::assertSame('unloaded', $protected[0]['payload']['browser_event']['page']['visibility_state']);
+        self::assertSame($failureRef, $protected[0]['context']['evidence_reference']['failure_ref']);
+        self::assertSame('[REDACTED]', $protected[0]['context']['password']);
+        self::assertStringNotContainsString('SECRET_VALUE', json_encode($protected, JSON_THROW_ON_ERROR));
+        self::assertStringNotContainsString('SECRET_SESS', json_encode($protected, JSON_THROW_ON_ERROR));
+    }
 }
