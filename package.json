@@ -1,6 +1,6 @@
 {
   "name": "debugbundle-wordpress",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "license": "GPL-2.0-or-later",
@@ -23,7 +23,7 @@
     "release:assemble": "./scripts/assemble-release.sh"
   },
   "dependencies": {
-    "@debugbundle/sdk-browser": "3.2.4",
+    "@debugbundle/sdk-browser": "3.3.0",
     "esbuild": "^0.25.5"
   }
 }

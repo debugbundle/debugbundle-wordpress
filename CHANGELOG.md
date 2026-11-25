@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-25
+
+- Bundle published PHP SDK 2.2.0 and Browser SDK 3.3.0. Exact-key redaction preserves validated protocol fields and still removes sensitive application data.
+- Record browser teardown visibility and approved PHP rate-limit evidence where the integration supports it.
+
 ## [2.1.4] - 2026-11-15
 
 - Sanitise and bound local admin diagnostics, including the same WordPress/WooCommerce nonce fields used by native capture, and contain failed or recursive transient writes inside SDK error handlers. Protect legacy diagnostic values on read without rewriting them, and contain storage read failures. Keep existing status keys, TTL and delivery semantics.

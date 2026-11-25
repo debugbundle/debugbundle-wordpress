@@ -7,7 +7,7 @@
   };
   var __publicField = (obj, key2, value) => __defNormalProp(obj, typeof key2 !== "symbol" ? key2 + "" : key2, value);
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.7.1/node_modules/@debugbundle/redaction/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.8.0/node_modules/@debugbundle/redaction/dist/browser-stack.js
   function sanitizeBrowserStackUrls(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a5, _b, _c, _d;
@@ -22,7 +22,7 @@
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.7.1/node_modules/@debugbundle/redaction/dist/keys.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.8.0/node_modules/@debugbundle/redaction/dist/keys.js
   var DEFAULT_SENSITIVE_KEYS = [
     "password",
     "secret",
@@ -72,8 +72,15 @@
     }
     return false;
   }
+  function isExactSensitiveKey(key2, exactKeys) {
+    if (exactKeys.length === 0) {
+      return false;
+    }
+    const normalized = key2.trim().toLowerCase();
+    return exactKeys.some((candidate) => candidate.trim().toLowerCase() === normalized);
+  }
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.7.1/node_modules/@debugbundle/redaction/dist/telemetry-text.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.8.0/node_modules/@debugbundle/redaction/dist/telemetry-text.js
   var REDACTED = "[REDACTED]";
   var BUILTIN_LABELS = [
     ...DEFAULT_SENSITIVE_KEYS,
@@ -110,7 +117,8 @@
     }
     return sum % 10 === 0;
   }
-  function scrubUrl(raw, keys) {
+  function scrubUrl(raw, additionalKeys, exactKeys) {
+    const broadKeys = [...DEFAULT_SENSITIVE_KEYS, ...additionalKeys];
     try {
       const url2 = new URL(raw);
       if (url2.username || url2.password) {
@@ -119,9 +127,9 @@
       }
       const nextQuery = new URLSearchParams();
       for (const [key2, value] of url2.searchParams) {
-        if (key2.length > 128 || scrubCredentialText(key2, keys, false) !== key2)
+        if (key2.length > 128 || scrubCredentialText(key2, additionalKeys, false, exactKeys) !== key2)
           continue;
-        nextQuery.append(key2, isSensitiveKey(key2, keys) || scrubCredentialText(value, keys, false) !== value ? REDACTED : value);
+        nextQuery.append(key2, isSensitiveKey(key2, broadKeys) || isExactSensitiveKey(key2, exactKeys) || scrubCredentialText(value, additionalKeys, false, exactKeys) !== value ? REDACTED : value);
       }
       url2.search = nextQuery.toString();
       url2.hash = "";
@@ -130,8 +138,7 @@
       return REDACTED;
     }
   }
-  function scrubCredentialText(input2, additionalKeys, scanUrls = true) {
-    const keys = [...DEFAULT_SENSITIVE_KEYS, ...additionalKeys];
+  function scrubCredentialText(input2, additionalKeys, scanUrls = true, exactKeys = []) {
     if (PEM_START.test(input2) && !PEM_COMPLETE.test(input2))
       return REDACTED;
     let output2 = input2;
@@ -152,17 +159,27 @@
         output2 = output2.replace(named, "$1$2[REDACTED]");
       }
     }
+    if (exactKeys.length > 0) {
+      for (const key2 of exactKeys) {
+        const trimmed = key2.trim();
+        if (trimmed.length === 0)
+          continue;
+        const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const named = new RegExp(`(?<![A-Za-z0-9_-])(${escaped})(?![A-Za-z0-9_-])(["']?\\s*[:=]\\s*)(?:"[^"]*"|'[^']*'|[^\\s&,;]+)`, "gi");
+        output2 = output2.replace(named, "$1$2[REDACTED]");
+      }
+    }
     output2 = output2.replace(CARD, (candidate) => isValidCard(candidate) ? REDACTED : candidate);
     if (!scanUrls)
       return output2;
     return output2.replace(URL_TEXT, (matched) => {
       var _a5, _b;
       const trailing = (_b = (_a5 = matched.match(/[).,;]+$/)) == null ? void 0 : _a5[0]) != null ? _b : "";
-      return scrubUrl(matched.slice(0, matched.length - trailing.length), keys) + trailing;
+      return scrubUrl(matched.slice(0, matched.length - trailing.length), additionalKeys, exactKeys) + trailing;
     });
   }
 
-  // node_modules/.pnpm/@debugbundle+redaction@2.7.1/node_modules/@debugbundle/redaction/dist/telemetry.js
+  // node_modules/.pnpm/@debugbundle+redaction@2.8.0/node_modules/@debugbundle/redaction/dist/telemetry.js
   var REDACTED2 = "[REDACTED]";
   var MAX_DEPTH = 16;
   var MAX_NODES = 4096;
@@ -202,7 +219,7 @@
           throw error62;
       }
     }
-    const result = scrubCredentialText(value, state2.extra);
+    const result = scrubCredentialText(value, state2.extra, true, state2.exact);
     if (result !== value)
       state2.redactionCount += 1;
     if ((value.startsWith("{") || value.startsWith("[")) && result === value && /(?:password|token|secret|authorization|cookie)["']?\s*[:=]/i.test(value)) {
@@ -253,7 +270,7 @@
         state2.textBytes += byteLength(key2);
         if (state2.textBytes > state2.maxTotalBytes)
           throw new BudgetExceeded();
-        const safeKey = scrubCredentialText(key2, state2.extra);
+        const safeKey = scrubCredentialText(key2, state2.extra, true, state2.exact);
         if (safeKey !== key2) {
           state2.redactionCount += 1;
           continue;
@@ -261,7 +278,7 @@
         const descriptor2 = Object.getOwnPropertyDescriptor(value, key2);
         if (descriptor2 === void 0 || !("value" in descriptor2))
           throw new TypeError("unsafe_input");
-        const safeValue = isSensitiveKey(key2, state2.keys) ? mask(state2) : sanitizeValue(descriptor2.value, state2, depth2 + 1, allowStructured);
+        const safeValue = isSensitiveKey(key2, state2.keys) || isExactSensitiveKey(key2, state2.exact) ? mask(state2) : sanitizeValue(descriptor2.value, state2, depth2 + 1, allowStructured);
         Object.defineProperty(result, key2, {
           value: safeValue,
           enumerable: true,
@@ -275,13 +292,14 @@
     }
   }
   function sanitizeTelemetry(value, options = {}) {
-    var _a5, _b;
+    var _a5, _b, _c;
     try {
       const extra = (_a5 = options.additionalKeys) != null ? _a5 : [];
-      if (extra.length > 128 || extra.some((key2) => typeof key2 !== "string" || key2.length > 64 || !key2.trim())) {
+      const exact = (_b = options.exactKeys) != null ? _b : [];
+      if (extra.length + exact.length > 128 || extra.some((key2) => typeof key2 !== "string" || key2.length > 64 || !key2.trim()) || exact.some((key2) => typeof key2 !== "string" || key2.length > 64 || !key2.trim())) {
         return { ok: false, reason: "unsafe_input" };
       }
-      const maxTotalBytes = (_b = options.maxTotalBytes) != null ? _b : MAX_TOTAL_BYTES;
+      const maxTotalBytes = (_c = options.maxTotalBytes) != null ? _c : MAX_TOTAL_BYTES;
       if (!Number.isInteger(maxTotalBytes) || maxTotalBytes < 1 || maxTotalBytes > 512 * 1024) {
         return { ok: false, reason: "unsafe_input" };
       }
@@ -292,6 +310,7 @@
         seen: /* @__PURE__ */ new WeakSet(),
         keys: [...DEFAULT_SENSITIVE_KEYS, ...extra],
         extra,
+        exact,
         maxTotalBytes
       };
       const sanitized = sanitizeValue(value, state2, 0, true);
@@ -304,7 +323,7 @@
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/browser-stack.js
   function sanitizeBrowserStack(stack) {
     return stack.replace(/https?:\/\/[^\s]+/gi, (source) => {
       var _a5, _b, _c, _d;
@@ -16092,13 +16111,13 @@ ${code}
     return ch;
   }
   // @__NO_SIDE_EFFECTS__
-  function meta(metadata) {
+  function meta(metadata2) {
     const ch = new $ZodCheck({ check: "meta" });
     ch._zod.onattach = [
       (inst) => {
         var _a5;
         const existing = (_a5 = globalRegistry.get(inst)) != null ? _a5 : {};
-        globalRegistry.add(inst, { ...existing, ...metadata });
+        globalRegistry.add(inst, { ...existing, ...metadata2 });
       }
     ];
     ch._zod.check = () => {
@@ -20333,7 +20352,795 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return _coercedDate(ZodDate, params);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/evidence-bounds.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics.js
+  var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
+  var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
+  var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
+  var AnalyticsEventKindValues = [
+    "session_start",
+    "page_view",
+    "route_change",
+    "action",
+    "funnel_step",
+    "conversion",
+    "journey_marker",
+    "session_summary"
+  ];
+  var AnalyticsEventKindSchema = external_exports.enum(AnalyticsEventKindValues);
+  var AnalyticsPrivacyModeValues = ["strict", "standard", "custom"];
+  var AnalyticsPrivacyModeSchema = external_exports.enum(AnalyticsPrivacyModeValues);
+  var AnalyticsAuthStateValues = ["anonymous", "authenticated", "unknown"];
+  var AnalyticsAuthStateSchema = external_exports.enum(AnalyticsAuthStateValues);
+  var AnalyticsDeviceTypeValues = ["desktop", "mobile", "tablet", "unknown"];
+  var AnalyticsDeviceTypeSchema = external_exports.enum(AnalyticsDeviceTypeValues);
+  var AnalyticsViewportBucketValues = ["small", "medium", "large", "unknown"];
+  var AnalyticsViewportBucketSchema = external_exports.enum(AnalyticsViewportBucketValues);
+  var AnalyticsBundleAnalysisKindValues = [
+    "usage_summary",
+    "route_health",
+    "funnel_dropoff",
+    "journey_friction",
+    "feature_usage",
+    "incident_impact",
+    "deploy_comparison",
+    "conversion_path"
+  ];
+  var AnalyticsBundleAnalysisKindSchema = external_exports.enum(AnalyticsBundleAnalysisKindValues);
+  var AnalyticsBundleConfidenceValues = ["low", "medium", "high"];
+  var AnalyticsBundleConfidenceSchema = external_exports.enum(AnalyticsBundleConfidenceValues);
+  var AnalyticsBundleSeverityValues = ["low", "medium", "high"];
+  var AnalyticsBundleSeveritySchema = external_exports.enum(AnalyticsBundleSeverityValues);
+  var AnalyticsBundleGranularityValues = ["hour", "day", "week", "month"];
+  var AnalyticsBundleGranularitySchema = external_exports.enum(AnalyticsBundleGranularityValues);
+  var AnalyticsMetricsGranularityValues = ["hour", "day"];
+  var AnalyticsMetricsGranularitySchema = external_exports.enum(AnalyticsMetricsGranularityValues);
+  var AnalyticsSafeHashSchema = external_exports.string().regex(/^sha256:[a-f0-9]{64}$/i);
+  var AnalyticsNullableHashSchema = AnalyticsSafeHashSchema.nullable();
+  var AnalyticsNullableTextSchema = (max) => external_exports.string().trim().min(1).max(max).nullable();
+  var AnalyticsRoutePathSchema = external_exports.string().trim().min(1).max(2048).refine((value) => !value.includes("?") && !value.includes("#"), {
+    message: "Analytics route paths must not include query strings or fragments."
+  }).nullable();
+  var AnalyticsDomainSchema = external_exports.string().trim().min(1).max(255).refine((value) => !/[/?#@]/.test(value), {
+    message: "Analytics referrer domains must be hostnames, not URLs."
+  }).nullable();
+  var AnalyticsLocaleSchema = external_exports.string().trim().min(2).max(35).regex(/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/).nullable();
+  var AnalyticsRegionCodeSchema = external_exports.string().trim().min(1).max(16).regex(/^[A-Za-z0-9-]+$/).nullable();
+  var AnalyticsSignalKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
+  var AnalyticsSignalSchema = external_exports.object({
+    action_key: AnalyticsSignalKeySchema.nullable().optional(),
+    funnel_key: AnalyticsSignalKeySchema.nullable().optional(),
+    step_key: AnalyticsSignalKeySchema.nullable().optional(),
+    conversion_key: AnalyticsSignalKeySchema.nullable().optional(),
+    marker_key: AnalyticsSignalKeySchema.nullable().optional()
+  }).strict().transform((value) => {
+    var _a5, _b, _c, _d, _e;
+    return {
+      action_key: (_a5 = value.action_key) != null ? _a5 : null,
+      funnel_key: (_b = value.funnel_key) != null ? _b : null,
+      step_key: (_c = value.step_key) != null ? _c : null,
+      conversion_key: (_d = value.conversion_key) != null ? _d : null,
+      marker_key: (_e = value.marker_key) != null ? _e : null
+    };
+  });
+  var AnalyticsRouteSchema = external_exports.object({
+    path: AnalyticsRoutePathSchema,
+    normalized_path: AnalyticsRoutePathSchema,
+    title: AnalyticsNullableTextSchema(200)
+  }).strict().superRefine((value, context) => {
+    if (value.path === null && value.normalized_path === null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["path"],
+        message: "Analytics routes require path or normalized_path."
+      });
+    }
+  });
+  var AnalyticsDimensionsSchema = external_exports.object({
+    auth_state: AnalyticsAuthStateSchema,
+    device_type: AnalyticsDeviceTypeSchema,
+    browser_family: AnalyticsNullableTextSchema(80),
+    browser_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
+    os_family: AnalyticsNullableTextSchema(80),
+    os_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
+    language: AnalyticsLocaleSchema,
+    locale: AnalyticsLocaleSchema,
+    viewport_bucket: AnalyticsViewportBucketSchema,
+    referrer_domain: AnalyticsDomainSchema,
+    utm_source: AnalyticsNullableTextSchema(128),
+    utm_medium: AnalyticsNullableTextSchema(128),
+    utm_campaign: AnalyticsNullableTextSchema(128),
+    country_code: external_exports.string().trim().regex(/^[A-Z]{2}$/).nullable(),
+    region_code: AnalyticsRegionCodeSchema
+  }).strict();
+  var AnalyticsCustomDimensionKeySchema = external_exports.string().trim().min(1).max(64).regex(/^[A-Za-z][A-Za-z0-9_.-]*$/).refine((value) => !isSensitiveCustomDimensionKey(value), {
+    message: "Analytics custom dimension key is reserved for sensitive or high-cardinality data."
+  });
+  var AnalyticsCustomDimensionStringValueSchema = external_exports.string().trim().min(1).max(128).refine((value) => !looksSensitiveCustomDimensionValue(value), {
+    message: "Analytics custom dimension value appears sensitive or high-cardinality."
+  });
+  var AnalyticsCustomDimensionValueSchema = external_exports.union([
+    AnalyticsCustomDimensionStringValueSchema,
+    external_exports.number().finite().min(-1e6).max(1e6),
+    external_exports.boolean(),
+    external_exports.null()
+  ]);
+  var AnalyticsCustomDimensionsSchema = external_exports.record(AnalyticsCustomDimensionKeySchema, AnalyticsCustomDimensionValueSchema).superRefine((value, context) => {
+    if (Object.keys(value).length > MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        message: `Analytics events may include at most ${MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT} custom dimensions.`
+      });
+    }
+  });
+  var AnalyticsServiceSchema = external_exports.object({
+    name: external_exports.string().trim().min(1).max(120),
+    runtime: external_exports.literal("browser").nullable().optional(),
+    framework: external_exports.string().trim().min(1).max(80).nullable().optional(),
+    environment: external_exports.string().trim().min(1).max(120)
+  }).strict();
+  var AnalyticsCorrelationSchema = external_exports.object({
+    session_id: external_exports.string().trim().min(1).max(128),
+    visitor_id_hash: AnalyticsNullableHashSchema,
+    user_id_hash: AnalyticsNullableHashSchema,
+    trace_id: external_exports.string().trim().min(1).max(128).nullable(),
+    deploy_id: external_exports.string().trim().min(1).max(128).nullable()
+  }).strict();
+  var AnalyticsEventPrivacySchema = external_exports.object({
+    mode: AnalyticsPrivacyModeSchema,
+    consent_granted: external_exports.boolean()
+  }).strict();
+  var AnalyticsSessionMetricsSchema = external_exports.object({
+    duration_ms: external_exports.number().int().min(0).max(864e5),
+    pageviews: external_exports.number().int().min(0).max(1e5)
+  }).strict();
+  var AnalyticsPayloadSchema = external_exports.object({
+    kind: AnalyticsEventKindSchema,
+    privacy: AnalyticsEventPrivacySchema.optional().default({
+      mode: "strict",
+      consent_granted: false
+    }),
+    session: AnalyticsSessionMetricsSchema.optional(),
+    signal: AnalyticsSignalSchema.optional(),
+    route: AnalyticsRouteSchema.nullable().optional(),
+    previous_route: AnalyticsRouteSchema.nullable().optional(),
+    dimensions: AnalyticsDimensionsSchema,
+    custom_dimensions: AnalyticsCustomDimensionsSchema.optional().default({})
+  }).strict().superRefine((value, context) => {
+    var _a5, _b, _c, _d, _e;
+    if ((value.kind === "page_view" || value.kind === "route_change") && value.route == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["route"],
+        message: "Page view and route change analytics events require route context."
+      });
+    }
+    if (value.previous_route != null && value.kind !== "route_change") {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["previous_route"],
+        message: "Analytics previous_route is only valid for route_change events."
+      });
+    }
+    if (value.kind === "action" && ((_a5 = value.signal) == null ? void 0 : _a5.action_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "action_key"],
+        message: "Action analytics events require signal.action_key."
+      });
+    }
+    if (value.kind === "funnel_step") {
+      if (((_b = value.signal) == null ? void 0 : _b.funnel_key) == null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["signal", "funnel_key"],
+          message: "Funnel step analytics events require signal.funnel_key."
+        });
+      }
+      if (((_c = value.signal) == null ? void 0 : _c.step_key) == null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["signal", "step_key"],
+          message: "Funnel step analytics events require signal.step_key."
+        });
+      }
+    }
+    if (value.kind === "conversion" && ((_d = value.signal) == null ? void 0 : _d.conversion_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "conversion_key"],
+        message: "Conversion analytics events require signal.conversion_key."
+      });
+    }
+    if (value.kind === "journey_marker" && ((_e = value.signal) == null ? void 0 : _e.marker_key) == null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["signal", "marker_key"],
+        message: "Journey marker analytics events require signal.marker_key."
+      });
+    }
+    if (value.session !== void 0 && value.kind !== "session_summary") {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["session"],
+        message: "Analytics session metrics are only valid for session_summary events."
+      });
+    }
+  });
+  var AnalyticsEventEnvelopeSchema = external_exports.object({
+    schema_version: external_exports.literal(ANALYTICS_EVENT_SCHEMA_VERSION),
+    event_id: external_exports.string().guid(),
+    event_type: external_exports.literal("analytics_event"),
+    project_token: external_exports.string().trim().min(1).max(256).optional(),
+    project_id: external_exports.string().guid().nullable().optional(),
+    occurred_at: external_exports.string().datetime(),
+    sdk_name: external_exports.string().trim().min(1).max(120),
+    sdk_version: external_exports.string().trim().min(1).max(80),
+    service: AnalyticsServiceSchema,
+    correlation: AnalyticsCorrelationSchema,
+    payload: AnalyticsPayloadSchema
+  }).strict();
+  var AnalyticsMetricsSegmentSchema = external_exports.object({
+    value: external_exports.string().trim().min(1).max(255),
+    sessions: external_exports.number().int().nonnegative(),
+    pageviews: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsOriginScopeSchema = external_exports.object({
+    origin_project_ids: external_exports.array(external_exports.string().guid()).min(1).max(1e3),
+    unique_count_semantics: external_exports.literal("sum_of_origin_scoped_counts")
+  }).strict();
+  var AnalyticsUsageSummarySchema = external_exports.object({
+    project_id: external_exports.string().guid(),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    sessions: external_exports.number().int().nonnegative(),
+    pageviews: external_exports.number().int().nonnegative(),
+    active_visitors: external_exports.number().int().nonnegative(),
+    new_visitors: external_exports.number().int().nonnegative(),
+    returning_visitors: external_exports.number().int().nonnegative(),
+    exits: external_exports.number().int().nonnegative(),
+    conversions: external_exports.number().int().nonnegative(),
+    origin_scope: AnalyticsOriginScopeSchema.optional()
+  }).strict().refine((value) => Date.parse(value.from) <= Date.parse(value.to), {
+    message: "Analytics summary from must be before or equal to to.",
+    path: ["from"]
+  });
+  var AnalyticsUsageBreakdownsSchema = external_exports.object({
+    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    auth_states: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsUsageSummaryResponseSchema = external_exports.object({
+    summary: AnalyticsUsageSummarySchema,
+    breakdowns: AnalyticsUsageBreakdownsSchema
+  }).strict();
+  var AnalyticsMetricsWindowSchema = external_exports.object({
+    project_id: external_exports.string().guid(),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    origin_scope: AnalyticsOriginScopeSchema.optional()
+  }).strict();
+  var AnalyticsRouteMetricSchema = external_exports.object({
+    route_key: external_exports.string().trim().min(1).max(2048),
+    pageviews: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative(),
+    entrances: external_exports.number().int().nonnegative(),
+    exits: external_exports.number().int().nonnegative(),
+    bounces: external_exports.number().int().nonnegative(),
+    linked_incident_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsRouteMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    routes: external_exports.array(AnalyticsRouteMetricSchema).max(100)
+  }).strict();
+  var AnalyticsJourneyPatternSchema = external_exports.object({
+    from_route_key: external_exports.string().trim().min(1).max(2048),
+    to_route_key: external_exports.string().trim().min(1).max(2048),
+    transition_count: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative(),
+    transition_share: external_exports.number().min(0).max(1),
+    sample_ids: external_exports.array(external_exports.string().guid()).max(3).default([])
+  }).strict();
+  var AnalyticsJourneyPatternsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    patterns: external_exports.array(AnalyticsJourneyPatternSchema).max(100)
+  }).strict();
+  var AnalyticsIncidentImpactSegmentSchema = external_exports.object({
+    value: external_exports.string().trim().min(1).max(255),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactRouteSchema = external_exports.object({
+    route_key: external_exports.string().trim().min(1).max(2048),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactFunnelSchema = external_exports.object({
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    affected_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsIncidentImpactJourneyPatternSchema = external_exports.object({
+    from_route_key: external_exports.string().trim().min(1).max(2048),
+    to_route_key: external_exports.string().trim().min(1).max(2048),
+    affected_sessions: external_exports.number().int().nonnegative(),
+    sample_ids: external_exports.array(external_exports.string().guid()).max(3)
+  }).strict();
+  var AnalyticsIncidentImpactConversionDeltaSchema = external_exports.object({
+    availability: external_exports.enum(["available", "unavailable"]),
+    value: external_exports.number().finite().nullable(),
+    unit: external_exports.literal("percentage_points")
+  }).strict().superRefine((value, context) => {
+    if (value.availability === "unavailable" && value.value !== null) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["value"],
+        message: "Unavailable conversion deltas must not include a value."
+      });
+    }
+  });
+  var AnalyticsIncidentImpactBundleStateSchema = external_exports.object({
+    status: external_exports.enum(["not_requested", "pending", "running", "completed", "failed"]),
+    generation_id: external_exports.string().guid().nullable(),
+    failure_reason: external_exports.string().trim().min(1).max(240).nullable()
+  }).strict();
+  var AnalyticsIncidentImpactResponseSchema = external_exports.object({
+    incident_id: external_exports.string().guid(),
+    window: AnalyticsMetricsWindowSchema,
+    affected_sessions: external_exports.number().int().nonnegative(),
+    affected_routes: external_exports.array(AnalyticsIncidentImpactRouteSchema).max(100),
+    affected_funnels: external_exports.array(AnalyticsIncidentImpactFunnelSchema).max(100),
+    top_device_types: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
+    top_browsers: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
+    journey_patterns: external_exports.array(AnalyticsIncidentImpactJourneyPatternSchema).max(100),
+    conversion_delta: AnalyticsIncidentImpactConversionDeltaSchema,
+    analytics_bundle: AnalyticsIncidentImpactBundleStateSchema
+  }).strict();
+  var AnalyticsDeviceBreakdownResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsReferrerMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_sources: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_mediums: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
+    utm_campaigns: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
+  }).strict();
+  var AnalyticsActionMetricSchema = external_exports.object({
+    action_key: external_exports.string().trim().min(1).max(160),
+    kind: external_exports.enum(["action", "conversion", "marker"]),
+    event_count: external_exports.number().int().nonnegative(),
+    unique_sessions: external_exports.number().int().nonnegative()
+  }).strict();
+  var AnalyticsActionMetricsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    actions: external_exports.array(AnalyticsActionMetricSchema).max(100)
+  }).strict();
+  var AnalyticsFunnelListItemSchema = external_exports.object({
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelsResponseSchema = external_exports.object({
+    window: AnalyticsMetricsWindowSchema,
+    funnels: external_exports.array(AnalyticsFunnelListItemSchema).max(100)
+  }).strict();
+  var AnalyticsFunnelStepMetricSchema = external_exports.object({
+    step_key: external_exports.string().trim().min(1).max(120),
+    step_order: external_exports.number().int().nonnegative(),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelSummarySchema = external_exports.object({
+    project_id: external_exports.string().guid(),
+    funnel_key: external_exports.string().trim().min(1).max(120),
+    from: external_exports.string().datetime(),
+    to: external_exports.string().datetime(),
+    granularity: AnalyticsMetricsGranularitySchema,
+    service: external_exports.string().trim().min(1).max(120).nullable(),
+    environment: external_exports.string().trim().min(1).max(120).nullable(),
+    sessions_entered: external_exports.number().int().nonnegative(),
+    sessions_completed: external_exports.number().int().nonnegative(),
+    dropoffs: external_exports.number().int().nonnegative(),
+    conversion_rate: external_exports.number().min(0).max(1)
+  }).strict();
+  var AnalyticsFunnelAnalysisResponseSchema = external_exports.object({
+    funnel: AnalyticsFunnelSummarySchema,
+    steps: external_exports.array(AnalyticsFunnelStepMetricSchema).max(100)
+  }).strict();
+  function normalizeCustomDimensionKey(value) {
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+  function isSensitiveCustomDimensionKey(value) {
+    const normalized = normalizeCustomDimensionKey(value);
+    const sensitiveKeys = /* @__PURE__ */ new Set([
+      "auth_state",
+      "device_type",
+      "browser_family",
+      "browser_major",
+      "os_family",
+      "os_major",
+      "language",
+      "locale",
+      "viewport_bucket",
+      "referrer_domain",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "country_code",
+      "region_code",
+      "email",
+      "email_address",
+      "phone",
+      "phone_number",
+      "password",
+      "passcode",
+      "token",
+      "secret",
+      "api_key",
+      "apikey",
+      "authorization",
+      "auth_token",
+      "card",
+      "card_number",
+      "credit_card",
+      "ssn",
+      "ip",
+      "ip_address",
+      "user_id",
+      "userid",
+      "account_id",
+      "workspace_id",
+      "order_id",
+      "ticket_id",
+      "url",
+      "href",
+      "query",
+      "text",
+      "message",
+      "body",
+      "payload",
+      "session_id",
+      "visitor_id"
+    ]);
+    return sensitiveKeys.has(normalized) || normalized.endsWith("_id") || normalized.endsWith("_token") || normalized.endsWith("_secret") || normalized.endsWith("_password");
+  }
+  function looksSensitiveCustomDimensionValue(value) {
+    return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
+  }
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-query.js
+  var DEFAULT_LAST_MS = 7 * 24 * 60 * 60 * 1e3;
+  var MAX_LAST_MS = 370 * 24 * 60 * 60 * 1e3;
+  var AnalyticsMetricsQuerySchema = external_exports.object({
+    project_id: external_exports.string().guid(),
+    from: external_exports.string().datetime().optional(),
+    to: external_exports.string().datetime().optional(),
+    last: external_exports.string().trim().min(2).max(16).optional(),
+    granularity: AnalyticsMetricsGranularitySchema.optional().default("day"),
+    service: external_exports.string().trim().min(1).max(120).optional(),
+    environment: external_exports.string().trim().min(1).max(120).optional(),
+    route: external_exports.string().trim().min(1).max(2048).refine((value) => !value.includes("?") && !value.includes("#")).optional(),
+    device_type: external_exports.string().trim().min(1).max(40).optional(),
+    browser: external_exports.string().trim().min(1).max(80).optional(),
+    os: external_exports.string().trim().min(1).max(80).optional(),
+    language: external_exports.string().trim().min(1).max(40).optional(),
+    country: external_exports.string().trim().min(1).max(8).optional(),
+    auth_state: external_exports.enum(["anonymous", "authenticated", "unknown"]).optional(),
+    referrer: external_exports.string().trim().min(1).max(255).optional(),
+    utm_source: external_exports.string().trim().min(1).max(128).optional(),
+    utm_medium: external_exports.string().trim().min(1).max(128).optional(),
+    utm_campaign: external_exports.string().trim().min(1).max(128).optional(),
+    custom_dimensions: external_exports.record(external_exports.string().regex(/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/), external_exports.string().max(128)).refine((value) => Object.keys(value).length <= 8).optional(),
+    limit: external_exports.coerce.number().int().min(1).max(100).optional().default(10)
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-filter-options.js
+  function optionSet(schema) {
+    return external_exports.object({
+      values: external_exports.array(schema).max(100),
+      truncated: external_exports.boolean()
+    }).strict();
+  }
+  var fields = {
+    route: optionSet(AnalyticsMetricsQuerySchema.shape.route.unwrap()),
+    device_type: optionSet(AnalyticsMetricsQuerySchema.shape.device_type.unwrap()),
+    browser: optionSet(AnalyticsMetricsQuerySchema.shape.browser.unwrap()),
+    os: optionSet(AnalyticsMetricsQuerySchema.shape.os.unwrap()),
+    language: optionSet(AnalyticsMetricsQuerySchema.shape.language.unwrap()),
+    country: optionSet(AnalyticsMetricsQuerySchema.shape.country.unwrap()),
+    auth_state: optionSet(AnalyticsMetricsQuerySchema.shape.auth_state.unwrap()),
+    referrer: optionSet(AnalyticsMetricsQuerySchema.shape.referrer.unwrap()),
+    utm_source: optionSet(AnalyticsMetricsQuerySchema.shape.utm_source.unwrap()),
+    utm_medium: optionSet(AnalyticsMetricsQuerySchema.shape.utm_medium.unwrap()),
+    utm_campaign: optionSet(AnalyticsMetricsQuerySchema.shape.utm_campaign.unwrap())
+  };
+  var ANALYTICS_FILTER_OPTION_FIELDS = Object.freeze(Object.keys(fields));
+  var AnalyticsFilterOptionsQuerySchema = AnalyticsMetricsQuerySchema.pick({
+    project_id: true,
+    from: true,
+    to: true,
+    last: true,
+    granularity: true,
+    service: true,
+    environment: true,
+    limit: true
+  }).extend({ limit: external_exports.coerce.number().int().min(1).max(100).optional().default(100) });
+  var AnalyticsFilterOptionsResponseSchema = external_exports.object({
+    window: AnalyticsRouteMetricsResponseSchema.shape.window,
+    options: external_exports.object(fields).strict(),
+    custom_dimensions: external_exports.array(external_exports.object({
+      key: external_exports.string().regex(/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/),
+      values: external_exports.array(external_exports.string().max(128)).max(100),
+      truncated: external_exports.boolean()
+    }).strict()).max(8)
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/access-control.js
+  var OrganizationRoleSchema = external_exports.enum(["owner", "admin", "member"]);
+  var ProjectRoleSchema = external_exports.enum(["owner", "admin", "member", "viewer"]);
+  var ProjectMemberRoleSchema = external_exports.enum(["admin", "member", "viewer"]);
+  var MemberTokenPermissionSchema = external_exports.enum([
+    "project:read",
+    "project:write",
+    "project:admin",
+    "organization:admin"
+  ]);
+  var permissions = external_exports.array(MemberTokenPermissionSchema).min(1).max(4).refine((items) => new Set(items).size === items.length, "duplicate_permissions");
+  var projectIds = external_exports.array(external_exports.uuid()).min(1).max(100).refine((items) => new Set(items).size === items.length, "duplicate_projects");
+  var MemberTokenScopeDeclarationSchema = external_exports.discriminatedUnion("mode", [
+    external_exports.object({ mode: external_exports.literal("projects"), project_ids: projectIds, permissions }).strict(),
+    external_exports.object({ mode: external_exports.literal("organization"), organization_id: external_exports.uuid(), permissions }).strict()
+  ]).refine((scope) => scope.mode !== "projects" || !scope.permissions.includes("organization:admin"), "organization_permission_requires_organization_scope");
+  var MemberTokenPolicySchema = external_exports.discriminatedUnion("mode", [
+    external_exports.object({
+      version: external_exports.literal(1),
+      mode: external_exports.literal("projects"),
+      permissions,
+      projects: external_exports.array(external_exports.object({
+        project_id: external_exports.uuid(),
+        origin_project_ids: external_exports.array(external_exports.uuid()).min(1).max(1e3)
+      }).strict()).min(1).max(100)
+    }).strict(),
+    external_exports.object({
+      version: external_exports.literal(1),
+      mode: external_exports.literal("organization"),
+      permissions,
+      organization_id: external_exports.uuid()
+    }).strict()
+  ]).superRefine((policy, context) => {
+    if (policy.mode !== "projects")
+      return;
+    if (policy.permissions.includes("organization:admin"))
+      context.addIssue({
+        code: "custom",
+        message: "organization_permission_requires_organization_scope"
+      });
+    if (new Set(policy.projects.map((project) => project.project_id)).size !== policy.projects.length)
+      context.addIssue({ code: "custom", message: "duplicate_projects" });
+    if (new Set(policy.projects.flatMap((project) => project.origin_project_ids)).size > 1e3)
+      context.addIssue({ code: "custom", message: "project_scope_limit_exceeded" });
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/organization.js
+  var projectIds2 = external_exports.array(external_exports.uuid()).max(100).refine((ids) => new Set(ids).size === ids.length, "duplicate_projects");
+  var OrganizationInviteBodySchema = external_exports.object({
+    email: external_exports.email().max(320),
+    role: external_exports.enum(["admin", "member"]).default("member"),
+    project_access: external_exports.enum(["selected", "all"]).default("selected"),
+    default_project_role: external_exports.enum(["member", "viewer"]).default("member"),
+    project_ids: projectIds2.default([])
+  }).strict().refine((value) => value.project_ids.length === 0 || value.role === "member" && value.project_access === "selected", "selected_project_ids_require_selected_member_access");
+  var OrganizationMemberUpdateSchema = external_exports.object({
+    role: external_exports.enum(["admin", "member"]).optional(),
+    project_access: external_exports.enum(["selected", "all"]).optional(),
+    default_project_role: external_exports.enum(["member", "viewer"]).optional(),
+    suspended: external_exports.boolean().optional()
+  }).strict().refine((value) => Object.keys(value).length > 0, "empty_update");
+  var OrganizationSummarySchema = external_exports.object({
+    organization_id: external_exports.uuid(),
+    name: external_exports.string(),
+    plan: external_exports.enum(["free", "solo", "team", "business"]),
+    role: OrganizationRoleSchema
+  }).strict();
+  var OrganizationPersonSchema = external_exports.object({
+    user_id: external_exports.uuid(),
+    email: external_exports.email(),
+    role: OrganizationRoleSchema.nullable(),
+    avatar_url: external_exports.string().nullable().optional(),
+    project_access: external_exports.enum(["selected", "all"]),
+    default_project_role: external_exports.enum(["member", "viewer"]),
+    suspended_at: external_exports.string().nullable(),
+    grants_paused_at: external_exports.string().nullable(),
+    direct_project_count: external_exports.number().int().nonnegative()
+  }).strict();
+  var OrganizationInviteSchema = external_exports.object({
+    invite_id: external_exports.uuid(),
+    organization_id: external_exports.uuid(),
+    email: external_exports.email(),
+    role: external_exports.enum(["admin", "member"]),
+    project_access: external_exports.enum(["selected", "all"]),
+    default_project_role: external_exports.enum(["member", "viewer"]),
+    project_ids: projectIds2,
+    expires_at: external_exports.string(),
+    created_at: external_exports.string()
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/project-services.js
+  var ServiceDefinitionNameSchema = external_exports.string().min(1).max(120).regex(/^[^\u0000-\u001f\u007f]+$/).refine((value) => value.length === value.trim().length && value.trim().length > 0);
+  var RepositoryUrlSchema = external_exports.string().max(2e3).refine((value) => value === value.trim() && !/[\u0000-\u0020\u007f]/.test(value)).refine((value) => {
+    try {
+      const url2 = new URL(value);
+      return url2.protocol === "https:" && !url2.username && !url2.password && !url2.search && !url2.hash;
+    } catch {
+      return false;
+    }
+  });
+  var RepositoryRootSchema = external_exports.string().min(1).max(1e3).refine((value) => !/[\\\u0000-\u001f\u007f]/.test(value) && !value.startsWith("/") && value.split("/").every((part) => part.length > 0 && part !== "." && part !== ".."));
+  var metadata = {
+    name: ServiceDefinitionNameSchema,
+    description: external_exports.string().max(2e3).nullable().optional(),
+    repository_url: RepositoryUrlSchema.nullable().optional(),
+    repository_root: RepositoryRootSchema.nullable().optional()
+  };
+  var ServiceDefinitionCreateSchema = external_exports.object(metadata).strict();
+  var ServiceDefinitionUpdateSchema = external_exports.object(metadata).partial().strict().refine((input2) => Object.keys(input2).length > 0);
+  var ServiceDefinitionSchema = external_exports.object({
+    service_definition_id: external_exports.string().guid(),
+    project_id: external_exports.string().guid(),
+    origin_project_id: external_exports.string().guid(),
+    name: external_exports.string(),
+    input_name: external_exports.string(),
+    redacted_fields: external_exports.array(external_exports.enum([
+      "name",
+      "input_name",
+      "description",
+      "repository_url",
+      "repository_root",
+      "repository",
+      "environments"
+    ])).max(7).optional(),
+    description: external_exports.string().nullable(),
+    repository_url: external_exports.string().nullable(),
+    repository_root: external_exports.string().nullable(),
+    repository: external_exports.object({
+      url: external_exports.string(),
+      root: external_exports.string().nullable(),
+      source: external_exports.enum(["project", "service"])
+    }).nullable(),
+    environments: external_exports.array(external_exports.string()),
+    created_at: external_exports.string(),
+    updated_at: external_exports.string()
+  });
+  var ServiceDefinitionPageSchema = external_exports.object({
+    services: external_exports.array(ServiceDefinitionSchema),
+    next_cursor: external_exports.string().guid().nullable()
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/canonical-text-order.js
+  function compareCanonicalText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/project-consolidation.js
+  var projectIdentity = external_exports.string().guid().transform((value) => value.toLowerCase());
+  var ProjectServiceMappingSchema = external_exports.object({
+    source_project_id: projectIdentity,
+    service_definition_id: projectIdentity,
+    name: ServiceDefinitionNameSchema
+  }).strict();
+  var ProjectMergeRequestSchema = external_exports.object({
+    target_project_id: projectIdentity,
+    source_project_ids: external_exports.array(projectIdentity).min(1).max(15),
+    service_mappings: external_exports.array(ProjectServiceMappingSchema).max(1e3)
+  }).strict().refine((value) => {
+    const sources = new Set(value.source_project_ids);
+    return sources.size === value.source_project_ids.length && !sources.has(value.target_project_id);
+  }).transform((value) => ({
+    ...value,
+    source_project_ids: [...value.source_project_ids].sort(),
+    service_mappings: [...value.service_mappings].sort((a, b) => compareCanonicalText(a.source_project_id, b.source_project_id) || compareCanonicalText(a.service_definition_id, b.service_definition_id) || compareCanonicalText(a.name, b.name))
+  }));
+  var ProjectMergeStateSchema = external_exports.enum([
+    "queued",
+    "checking",
+    "applying",
+    "verifying",
+    "completed",
+    "cancelled",
+    "failed_before_commit",
+    "verification_failed_after_commit"
+  ]);
+  var ProjectMergeApplySchema = external_exports.object({
+    request: ProjectMergeRequestSchema,
+    plan_digest: external_exports.string().regex(/^[a-f0-9]{64}$/),
+    idempotency_key: external_exports.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/)
+  }).strict();
+  var digest = external_exports.string().regex(/^[a-f0-9]{64}$/);
+  var resourceLimit = external_exports.object({
+    resource: external_exports.string(),
+    count: external_exports.number().int().nonnegative(),
+    limit: external_exports.number().int().nonnegative()
+  }).strict();
+  var ProjectMergePlanSchema = external_exports.object({
+    target_project_id: projectIdentity,
+    source_project_ids: external_exports.array(projectIdentity),
+    service_mappings: external_exports.array(ProjectServiceMappingSchema),
+    plan_version: external_exports.literal(1),
+    runtime_contract: external_exports.string(),
+    plan_digest: digest,
+    ready: external_exports.boolean(),
+    origin_ids: external_exports.array(projectIdentity),
+    observed_rows: external_exports.number().int().nonnegative(),
+    blockers: external_exports.array(external_exports.object({
+      code: external_exports.string(),
+      project_id: projectIdentity.nullable(),
+      resource: external_exports.string().nullable()
+    }).strict()),
+    suggested_service_mappings: external_exports.array(ProjectServiceMappingSchema),
+    resource_limits: external_exports.array(resourceLimit)
+  }).strict();
+  var ProjectAdoptionManifestSchema = external_exports.object({
+    version: external_exports.literal(1),
+    canonical_project_id: projectIdentity,
+    origin_project_ids: external_exports.array(projectIdentity),
+    credential_strategy: external_exports.literal("retain_existing_tokens_and_input_names"),
+    services: external_exports.array(ServiceDefinitionSchema.extend({
+      retained_input_names: external_exports.array(external_exports.string()),
+      manual_review_required: external_exports.boolean()
+    })),
+    remaining_gates: external_exports.tuple([
+      external_exports.literal("authorised_repository_adoption"),
+      external_exports.literal("deployed_runtime_verification")
+    ])
+  }).strict();
+  var ProjectMergeReceiptSchema = external_exports.object({
+    canonical_project_id: projectIdentity,
+    origin_ids: external_exports.array(projectIdentity),
+    legacy_project_ids: external_exports.array(projectIdentity),
+    service_mappings: external_exports.array(ProjectServiceMappingSchema),
+    adoption_manifest: ProjectAdoptionManifestSchema.optional()
+  }).strict();
+  var ProjectMergeOperationSchema = external_exports.object({
+    operation_id: projectIdentity,
+    canonical_project_id: projectIdentity,
+    state: ProjectMergeStateSchema,
+    request: ProjectMergeRequestSchema,
+    plan_digest: digest,
+    receipt: ProjectMergeReceiptSchema.nullable(),
+    error_code: external_exports.string().nullable(),
+    committed_at: external_exports.string().datetime().nullable(),
+    verified_at: external_exports.string().datetime().nullable(),
+    created_at: external_exports.string().datetime(),
+    updated_at: external_exports.string().datetime(),
+    local_adoption: external_exports.literal("pending"),
+    deployed_runtime: external_exports.literal("pending")
+  }).strict();
+  var ProjectMergeVerificationSchema = external_exports.object({
+    operation_id: projectIdentity,
+    canonical_project_id: projectIdentity,
+    verified: external_exports.boolean(),
+    failures: external_exports.array(external_exports.string())
+  }).strict();
+  var ProjectMergeSelectorSchema = external_exports.union([
+    external_exports.object({ operation_id: projectIdentity }).strict(),
+    external_exports.object({ idempotency_key: ProjectMergeApplySchema.shape.idempotency_key }).strict()
+  ]);
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/evidence-bounds.js
   function utf8ByteLength(value, maxBytes) {
     if (value.length > maxBytes)
       return null;
@@ -20374,7 +21181,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return external_exports.string().max(maxBytes).refine((value) => withinUtf8Budget(value, maxBytes), "Evidence string exceeds its UTF-8 byte budget");
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/exception-evidence.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/exception-evidence.js
   var EXCEPTION_EVIDENCE_LIMITS = {
     nodes: 8,
     depth: 4,
@@ -20498,7 +21305,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/diagnostic-context.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/diagnostic-context.js
   var EvidenceReferenceIdSchema = external_exports.string().guid().refine((value) => {
     var _a5;
     return value[14] === "4" && /^[89ab]$/i.test((_a5 = value[19]) != null ? _a5 : "");
@@ -20594,7 +21401,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     limit_ms: external_exports.number().finite().nonnegative().nullable()
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/event-envelope.js
   var EVENT_INGESTION_MAX_BODY_BYTES = 256 * 1024;
   var EVENT_ENVELOPE_MAX_WIRE_BYTES = EVENT_INGESTION_MAX_BODY_BYTES - 13;
   function createUuidV4() {
@@ -21005,7 +21812,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return EventEnvelopeSchema.parse(candidate);
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/browser-resource-routes.js
   var BrowserResourceRoutesSchema = external_exports.object({
     items: external_exports.array(external_exports.object({ route: external_exports.string().max(1024), occurrences: external_exports.number().int().positive() })).max(20),
     recorded_occurrences: external_exports.number().int().nonnegative(),
@@ -21014,7 +21821,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     coverage: external_exports.enum(["occurrence_metadata", "retained_samples"])
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/browser-resource-context.js
   var BrowserResourceContextSchema = external_exports.object({
     version: external_exports.literal(1),
     host: external_exports.string().max(255).nullable(),
@@ -21050,7 +21857,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     })).max(10).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/bundle-evidence.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/bundle-evidence.js
   var EvidenceAvailabilitySchema = external_exports.enum([
     "observed",
     "unknown",
@@ -21094,7 +21901,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     items: external_exports.array(external_exports.object({ source_event_id: external_exports.string().guid(), observation: ResourceObservationSchema }).strict()).max(10)
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/evidence-interpretation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/evidence-interpretation.js
   var EvidenceInterpretationSchema = external_exports.object({
     version: external_exports.literal(1),
     status: external_exports.enum(["unavailable", "legacy", "partial", "observed"]),
@@ -21133,7 +21940,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     next_evidence: external_exports.array(external_exports.string().max(512)).max(6)
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/evidence-capabilities.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/evidence-capabilities.js
   var EvidenceCapabilityValues = [
     "exception_evidence_v1",
     "resource_observations_v1",
@@ -21145,7 +21952,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     features: external_exports.array(external_exports.enum(EvidenceCapabilityValues)).max(EvidenceCapabilityValues.length)
   }).strict().refine((value) => new Set(value.features).size === value.features.length, "Evidence capabilities must be unique");
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/evidence-emission.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/evidence-emission.js
   function descriptor(value) {
     const parsed = EvidenceCapabilitiesSchema.safeParse(value);
     return {
@@ -21170,26 +21977,26 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       return downgraded;
     }
   };
-  function omitPayloadFields(event, fields) {
+  function omitPayloadFields(event, fields2) {
     const payload = { ...event.payload };
-    for (const field of fields)
+    for (const field of fields2)
       delete payload[field];
     return { ...event, payload };
   }
   function withoutOptionalExceptionEvidence(event, mark = false) {
     if (event.event_type !== "backend_exception" && event.event_type !== "frontend_exception")
       return null;
-    const fields = ["exception_evidence", "resource_observations", "execution"].filter((field) => Object.prototype.hasOwnProperty.call(event.payload, field));
-    if (fields.length === 0)
+    const fields2 = ["exception_evidence", "resource_observations", "execution"].filter((field) => Object.prototype.hasOwnProperty.call(event.payload, field));
+    if (fields2.length === 0)
       return null;
-    const reduced = omitPayloadFields(event, fields);
+    const reduced = omitPayloadFields(event, fields2);
     return mark ? {
       ...reduced,
       context: {
         ...event.context,
         evidence_limits: {
           version: 1,
-          ...Object.fromEntries(fields.map((field) => [field, "budget_exceeded"]))
+          ...Object.fromEntries(fields2.map((field) => [field, "budget_exceeded"]))
         }
       }
     } : reduced;
@@ -21199,13 +22006,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     const features = descriptor(capabilityProof).features;
     if (event.event_type === "diagnostic_context")
       return features.includes(event.payload.kind === "recovery" ? "recovery_v1" : "resource_observations_v1") ? event : null;
-    const fields = [];
+    const fields2 = [];
     if (!features.includes("exception_evidence_v1"))
-      fields.push("exception_evidence", "execution");
+      fields2.push("exception_evidence", "execution");
     if (!features.includes("resource_observations_v1"))
-      fields.push("resource_observations");
-    const changed = fields.some((field) => Object.prototype.hasOwnProperty.call(event.payload, field));
-    let result = changed ? omitPayloadFields(event, fields) : event;
+      fields2.push("resource_observations");
+    const changed = fields2.some((field) => Object.prototype.hasOwnProperty.call(event.payload, field));
+    let result = changed ? omitPayloadFields(event, fields2) : event;
     if (!features.includes("recovery_v1") && !features.includes("resource_observations_v1") && EvidenceReferenceSchema.safeParse((_a5 = event.context) == null ? void 0 : _a5["evidence_reference"]).success) {
       const context = { ...event.context };
       delete context["evidence_reference"];
@@ -21214,7 +22021,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return result;
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/ingestion-wire.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/ingestion-wire.js
   function fitEventToIngestionWire(event) {
     var _a5, _b;
     const fits = (candidate) => withinUtf8Budget(JSON.stringify(candidate), EVENT_ENVELOPE_MAX_WIRE_BYTES);
@@ -21240,7 +22047,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/diagnostic-capture-budget.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/diagnostic-capture-budget.js
   var MAX_BYTES = 64 * 1024;
   var MAX_FAILURES = 50;
   var WINDOW_MS = 5 * 60 * 1e3;
@@ -21426,7 +22233,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/stack-frames.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/stack-frames.js
   function coordinate(value) {
     if (value === void 0)
       return null;
@@ -21445,12 +22252,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (safeFile !== null && !withinUtf8Budget(safeFile, 2048) || fn !== null && !withinUtf8Budget(fn, 256))
       return null;
     const text = `${safeFile != null ? safeFile : ""} ${fn != null ? fn : ""}`;
-    const classification = /node_modules[/\\]@debugbundle[/\\]|vendor[/\\]debugbundle[/\\]|wp-content\/plugins\/debugbundle\/|debugbundle-browser(?:-sdk)?(?:\.js|\/)|\bcom\.debugbundle\.sdk\.|\bDebugBundle\./i.test(text) ? "sdk" : /(?:^|[/\\])(?:node_modules|vendor|site-packages|\.venv|gems)[/\\]|^node:|\b(?:java|javax|jdk|sun|kotlin|kotlinx)\./.test(text) ? "framework" : safeFile !== null && /(?:^|[/\\])(?:src|app|srv)[/\\]/.test(safeFile) && !/^https?:\/\//.test(safeFile) ? "application" : "unknown";
+    const classification = /node_modules[/\\]@debugbundle[/\\]|vendor[/\\]debugbundle[/\\]|wp-content\/plugins\/debugbundle\/|debugbundle-browser(?:-sdk)?(?:\.js|\/)|\bcom\.debugbundle\.sdk\.|\bDebugBundle\./i.test(text) || /^debugbundle::/.test(fn != null ? fn : "") ? "sdk" : /(?:^|[/\\])(?:node_modules|vendor|site-packages|\.venv|gems)[/\\]|^node:|\b(?:java|javax|jdk|sun|kotlin|kotlinx)\./.test(text) || /^(?:axum|actix_web|actix_http|tokio|tower)::/.test(fn != null ? fn : "") ? "framework" : safeFile !== null && /(?:^|[/\\])(?:src|app|srv)[/\\]/.test(safeFile) && !/^https?:\/\//.test(safeFile) ? "application" : "unknown";
     return { function: fn, file: safeFile, line: parsedLine, column: parsedColumn, classification };
   }
   function parseLine(text, previous, runtime) {
-    var _a5, _b;
+    var _a5, _b, _c;
     let match;
+    if ((runtime === "rust" || runtime === "unknown") && (match = /^at\s+(.+\.rs):(\d+)(?::(\d+))?$/.exec(text))) {
+      const symbol2 = (_a5 = /^\d+:\s+(.+)$/.exec(previous)) == null ? void 0 : _a5[1];
+      if (symbol2)
+        return frame(match[1], match[2], match[3], symbol2);
+    }
     if (match = /^#\d+\s+(.+?)\((\d+)\):\s*([^\r\n(]+)(?:\(|$)/.exec(text))
       return frame(match[1], match[2], void 0, match[3]);
     if (match = /^File\s+"?(.+?)"?,\s+line\s+(\d+),\s+in\s+(.+)$/.exec(text))
@@ -21462,7 +22274,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (match = /^(.+?)\(\)\s+at\s+(.+):(\d+)$/.exec(text))
       return frame(match[2], match[3], void 0, match[1]);
     if (match = /^(.+\.go):(\d+)(?:\s+\+0x[\da-f]+)?$/i.exec(text))
-      return frame(match[1], match[2], void 0, (_b = (_a5 = previous.match(/^([^()]+)\(/)) == null ? void 0 : _a5[1]) != null ? _b : null);
+      return frame(match[1], match[2], void 0, (_c = (_b = previous.match(/^([^()]+)\(/)) == null ? void 0 : _b[1]) != null ? _c : null);
     if (match = /^at\s+([^()]+)\((Native Method|Unknown Source)\)$/.exec(text))
       return frame(null, void 0, void 0, match[1]);
     if (match = /^at\s+(.+?)\s*\((.+?):(\d+)(?::(\d+))?\)$/.exec(text))
@@ -21508,7 +22320,151 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/smart-report-limits.js
+  var BUSINESS_SMART_REPORT_RUNS_PER_MONTH = 40;
+  var BUSINESS_SMART_REPORT_DEFINITIONS = 5;
+  var MAX_SMART_REPORT_PROJECTS = 10;
+  var MAX_SMART_REPORT_RECIPIENTS = 10;
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/tier-capabilities.js
+  var NO_SMART_REPORT_CAPABILITIES = {
+    smart_reports: false,
+    monthly_smart_report_generations: 0,
+    max_smart_report_definitions: 0,
+    max_smart_report_projects: 0,
+    max_smart_report_recipients: 0
+  };
+  var TEAM_CAPABILITIES = {
+    ...NO_SMART_REPORT_CAPABILITIES,
+    smart_reports: true,
+    monthly_smart_report_generations: 8,
+    max_smart_report_definitions: 2,
+    max_smart_report_projects: 5,
+    max_smart_report_recipients: 5,
+    remote_probes: true,
+    github_automation: true,
+    slack_integration: true,
+    cloud_improvement_bundles: true,
+    analytics_bundle: true,
+    shared_dashboards: true,
+    member_invites: true,
+    included_capacity_units: 15,
+    max_members: 1e3,
+    ingestion_rate_per_min: 1e4,
+    retrieval_rate_per_min: 500,
+    bundle_retention_days: 90,
+    raw_event_retention_days: 30,
+    // Per-unit allowance (multiply by included and purchased capacity units)
+    monthly_bundle_requests: 1e3,
+    monthly_raw_ingested_events: 1e4,
+    retained_bundle_cap: 400,
+    monthly_remote_activations: 50,
+    monthly_alert_deliveries: 300,
+    monthly_webhook_deliveries: 1e3,
+    monthly_analytics_events: 25e3,
+    monthly_analytics_sessions: 5e3,
+    monthly_analytics_journey_samples: 1e3,
+    monthly_analytics_bundle_generations: 100,
+    max_analytics_saved_funnels: 50,
+    max_analytics_custom_dimensions: 8,
+    analytics_hourly_retention_days: 90,
+    availability_checks_per_project: 5,
+    availability_monitored_projects_per_organization: 10,
+    availability_active_checks_per_organization: 30,
+    availability_check_min_interval_seconds: 60,
+    availability_check_recommended_failure_threshold: 2
+  };
+  var TIER_CAPABILITIES = {
+    free: {
+      ...NO_SMART_REPORT_CAPABILITIES,
+      remote_probes: false,
+      github_automation: false,
+      slack_integration: false,
+      cloud_improvement_bundles: false,
+      analytics_bundle: true,
+      shared_dashboards: false,
+      member_invites: false,
+      included_capacity_units: 1,
+      max_members: 1,
+      ingestion_rate_per_min: 1e3,
+      retrieval_rate_per_min: 100,
+      bundle_retention_days: 7,
+      raw_event_retention_days: 7,
+      // Allowance buckets (account-level pool, not per capacity unit)
+      monthly_bundle_requests: 100,
+      monthly_raw_ingested_events: 750,
+      retained_bundle_cap: 50,
+      monthly_remote_activations: 0,
+      monthly_alert_deliveries: 25,
+      monthly_webhook_deliveries: 100,
+      monthly_analytics_events: 5e3,
+      monthly_analytics_sessions: 1e3,
+      monthly_analytics_journey_samples: 100,
+      monthly_analytics_bundle_generations: 3,
+      max_analytics_saved_funnels: 1,
+      max_analytics_custom_dimensions: 1,
+      analytics_hourly_retention_days: 7,
+      availability_checks_per_project: 1,
+      availability_monitored_projects_per_organization: 3,
+      availability_active_checks_per_organization: 3,
+      availability_check_min_interval_seconds: 300,
+      availability_check_recommended_failure_threshold: 3
+    },
+    solo: {
+      ...NO_SMART_REPORT_CAPABILITIES,
+      smart_reports: true,
+      monthly_smart_report_generations: 2,
+      max_smart_report_definitions: 1,
+      max_smart_report_projects: 3,
+      max_smart_report_recipients: 1,
+      remote_probes: true,
+      github_automation: true,
+      slack_integration: false,
+      cloud_improvement_bundles: true,
+      analytics_bundle: true,
+      shared_dashboards: false,
+      member_invites: false,
+      included_capacity_units: 3,
+      max_members: 1,
+      ingestion_rate_per_min: 5e3,
+      retrieval_rate_per_min: 300,
+      bundle_retention_days: 30,
+      raw_event_retention_days: 14,
+      // Per-unit allowance (multiply by included and purchased capacity units)
+      monthly_bundle_requests: 250,
+      monthly_raw_ingested_events: 3500,
+      retained_bundle_cap: 150,
+      monthly_remote_activations: 25,
+      monthly_alert_deliveries: 75,
+      monthly_webhook_deliveries: 250,
+      monthly_analytics_events: 5e4,
+      monthly_analytics_sessions: 1e4,
+      monthly_analytics_journey_samples: 1e3,
+      monthly_analytics_bundle_generations: 25,
+      max_analytics_saved_funnels: 10,
+      max_analytics_custom_dimensions: 3,
+      analytics_hourly_retention_days: 30,
+      availability_checks_per_project: 3,
+      availability_monitored_projects_per_organization: 10,
+      availability_active_checks_per_organization: 30,
+      availability_check_min_interval_seconds: 60,
+      availability_check_recommended_failure_threshold: 3
+    },
+    team: TEAM_CAPABILITIES,
+    business: {
+      ...TEAM_CAPABILITIES,
+      smart_reports: true,
+      monthly_smart_report_generations: BUSINESS_SMART_REPORT_RUNS_PER_MONTH,
+      max_smart_report_definitions: BUSINESS_SMART_REPORT_DEFINITIONS,
+      max_smart_report_projects: MAX_SMART_REPORT_PROJECTS,
+      max_smart_report_recipients: MAX_SMART_REPORT_RECIPIENTS,
+      included_capacity_units: 30,
+      availability_checks_per_project: 10,
+      availability_active_checks_per_organization: 50
+    }
+  };
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/capture-policy.js
   var EventClassValues = [
     "incident_signal",
     "context_signal",
@@ -21666,7 +22622,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     409
   ]);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/capture-rule-schemas.js
   var CAPTURE_RULE_EVENT_TYPES = [
     "backend_exception",
     "request_event",
@@ -21686,12 +22642,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     "java",
     "go",
     "ruby",
+    "dotnet",
+    "rust",
+    "android",
+    "swift",
+    "react-native",
     "unknown"
   ];
-  var CaptureRuleActionValues = ["demote", "sample", "drop"];
+  var CaptureRuleActionValues = ["demote", "sample", "drop", "threshold", "allow"];
   var CaptureRuleActionSchema = external_exports.enum(CaptureRuleActionValues);
   var CaptureRuleSampleEventClassValues = ["preserve", "context"];
   var CaptureRuleSampleEventClassSchema = external_exports.enum(CaptureRuleSampleEventClassValues);
+  var CaptureRuleThresholdGroupByValues = ["resource", "fingerprint"];
+  var CaptureRuleThresholdGroupBySchema = external_exports.enum(CaptureRuleThresholdGroupByValues);
   var CaptureRuleRuntimeSchema = external_exports.enum(CAPTURE_RULE_RUNTIME_VALUES);
   var CaptureRuleEventTypeSchema = external_exports.enum(CAPTURE_RULE_EVENT_TYPES);
   var BrowserEventKindSchema = external_exports.enum(["window_error", "resource_error"]);
@@ -21772,6 +22735,29 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }).refine((value) => hasValue(value.host) || hasValue(value.host_suffix) || hasValue(value.path_prefix) || hasValue(value.path_equals), {
     message: "URL matchers must include at least one host or path constraint."
   });
+  var ExactUrlMatcherSchema = external_exports.object({
+    host: external_exports.string().trim().min(1).max(255),
+    path_equals: external_exports.string().trim().min(1).max(1024)
+  }).strict().transform((value) => ({
+    host: value.host.toLowerCase(),
+    path_equals: value.path_equals.startsWith("/") ? value.path_equals : `/${value.path_equals}`
+  }));
+  function normalizeExactUrlMatchers(values) {
+    if (values === void 0) {
+      return void 0;
+    }
+    const seen = /* @__PURE__ */ new Set();
+    const normalized = [];
+    for (const entry of values) {
+      const key2 = `${entry.host}\0${entry.path_equals}`;
+      if (seen.has(key2)) {
+        continue;
+      }
+      seen.add(key2);
+      normalized.push(entry);
+    }
+    return normalized;
+  }
   var StatusRangeSchema = external_exports.object({
     start: external_exports.number().int().min(100).max(599),
     end: external_exports.number().int().min(100).max(599)
@@ -21812,6 +22798,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     client_kind: CaptureRuleClientKindSchema.optional(),
     bot_family: external_exports.string().min(1).max(120).optional(),
     resource_url: UrlMatcherSchema.optional(),
+    resource_urls: external_exports.array(ExactUrlMatcherSchema).min(1).max(10).optional(),
     request_url: UrlMatcherSchema.optional(),
     status_codes: external_exports.array(external_exports.number().int().min(100).max(599)).min(1).optional(),
     status_ranges: external_exports.array(StatusRangeSchema).min(1).optional(),
@@ -21827,6 +22814,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     const messageEquals = normalizeOptionalTrimmedString(value.message_equals);
     const botFamily = normalizeOptionalTrimmedString(value.bot_family);
     const browserTargetTagName = normalizeOptionalTrimmedString(value.browser_target_tag_name);
+    const resourceUrls = normalizeExactUrlMatchers(value.resource_urls);
     const statusCodes = normalizeNumberArray(value.status_codes);
     if (eventTypes !== void 0) {
       normalized.event_types = eventTypes;
@@ -21879,6 +22867,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (value.resource_url !== void 0) {
       normalized.resource_url = value.resource_url;
     }
+    if (resourceUrls !== void 0) {
+      normalized.resource_urls = resourceUrls;
+    }
     if (value.request_url !== void 0) {
       normalized.request_url = value.request_url;
     }
@@ -21910,6 +22901,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       "client_kind",
       "bot_family",
       "resource_url",
+      "resource_urls",
       "request_url",
       "status_codes",
       "status_ranges",
@@ -21921,8 +22913,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         message: "Capture rules must include at least one narrowing field beyond event_types."
       });
     }
+    if (hasValue(value.resource_url) && hasValue(value.resource_urls)) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["resource_urls"],
+        message: "Capture rules cannot combine resource_url and resource_urls."
+      });
+    }
     if (value.browser_event_kind === "resource_error") {
-      const hasResourceConstraint = hasValue(value.resource_url) || hasValue(value.fingerprint);
+      const hasResourceConstraint = hasValue(value.resource_url) || hasValue(value.resource_urls) || hasValue(value.fingerprint);
       if (!hasResourceConstraint) {
         context.addIssue({
           code: external_exports.ZodIssueCode.custom,
@@ -21939,42 +22938,112 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     matcher: CaptureRuleMatcherSchema,
     sample_rate: external_exports.number().min(0).max(1).nullable(),
     sample_event_class: CaptureRuleSampleEventClassSchema.nullable(),
+    threshold_count: external_exports.number().int().min(2).max(1e3).nullable().optional(),
+    threshold_window_seconds: external_exports.number().int().min(60).max(86400).nullable().optional(),
+    threshold_group_by: CaptureRuleThresholdGroupBySchema.nullable().optional(),
     created_by_user_id: external_exports.string().min(1).max(120).nullable(),
     created_from_incident_id: external_exports.string().min(1).max(120).nullable(),
     created_from_event_id: external_exports.string().min(1).max(120).nullable(),
     expires_at: external_exports.string().datetime().nullable()
   });
+  function validateResourceThresholdMatcher(matcher, context) {
+    if (matcher === void 0) {
+      return;
+    }
+    const allowsFrontendException = matcher.event_types === void 0 || matcher.event_types.includes("frontend_exception");
+    if (matcher.browser_event_kind !== "resource_error" || !allowsFrontendException) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["threshold_group_by"],
+        message: "Resource threshold grouping requires a browser resource_error matcher."
+      });
+    }
+  }
   function addCaptureRuleActionValidation(schema) {
     return schema.superRefine((value, context) => {
-      if (value["action"] === "sample") {
-        if (value["sample_rate"] === null) {
+      const action = value["action"];
+      const sampleRate = value["sample_rate"];
+      const sampleEventClass = value["sample_event_class"];
+      const thresholdCount = value["threshold_count"];
+      const thresholdWindowSeconds = value["threshold_window_seconds"];
+      const thresholdGroupBy = value["threshold_group_by"];
+      const matcher = value["matcher"];
+      if (action === "sample") {
+        if (sampleRate === null || sampleRate === void 0) {
           context.addIssue({
             code: external_exports.ZodIssueCode.custom,
             path: ["sample_rate"],
             message: "Sample rules require sample_rate."
           });
         }
-        if (value["sample_event_class"] === null) {
+        if (sampleEventClass === null || sampleEventClass === void 0) {
           context.addIssue({
             code: external_exports.ZodIssueCode.custom,
             path: ["sample_event_class"],
             message: "Sample rules require sample_event_class."
           });
         }
+      } else {
+        if (hasValue(sampleRate)) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["sample_rate"],
+            message: "Only sample rules can set sample_rate."
+          });
+        }
+        if (hasValue(sampleEventClass)) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["sample_event_class"],
+            message: "Only sample rules can set sample_event_class."
+          });
+        }
+      }
+      if (action === "threshold") {
+        if (!hasValue(thresholdCount)) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["threshold_count"],
+            message: "Threshold rules require threshold_count."
+          });
+        }
+        if (!hasValue(thresholdWindowSeconds)) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["threshold_window_seconds"],
+            message: "Threshold rules require threshold_window_seconds."
+          });
+        }
+        if (!hasValue(thresholdGroupBy)) {
+          context.addIssue({
+            code: external_exports.ZodIssueCode.custom,
+            path: ["threshold_group_by"],
+            message: "Threshold rules require threshold_group_by."
+          });
+        } else if (thresholdGroupBy === "resource") {
+          validateResourceThresholdMatcher(matcher, context);
+        }
         return;
       }
-      if (value["sample_rate"] !== null) {
+      if (hasValue(thresholdCount)) {
         context.addIssue({
           code: external_exports.ZodIssueCode.custom,
-          path: ["sample_rate"],
-          message: "Only sample rules can set sample_rate."
+          path: ["threshold_count"],
+          message: "Only threshold rules can set threshold_count."
         });
       }
-      if (value["sample_event_class"] !== null) {
+      if (hasValue(thresholdWindowSeconds)) {
         context.addIssue({
           code: external_exports.ZodIssueCode.custom,
-          path: ["sample_event_class"],
-          message: "Only sample rules can set sample_event_class."
+          path: ["threshold_window_seconds"],
+          message: "Only threshold rules can set threshold_window_seconds."
+        });
+      }
+      if (hasValue(thresholdGroupBy)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_group_by"],
+          message: "Only threshold rules can set threshold_group_by."
         });
       }
     });
@@ -21982,6 +23051,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var CaptureRuleSchema = addCaptureRuleActionValidation(CaptureRuleCoreObjectSchema.extend({
     id: external_exports.string().guid(),
     project_id: external_exports.string().min(1).max(120),
+    scope_origin_ids: external_exports.array(external_exports.string().guid()).max(1e3).nullable().optional(),
+    filter_project_id: external_exports.string().guid().nullable().optional(),
     hit_count: external_exports.number().int().nonnegative(),
     last_matched_at: external_exports.string().datetime().nullable(),
     created_at: external_exports.string().datetime(),
@@ -21995,6 +23066,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     matcher: CaptureRuleMatcherSchema,
     sample_rate: external_exports.number().min(0).max(1).nullable().optional(),
     sample_event_class: CaptureRuleSampleEventClassSchema.nullable().optional(),
+    threshold_count: external_exports.number().int().min(2).max(1e3).nullable().optional(),
+    threshold_window_seconds: external_exports.number().int().min(60).max(86400).nullable().optional(),
+    threshold_group_by: CaptureRuleThresholdGroupBySchema.nullable().optional(),
     created_by_user_id: external_exports.string().min(1).max(120).nullable().default(null),
     created_from_incident_id: external_exports.string().min(1).max(120).nullable().default(null),
     created_from_event_id: external_exports.string().min(1).max(120).nullable().default(null),
@@ -22008,20 +23082,67 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           message: "Sample rules require sample_rate."
         });
       }
+    } else {
+      if (value.sample_rate !== void 0 && value.sample_rate !== null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_rate"],
+          message: "Only sample rules can set sample_rate."
+        });
+      }
+      if (value.sample_event_class !== void 0 && value.sample_event_class !== null) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_event_class"],
+          message: "Only sample rules can set sample_event_class."
+        });
+      }
+    }
+    if (value.action === "threshold") {
+      if (!hasValue(value.threshold_count)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_count"],
+          message: "Threshold rules require threshold_count."
+        });
+      }
+      if (!hasValue(value.threshold_window_seconds)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_window_seconds"],
+          message: "Threshold rules require threshold_window_seconds."
+        });
+      }
+      if (!hasValue(value.threshold_group_by)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_group_by"],
+          message: "Threshold rules require threshold_group_by."
+        });
+      } else if (value.threshold_group_by === "resource") {
+        validateResourceThresholdMatcher(value.matcher, context);
+      }
       return;
     }
-    if (value.sample_rate !== void 0 && value.sample_rate !== null) {
+    if (hasValue(value.threshold_count)) {
       context.addIssue({
         code: external_exports.ZodIssueCode.custom,
-        path: ["sample_rate"],
-        message: "Only sample rules can set sample_rate."
+        path: ["threshold_count"],
+        message: "Only threshold rules can set threshold_count."
       });
     }
-    if (value.sample_event_class !== void 0 && value.sample_event_class !== null) {
+    if (hasValue(value.threshold_window_seconds)) {
       context.addIssue({
         code: external_exports.ZodIssueCode.custom,
-        path: ["sample_event_class"],
-        message: "Only sample rules can set sample_event_class."
+        path: ["threshold_window_seconds"],
+        message: "Only threshold rules can set threshold_window_seconds."
+      });
+    }
+    if (hasValue(value.threshold_group_by)) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["threshold_group_by"],
+        message: "Only threshold rules can set threshold_group_by."
       });
     }
   }).transform((value) => {
@@ -22029,10 +23150,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return {
       ...value,
       sample_rate: value.action === "sample" ? value.sample_rate : null,
-      sample_event_class: value.action === "sample" ? (_a5 = value.sample_event_class) != null ? _a5 : "preserve" : null
+      sample_event_class: value.action === "sample" ? (_a5 = value.sample_event_class) != null ? _a5 : "preserve" : null,
+      threshold_count: value.action === "threshold" ? value.threshold_count : null,
+      threshold_window_seconds: value.action === "threshold" ? value.threshold_window_seconds : null,
+      threshold_group_by: value.action === "threshold" ? value.threshold_group_by : null
     };
   });
   var CaptureRuleUpdateSchema = external_exports.object({
+    project_scope: external_exports.literal("current_project").optional(),
     name: external_exports.string().trim().min(1).max(120).optional(),
     description: external_exports.string().trim().max(500).nullable().optional(),
     enabled: external_exports.boolean().optional(),
@@ -22040,6 +23165,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     matcher: CaptureRuleMatcherSchema.optional(),
     sample_rate: external_exports.number().min(0).max(1).nullable().optional(),
     sample_event_class: CaptureRuleSampleEventClassSchema.nullable().optional(),
+    threshold_count: external_exports.number().int().min(2).max(1e3).nullable().optional(),
+    threshold_window_seconds: external_exports.number().int().min(60).max(86400).nullable().optional(),
+    threshold_group_by: CaptureRuleThresholdGroupBySchema.nullable().optional(),
     expires_at: external_exports.string().datetime().nullable().optional()
   }).superRefine((value, context) => {
     if (Object.keys(value).length === 0) {
@@ -22050,34 +23178,81 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
     const resolvedAction = value.action;
     if (resolvedAction === "sample") {
-      if (!("sample_rate" in value)) {
+      if (!("sample_rate" in value) || value.sample_rate === null) {
         context.addIssue({
           code: external_exports.ZodIssueCode.custom,
           path: ["sample_rate"],
           message: "Sample rule updates must include sample_rate when changing action to sample."
         });
       }
-      if (!("sample_event_class" in value)) {
+      if (!("sample_event_class" in value) || value.sample_event_class === null) {
         context.addIssue({
           code: external_exports.ZodIssueCode.custom,
           path: ["sample_event_class"],
           message: "Sample rule updates must include sample_event_class when changing action to sample."
         });
       }
+    } else {
+      if ("sample_rate" in value) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_rate"],
+          message: "Sample rule fields can only be updated while setting action to sample."
+        });
+      }
+      if ("sample_event_class" in value) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["sample_event_class"],
+          message: "Sample rule fields can only be updated while setting action to sample."
+        });
+      }
+    }
+    if (resolvedAction === "threshold") {
+      if (!("threshold_count" in value) || !hasValue(value.threshold_count)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_count"],
+          message: "Threshold rule updates must include threshold_count when changing action to threshold."
+        });
+      }
+      if (!("threshold_window_seconds" in value) || !hasValue(value.threshold_window_seconds)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_window_seconds"],
+          message: "Threshold rule updates must include threshold_window_seconds when changing action to threshold."
+        });
+      }
+      if (!("threshold_group_by" in value) || !hasValue(value.threshold_group_by)) {
+        context.addIssue({
+          code: external_exports.ZodIssueCode.custom,
+          path: ["threshold_group_by"],
+          message: "Threshold rule updates must include threshold_group_by when changing action to threshold."
+        });
+      } else if (value.threshold_group_by === "resource" && value.matcher !== void 0) {
+        validateResourceThresholdMatcher(value.matcher, context);
+      }
       return;
     }
-    if ("sample_rate" in value) {
+    if ("threshold_count" in value) {
       context.addIssue({
         code: external_exports.ZodIssueCode.custom,
-        path: ["sample_rate"],
-        message: "Sample rule fields can only be updated while setting action to sample."
+        path: ["threshold_count"],
+        message: "Threshold rule fields can only be updated while setting action to threshold."
       });
     }
-    if ("sample_event_class" in value) {
+    if ("threshold_window_seconds" in value) {
       context.addIssue({
         code: external_exports.ZodIssueCode.custom,
-        path: ["sample_event_class"],
-        message: "Sample rule fields can only be updated while setting action to sample."
+        path: ["threshold_window_seconds"],
+        message: "Threshold rule fields can only be updated while setting action to threshold."
+      });
+    }
+    if ("threshold_group_by" in value) {
+      context.addIssue({
+        code: external_exports.ZodIssueCode.custom,
+        path: ["threshold_group_by"],
+        message: "Threshold rule fields can only be updated while setting action to threshold."
       });
     }
   });
@@ -22093,7 +23268,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     rules: external_exports.array(CaptureRuleSchema)
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/capture-rule-evaluation-context.js
   var CaptureRuleEvaluationUrlSchema = external_exports.object({
     host: external_exports.string().min(1).transform((value) => value.toLowerCase()).optional(),
     path: external_exports.string().min(1).transform((value) => value.startsWith("/") ? value : `/${value}`)
@@ -22103,6 +23278,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     event_id: external_exports.string().guid(),
     event_type: CaptureRuleEventTypeSchema,
     service: external_exports.string().min(1).optional(),
+    service_aliases: external_exports.array(external_exports.string().min(1)).max(1e3).optional(),
     environment: external_exports.string().min(1).optional(),
     runtime: CaptureRuleRuntimeSchema,
     first_party: external_exports.boolean().optional(),
@@ -22133,7 +23309,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     fingerprint_aliases: external_exports.array(CaptureRuleFingerprintSchema).max(2).optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/capture-rule-suggestions.js
   var CaptureRuleSuggestionConfidenceSchema = external_exports.enum(["high", "medium", "low"]);
   var CaptureRuleSuggestionSchema = external_exports.object({
     suggestion_id: external_exports.string().min(1).max(120),
@@ -22160,7 +23336,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     expires_at: external_exports.string().datetime().nullable().optional()
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/improvement-settings.js
   var ImprovementBundleSensitivityValues = [
     "high_confidence",
     "balanced",
@@ -22183,471 +23359,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     message: "At least one improvement settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics.js
-  var ANALYTICS_EVENT_SCHEMA_VERSION = "2026-07-analytics-01";
-  var ANALYTICS_BUNDLE_SCHEMA_VERSION = "analytics_bundle.v1";
-  var MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT = 8;
-  var AnalyticsEventKindValues = [
-    "session_start",
-    "page_view",
-    "route_change",
-    "action",
-    "funnel_step",
-    "conversion",
-    "journey_marker",
-    "session_summary"
-  ];
-  var AnalyticsEventKindSchema = external_exports.enum(AnalyticsEventKindValues);
-  var AnalyticsPrivacyModeValues = ["strict", "standard", "custom"];
-  var AnalyticsPrivacyModeSchema = external_exports.enum(AnalyticsPrivacyModeValues);
-  var AnalyticsAuthStateValues = ["anonymous", "authenticated", "unknown"];
-  var AnalyticsAuthStateSchema = external_exports.enum(AnalyticsAuthStateValues);
-  var AnalyticsDeviceTypeValues = ["desktop", "mobile", "tablet", "unknown"];
-  var AnalyticsDeviceTypeSchema = external_exports.enum(AnalyticsDeviceTypeValues);
-  var AnalyticsViewportBucketValues = ["small", "medium", "large", "unknown"];
-  var AnalyticsViewportBucketSchema = external_exports.enum(AnalyticsViewportBucketValues);
-  var AnalyticsBundleAnalysisKindValues = [
-    "usage_summary",
-    "route_health",
-    "funnel_dropoff",
-    "journey_friction",
-    "feature_usage",
-    "incident_impact",
-    "deploy_comparison",
-    "conversion_path"
-  ];
-  var AnalyticsBundleAnalysisKindSchema = external_exports.enum(AnalyticsBundleAnalysisKindValues);
-  var AnalyticsBundleConfidenceValues = ["low", "medium", "high"];
-  var AnalyticsBundleConfidenceSchema = external_exports.enum(AnalyticsBundleConfidenceValues);
-  var AnalyticsBundleSeverityValues = ["low", "medium", "high"];
-  var AnalyticsBundleSeveritySchema = external_exports.enum(AnalyticsBundleSeverityValues);
-  var AnalyticsBundleGranularityValues = ["hour", "day", "week", "month"];
-  var AnalyticsBundleGranularitySchema = external_exports.enum(AnalyticsBundleGranularityValues);
-  var AnalyticsMetricsGranularityValues = ["hour", "day"];
-  var AnalyticsMetricsGranularitySchema = external_exports.enum(AnalyticsMetricsGranularityValues);
-  var AnalyticsSafeHashSchema = external_exports.string().regex(/^sha256:[a-f0-9]{64}$/i);
-  var AnalyticsNullableHashSchema = AnalyticsSafeHashSchema.nullable();
-  var AnalyticsNullableTextSchema = (max) => external_exports.string().trim().min(1).max(max).nullable();
-  var AnalyticsRoutePathSchema = external_exports.string().trim().min(1).max(2048).refine((value) => !value.includes("?") && !value.includes("#"), {
-    message: "Analytics route paths must not include query strings or fragments."
-  }).nullable();
-  var AnalyticsDomainSchema = external_exports.string().trim().min(1).max(255).refine((value) => !/[/?#@]/.test(value), {
-    message: "Analytics referrer domains must be hostnames, not URLs."
-  }).nullable();
-  var AnalyticsLocaleSchema = external_exports.string().trim().min(2).max(35).regex(/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/).nullable();
-  var AnalyticsRegionCodeSchema = external_exports.string().trim().min(1).max(16).regex(/^[A-Za-z0-9-]+$/).nullable();
-  var AnalyticsSignalKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
-  var AnalyticsSignalSchema = external_exports.object({
-    action_key: AnalyticsSignalKeySchema.nullable().optional(),
-    funnel_key: AnalyticsSignalKeySchema.nullable().optional(),
-    step_key: AnalyticsSignalKeySchema.nullable().optional(),
-    conversion_key: AnalyticsSignalKeySchema.nullable().optional(),
-    marker_key: AnalyticsSignalKeySchema.nullable().optional()
-  }).strict().transform((value) => {
-    var _a5, _b, _c, _d, _e;
-    return {
-      action_key: (_a5 = value.action_key) != null ? _a5 : null,
-      funnel_key: (_b = value.funnel_key) != null ? _b : null,
-      step_key: (_c = value.step_key) != null ? _c : null,
-      conversion_key: (_d = value.conversion_key) != null ? _d : null,
-      marker_key: (_e = value.marker_key) != null ? _e : null
-    };
-  });
-  var AnalyticsRouteSchema = external_exports.object({
-    path: AnalyticsRoutePathSchema,
-    normalized_path: AnalyticsRoutePathSchema,
-    title: AnalyticsNullableTextSchema(200)
-  }).strict().superRefine((value, context) => {
-    if (value.path === null && value.normalized_path === null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["path"],
-        message: "Analytics routes require path or normalized_path."
-      });
-    }
-  });
-  var AnalyticsDimensionsSchema = external_exports.object({
-    auth_state: AnalyticsAuthStateSchema,
-    device_type: AnalyticsDeviceTypeSchema,
-    browser_family: AnalyticsNullableTextSchema(80),
-    browser_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
-    os_family: AnalyticsNullableTextSchema(80),
-    os_major: external_exports.number().int().nonnegative().max(1e4).nullable(),
-    language: AnalyticsLocaleSchema,
-    locale: AnalyticsLocaleSchema,
-    viewport_bucket: AnalyticsViewportBucketSchema,
-    referrer_domain: AnalyticsDomainSchema,
-    utm_source: AnalyticsNullableTextSchema(128),
-    utm_medium: AnalyticsNullableTextSchema(128),
-    utm_campaign: AnalyticsNullableTextSchema(128),
-    country_code: external_exports.string().trim().regex(/^[A-Z]{2}$/).nullable(),
-    region_code: AnalyticsRegionCodeSchema
-  }).strict();
-  var AnalyticsCustomDimensionKeySchema = external_exports.string().trim().min(1).max(64).regex(/^[A-Za-z][A-Za-z0-9_.-]*$/).refine((value) => !isSensitiveCustomDimensionKey(value), {
-    message: "Analytics custom dimension key is reserved for sensitive or high-cardinality data."
-  });
-  var AnalyticsCustomDimensionStringValueSchema = external_exports.string().trim().min(1).max(128).refine((value) => !looksSensitiveCustomDimensionValue(value), {
-    message: "Analytics custom dimension value appears sensitive or high-cardinality."
-  });
-  var AnalyticsCustomDimensionValueSchema = external_exports.union([
-    AnalyticsCustomDimensionStringValueSchema,
-    external_exports.number().finite().min(-1e6).max(1e6),
-    external_exports.boolean(),
-    external_exports.null()
-  ]);
-  var AnalyticsCustomDimensionsSchema = external_exports.record(AnalyticsCustomDimensionKeySchema, AnalyticsCustomDimensionValueSchema).superRefine((value, context) => {
-    if (Object.keys(value).length > MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        message: `Analytics events may include at most ${MAX_ANALYTICS_CUSTOM_DIMENSIONS_PER_EVENT} custom dimensions.`
-      });
-    }
-  });
-  var AnalyticsServiceSchema = external_exports.object({
-    name: external_exports.string().trim().min(1).max(120),
-    runtime: external_exports.literal("browser").nullable().optional(),
-    framework: external_exports.string().trim().min(1).max(80).nullable().optional(),
-    environment: external_exports.string().trim().min(1).max(120)
-  }).strict();
-  var AnalyticsCorrelationSchema = external_exports.object({
-    session_id: external_exports.string().trim().min(1).max(128),
-    visitor_id_hash: AnalyticsNullableHashSchema,
-    user_id_hash: AnalyticsNullableHashSchema,
-    trace_id: external_exports.string().trim().min(1).max(128).nullable(),
-    deploy_id: external_exports.string().trim().min(1).max(128).nullable()
-  }).strict();
-  var AnalyticsEventPrivacySchema = external_exports.object({
-    mode: AnalyticsPrivacyModeSchema,
-    consent_granted: external_exports.boolean()
-  }).strict();
-  var AnalyticsSessionMetricsSchema = external_exports.object({
-    duration_ms: external_exports.number().int().min(0).max(864e5),
-    pageviews: external_exports.number().int().min(0).max(1e5)
-  }).strict();
-  var AnalyticsPayloadSchema = external_exports.object({
-    kind: AnalyticsEventKindSchema,
-    privacy: AnalyticsEventPrivacySchema.optional().default({
-      mode: "strict",
-      consent_granted: false
-    }),
-    session: AnalyticsSessionMetricsSchema.optional(),
-    signal: AnalyticsSignalSchema.optional(),
-    route: AnalyticsRouteSchema.nullable().optional(),
-    previous_route: AnalyticsRouteSchema.nullable().optional(),
-    dimensions: AnalyticsDimensionsSchema,
-    custom_dimensions: AnalyticsCustomDimensionsSchema.optional().default({})
-  }).strict().superRefine((value, context) => {
-    var _a5, _b, _c, _d, _e;
-    if ((value.kind === "page_view" || value.kind === "route_change") && value.route == null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["route"],
-        message: "Page view and route change analytics events require route context."
-      });
-    }
-    if (value.previous_route != null && value.kind !== "route_change") {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["previous_route"],
-        message: "Analytics previous_route is only valid for route_change events."
-      });
-    }
-    if (value.kind === "action" && ((_a5 = value.signal) == null ? void 0 : _a5.action_key) == null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["signal", "action_key"],
-        message: "Action analytics events require signal.action_key."
-      });
-    }
-    if (value.kind === "funnel_step") {
-      if (((_b = value.signal) == null ? void 0 : _b.funnel_key) == null) {
-        context.addIssue({
-          code: external_exports.ZodIssueCode.custom,
-          path: ["signal", "funnel_key"],
-          message: "Funnel step analytics events require signal.funnel_key."
-        });
-      }
-      if (((_c = value.signal) == null ? void 0 : _c.step_key) == null) {
-        context.addIssue({
-          code: external_exports.ZodIssueCode.custom,
-          path: ["signal", "step_key"],
-          message: "Funnel step analytics events require signal.step_key."
-        });
-      }
-    }
-    if (value.kind === "conversion" && ((_d = value.signal) == null ? void 0 : _d.conversion_key) == null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["signal", "conversion_key"],
-        message: "Conversion analytics events require signal.conversion_key."
-      });
-    }
-    if (value.kind === "journey_marker" && ((_e = value.signal) == null ? void 0 : _e.marker_key) == null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["signal", "marker_key"],
-        message: "Journey marker analytics events require signal.marker_key."
-      });
-    }
-    if (value.session !== void 0 && value.kind !== "session_summary") {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["session"],
-        message: "Analytics session metrics are only valid for session_summary events."
-      });
-    }
-  });
-  var AnalyticsEventEnvelopeSchema = external_exports.object({
-    schema_version: external_exports.literal(ANALYTICS_EVENT_SCHEMA_VERSION),
-    event_id: external_exports.string().guid(),
-    event_type: external_exports.literal("analytics_event"),
-    project_token: external_exports.string().trim().min(1).max(256).optional(),
-    project_id: external_exports.string().guid().nullable().optional(),
-    occurred_at: external_exports.string().datetime(),
-    sdk_name: external_exports.string().trim().min(1).max(120),
-    sdk_version: external_exports.string().trim().min(1).max(80),
-    service: AnalyticsServiceSchema,
-    correlation: AnalyticsCorrelationSchema,
-    payload: AnalyticsPayloadSchema
-  }).strict();
-  var AnalyticsMetricsSegmentSchema = external_exports.object({
-    value: external_exports.string().trim().min(1).max(255),
-    sessions: external_exports.number().int().nonnegative(),
-    pageviews: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsUsageSummarySchema = external_exports.object({
-    project_id: external_exports.string().guid(),
-    from: external_exports.string().datetime(),
-    to: external_exports.string().datetime(),
-    granularity: AnalyticsMetricsGranularitySchema,
-    service: external_exports.string().trim().min(1).max(120).nullable(),
-    environment: external_exports.string().trim().min(1).max(120).nullable(),
-    sessions: external_exports.number().int().nonnegative(),
-    pageviews: external_exports.number().int().nonnegative(),
-    active_visitors: external_exports.number().int().nonnegative(),
-    new_visitors: external_exports.number().int().nonnegative(),
-    returning_visitors: external_exports.number().int().nonnegative(),
-    exits: external_exports.number().int().nonnegative(),
-    conversions: external_exports.number().int().nonnegative()
-  }).strict().refine((value) => Date.parse(value.from) <= Date.parse(value.to), {
-    message: "Analytics summary from must be before or equal to to.",
-    path: ["from"]
-  });
-  var AnalyticsUsageBreakdownsSchema = external_exports.object({
-    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    auth_states: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
-  }).strict();
-  var AnalyticsUsageSummaryResponseSchema = external_exports.object({
-    summary: AnalyticsUsageSummarySchema,
-    breakdowns: AnalyticsUsageBreakdownsSchema
-  }).strict();
-  var AnalyticsMetricsWindowSchema = external_exports.object({
-    project_id: external_exports.string().guid(),
-    from: external_exports.string().datetime(),
-    to: external_exports.string().datetime(),
-    granularity: AnalyticsMetricsGranularitySchema,
-    service: external_exports.string().trim().min(1).max(120).nullable(),
-    environment: external_exports.string().trim().min(1).max(120).nullable()
-  }).strict();
-  var AnalyticsRouteMetricSchema = external_exports.object({
-    route_key: external_exports.string().trim().min(1).max(2048),
-    pageviews: external_exports.number().int().nonnegative(),
-    unique_sessions: external_exports.number().int().nonnegative(),
-    entrances: external_exports.number().int().nonnegative(),
-    exits: external_exports.number().int().nonnegative(),
-    bounces: external_exports.number().int().nonnegative(),
-    linked_incident_sessions: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsRouteMetricsResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    routes: external_exports.array(AnalyticsRouteMetricSchema).max(100)
-  }).strict();
-  var AnalyticsJourneyPatternSchema = external_exports.object({
-    from_route_key: external_exports.string().trim().min(1).max(2048),
-    to_route_key: external_exports.string().trim().min(1).max(2048),
-    transition_count: external_exports.number().int().nonnegative(),
-    unique_sessions: external_exports.number().int().nonnegative(),
-    transition_share: external_exports.number().min(0).max(1),
-    sample_ids: external_exports.array(external_exports.string().guid()).max(3).default([])
-  }).strict();
-  var AnalyticsJourneyPatternsResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    patterns: external_exports.array(AnalyticsJourneyPatternSchema).max(100)
-  }).strict();
-  var AnalyticsIncidentImpactSegmentSchema = external_exports.object({
-    value: external_exports.string().trim().min(1).max(255),
-    affected_sessions: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsIncidentImpactRouteSchema = external_exports.object({
-    route_key: external_exports.string().trim().min(1).max(2048),
-    affected_sessions: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsIncidentImpactFunnelSchema = external_exports.object({
-    funnel_key: external_exports.string().trim().min(1).max(120),
-    affected_sessions: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsIncidentImpactJourneyPatternSchema = external_exports.object({
-    from_route_key: external_exports.string().trim().min(1).max(2048),
-    to_route_key: external_exports.string().trim().min(1).max(2048),
-    affected_sessions: external_exports.number().int().nonnegative(),
-    sample_ids: external_exports.array(external_exports.string().guid()).max(3)
-  }).strict();
-  var AnalyticsIncidentImpactConversionDeltaSchema = external_exports.object({
-    availability: external_exports.enum(["available", "unavailable"]),
-    value: external_exports.number().finite().nullable(),
-    unit: external_exports.literal("percentage_points")
-  }).strict().superRefine((value, context) => {
-    if (value.availability === "unavailable" && value.value !== null) {
-      context.addIssue({
-        code: external_exports.ZodIssueCode.custom,
-        path: ["value"],
-        message: "Unavailable conversion deltas must not include a value."
-      });
-    }
-  });
-  var AnalyticsIncidentImpactBundleStateSchema = external_exports.object({
-    status: external_exports.enum(["not_requested", "pending", "running", "completed", "failed"]),
-    generation_id: external_exports.string().guid().nullable(),
-    failure_reason: external_exports.string().trim().min(1).max(240).nullable()
-  }).strict();
-  var AnalyticsIncidentImpactResponseSchema = external_exports.object({
-    incident_id: external_exports.string().guid(),
-    window: AnalyticsMetricsWindowSchema,
-    affected_sessions: external_exports.number().int().nonnegative(),
-    affected_routes: external_exports.array(AnalyticsIncidentImpactRouteSchema).max(100),
-    affected_funnels: external_exports.array(AnalyticsIncidentImpactFunnelSchema).max(100),
-    top_device_types: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
-    top_browsers: external_exports.array(AnalyticsIncidentImpactSegmentSchema).max(100),
-    journey_patterns: external_exports.array(AnalyticsIncidentImpactJourneyPatternSchema).max(100),
-    conversion_delta: AnalyticsIncidentImpactConversionDeltaSchema,
-    analytics_bundle: AnalyticsIncidentImpactBundleStateSchema
-  }).strict();
-  var AnalyticsDeviceBreakdownResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    device_types: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    browsers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    os: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    languages: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
-  }).strict();
-  var AnalyticsReferrerMetricsResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    referrers: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    utm_sources: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    utm_mediums: external_exports.array(AnalyticsMetricsSegmentSchema).max(100),
-    utm_campaigns: external_exports.array(AnalyticsMetricsSegmentSchema).max(100)
-  }).strict();
-  var AnalyticsActionMetricSchema = external_exports.object({
-    action_key: external_exports.string().trim().min(1).max(160),
-    kind: external_exports.enum(["action", "conversion", "marker"]),
-    event_count: external_exports.number().int().nonnegative(),
-    unique_sessions: external_exports.number().int().nonnegative()
-  }).strict();
-  var AnalyticsActionMetricsResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    actions: external_exports.array(AnalyticsActionMetricSchema).max(100)
-  }).strict();
-  var AnalyticsFunnelListItemSchema = external_exports.object({
-    funnel_key: external_exports.string().trim().min(1).max(120),
-    sessions_entered: external_exports.number().int().nonnegative(),
-    sessions_completed: external_exports.number().int().nonnegative(),
-    dropoffs: external_exports.number().int().nonnegative(),
-    conversion_rate: external_exports.number().min(0).max(1)
-  }).strict();
-  var AnalyticsFunnelsResponseSchema = external_exports.object({
-    window: AnalyticsMetricsWindowSchema,
-    funnels: external_exports.array(AnalyticsFunnelListItemSchema).max(100)
-  }).strict();
-  var AnalyticsFunnelStepMetricSchema = external_exports.object({
-    step_key: external_exports.string().trim().min(1).max(120),
-    step_order: external_exports.number().int().nonnegative(),
-    sessions_entered: external_exports.number().int().nonnegative(),
-    sessions_completed: external_exports.number().int().nonnegative(),
-    dropoffs: external_exports.number().int().nonnegative(),
-    conversion_rate: external_exports.number().min(0).max(1)
-  }).strict();
-  var AnalyticsFunnelSummarySchema = external_exports.object({
-    project_id: external_exports.string().guid(),
-    funnel_key: external_exports.string().trim().min(1).max(120),
-    from: external_exports.string().datetime(),
-    to: external_exports.string().datetime(),
-    granularity: AnalyticsMetricsGranularitySchema,
-    service: external_exports.string().trim().min(1).max(120).nullable(),
-    environment: external_exports.string().trim().min(1).max(120).nullable(),
-    sessions_entered: external_exports.number().int().nonnegative(),
-    sessions_completed: external_exports.number().int().nonnegative(),
-    dropoffs: external_exports.number().int().nonnegative(),
-    conversion_rate: external_exports.number().min(0).max(1)
-  }).strict();
-  var AnalyticsFunnelAnalysisResponseSchema = external_exports.object({
-    funnel: AnalyticsFunnelSummarySchema,
-    steps: external_exports.array(AnalyticsFunnelStepMetricSchema).max(100)
-  }).strict();
-  function normalizeCustomDimensionKey(value) {
-    return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-  }
-  function isSensitiveCustomDimensionKey(value) {
-    const normalized = normalizeCustomDimensionKey(value);
-    const sensitiveKeys = /* @__PURE__ */ new Set([
-      "auth_state",
-      "device_type",
-      "browser_family",
-      "browser_major",
-      "os_family",
-      "os_major",
-      "language",
-      "locale",
-      "viewport_bucket",
-      "referrer_domain",
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "country_code",
-      "region_code",
-      "email",
-      "email_address",
-      "phone",
-      "phone_number",
-      "password",
-      "passcode",
-      "token",
-      "secret",
-      "api_key",
-      "apikey",
-      "authorization",
-      "auth_token",
-      "card",
-      "card_number",
-      "credit_card",
-      "ssn",
-      "ip",
-      "ip_address",
-      "user_id",
-      "userid",
-      "account_id",
-      "workspace_id",
-      "order_id",
-      "ticket_id",
-      "url",
-      "href",
-      "query",
-      "text",
-      "message",
-      "body",
-      "payload",
-      "session_id",
-      "visitor_id"
-    ]);
-    return sensitiveKeys.has(normalized) || normalized.endsWith("_id") || normalized.endsWith("_token") || normalized.endsWith("_secret") || normalized.endsWith("_password");
-  }
-  function looksSensitiveCustomDimensionValue(value) {
-    return /https?:\/\//i.test(value) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /\bBearer\s+[A-Za-z0-9._~+/=-]+/i.test(value) || /\b(?:token|password|secret|api_key)=/i.test(value);
-  }
-
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-product.js
   var AnalyticsOpportunityStatusValues = ["open", "resolved", "snoozed"];
   var AnalyticsOpportunityStatusSchema = external_exports.enum(AnalyticsOpportunityStatusValues);
   var AnalyticsOpportunityBundleStatusValues = [
@@ -22694,7 +23406,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var AnalyticsOpportunitiesListResponseSchema = external_exports.object({
     opportunities: external_exports.array(AnalyticsOpportunityRecordSchema).max(100),
     next_cursor: external_exports.string().trim().min(1).nullable(),
-    total_pages: external_exports.number().int().positive().optional()
+    total_pages: external_exports.number().int().positive().optional(),
+    total_count: external_exports.number().int().nonnegative().optional()
   }).strict();
   var AnalyticsOpportunityResponseSchema = external_exports.object({ opportunity: AnalyticsOpportunityRecordSchema }).strict();
   var AnalyticsBundleGenerationRecordSchema = external_exports.object({
@@ -22718,7 +23431,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var AnalyticsBundleGenerationsListResponseSchema = external_exports.object({
     bundles: external_exports.array(AnalyticsBundleGenerationRecordSchema).max(100),
     next_cursor: external_exports.string().trim().min(1).nullable(),
-    total_pages: external_exports.number().int().positive().optional()
+    total_pages: external_exports.number().int().positive().optional(),
+    total_count: external_exports.number().int().nonnegative().optional()
   }).strict();
   var AnalyticsBundleProjectSchema = external_exports.object({
     project_id: external_exports.string().guid(),
@@ -22835,7 +23549,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     message: "At least one analytics settings field must be provided."
   });
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-journey-samples.js
   var AnalyticsHashLikeSchema = external_exports.string().trim().min(1).max(200);
   var AnalyticsJourneySafeScalarSchema = external_exports.union([
     external_exports.string().max(256),
@@ -22905,7 +23619,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }).strict();
   var AnalyticsJourneySamplesListResponseSchema = external_exports.object({
     samples: external_exports.array(AnalyticsJourneySampleMetadataSchema).max(100),
-    next_cursor: external_exports.string().trim().min(1).nullable()
+    next_cursor: external_exports.string().trim().min(1).nullable(),
+    total_pages: external_exports.number().int().positive().optional(),
+    total_count: external_exports.number().int().nonnegative().optional()
   }).strict();
   var AnalyticsJourneySampleArtifactSchema = external_exports.object({
     schema_version: external_exports.literal("analytics_journey_sample.v1"),
@@ -22929,7 +23645,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     journey: AnalyticsJourneySampleArtifactSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-saved-funnels.js
   var AnalyticsSavedFunnelKeySchema = external_exports.string().trim().min(1).max(120).regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
   var AnalyticsSavedFunnelStepSchema = external_exports.object({
     step_key: AnalyticsSavedFunnelKeySchema,
@@ -22972,7 +23688,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     funnel: AnalyticsSavedFunnelSchema
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/project-color-tags.js
   var PROJECT_COLOR_TAG_VALUES = [
     "red",
     "orange",
@@ -22995,7 +23711,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   ];
   var ProjectColorTagSchema = external_exports.enum(PROJECT_COLOR_TAG_VALUES);
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics-flows.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/analytics-flows.js
   var AnalyticsFlowKeySchema = external_exports.string().trim().regex(/^[a-z][a-z0-9_.-]{0,63}$/);
   var AnalyticsFlowOriginSchema = external_exports.string().max(255).refine((value) => {
     try {
@@ -23068,33 +23784,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     withdraw: Context.strict()
   };
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/analytics-query.js
-  var DEFAULT_LAST_MS = 7 * 24 * 60 * 60 * 1e3;
-  var MAX_LAST_MS = 370 * 24 * 60 * 60 * 1e3;
-  var AnalyticsMetricsQuerySchema = external_exports.object({
-    project_id: external_exports.string().guid(),
-    from: external_exports.string().datetime().optional(),
-    to: external_exports.string().datetime().optional(),
-    last: external_exports.string().trim().min(2).max(16).optional(),
-    granularity: AnalyticsMetricsGranularitySchema.optional().default("day"),
-    service: external_exports.string().trim().min(1).max(120).optional(),
-    environment: external_exports.string().trim().min(1).max(120).optional(),
-    route: external_exports.string().trim().min(1).max(2048).refine((value) => !value.includes("?") && !value.includes("#")).optional(),
-    device_type: external_exports.string().trim().min(1).max(40).optional(),
-    browser: external_exports.string().trim().min(1).max(80).optional(),
-    os: external_exports.string().trim().min(1).max(80).optional(),
-    language: external_exports.string().trim().min(1).max(40).optional(),
-    country: external_exports.string().trim().min(1).max(8).optional(),
-    auth_state: external_exports.enum(["anonymous", "authenticated", "unknown"]).optional(),
-    referrer: external_exports.string().trim().min(1).max(255).optional(),
-    utm_source: external_exports.string().trim().min(1).max(128).optional(),
-    utm_medium: external_exports.string().trim().min(1).max(128).optional(),
-    utm_campaign: external_exports.string().trim().min(1).max(128).optional(),
-    custom_dimensions: external_exports.record(external_exports.string().regex(/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/), external_exports.string().max(128)).refine((value) => Object.keys(value).length <= 8).optional(),
-    limit: external_exports.coerce.number().int().min(1).max(100).optional().default(10)
-  }).strict();
-
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/public-status.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/public-status.js
   var PublicStatusIdSchema = external_exports.string().regex(/^[a-f0-9]{24}$/);
   var selection = external_exports.object({ project_id: external_exports.string().guid(), check_ids: external_exports.array(external_exports.string().guid()).max(50) }).strict();
   var PublicStatusSettingsSchema = external_exports.object({
@@ -23154,7 +23844,63 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     next_cursor: external_exports.string().guid().nullable()
   }).strict();
 
-  // node_modules/.pnpm/@debugbundle+shared-types@3.0.0/node_modules/@debugbundle/shared-types/dist/index.js
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/alert-scope.js
+  var ALERT_SCOPE_SERVICE_LIMIT = 100;
+  var ScopeServiceSchema = external_exports.object({
+    service_definition_id: external_exports.string().guid(),
+    name: external_exports.string().min(1)
+  }).strict();
+  var AlertScopeSchema = external_exports.object({
+    origin_project_ids: external_exports.array(external_exports.string().guid()).min(1).max(1e3),
+    covers_current_project: external_exports.boolean(),
+    services: external_exports.array(ScopeServiceSchema).max(ALERT_SCOPE_SERVICE_LIMIT),
+    service_count: external_exports.number().int().min(0),
+    service_filter: ScopeServiceSchema.extend({
+      service_id: external_exports.string().guid(),
+      environment: external_exports.string().min(1)
+    }).nullable()
+  }).strict().refine((scope) => scope.service_count >= scope.services.length, {
+    message: "scope_service_count_invalid"
+  });
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/billing-offers.js
+  var BillingOfferSelectionSchema = external_exports.object({
+    target_plan: external_exports.enum(["solo", "team", "business"]),
+    interval: external_exports.enum(["month", "year"])
+  }).strict();
+  var BillingOfferQuoteSchema = BillingOfferSelectionSchema.extend({
+    confirmation_token: external_exports.string().min(1).max(8192),
+    action: external_exports.enum(["upgrade", "renewal"]),
+    expires_at: external_exports.string().datetime(),
+    effective_at: external_exports.string().datetime(),
+    currency: external_exports.literal("usd"),
+    amount_due: external_exports.number().int().nonnegative(),
+    tax: external_exports.number().int(),
+    recurring_total: external_exports.number().int().nonnegative(),
+    additional_capacity_units: external_exports.number().int().min(0).max(99),
+    resume_required: external_exports.boolean().optional()
+  }).strict();
+  var BillingPendingOfferChangeSchema = BillingOfferSelectionSchema.extend({
+    schedule_id: external_exports.string().min(1).max(255),
+    effective_at: external_exports.string().datetime(),
+    additional_capacity_units: external_exports.number().int().min(0).max(99)
+  }).strict();
+  var BillingOfferChangeStateSchema = external_exports.object({ pending_change: BillingPendingOfferChangeSchema.nullable() }).strict();
+  var BillingSubscriptionOfferSchema = external_exports.object({
+    plan: external_exports.enum(["solo", "team", "business"]),
+    interval: external_exports.enum(["month", "year"]),
+    currency: external_exports.literal("usd"),
+    additional_capacity_units: external_exports.number().int().min(0).max(99),
+    base_amount_minor: external_exports.number().int().nonnegative().nullable(),
+    capacity_unit_amount_minor: external_exports.number().int().nonnegative().nullable(),
+    term_starts_at: external_exports.string().datetime().nullable(),
+    term_ends_at: external_exports.string().datetime().nullable()
+  }).strict();
+  var BillingOfferStatusSchema = BillingOfferChangeStateSchema.extend({
+    subscription: BillingSubscriptionOfferSchema.nullable()
+  }).strict();
+
+  // node_modules/.pnpm/@debugbundle+shared-types@3.9.0/node_modules/@debugbundle/shared-types/dist/index.js
   var SeveritySchema = external_exports.enum(["low", "medium", "high", "critical"]);
   var BundleSdkSchema = external_exports.object({
     name: external_exports.string().min(1),
@@ -23461,17 +24207,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     metadata: BundleMetadataSchema
   });
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/passive-resources.js
   var WINDOW = 3e4;
   var MAX_BYTES2 = 32 * 1024;
   var identities = /* @__PURE__ */ new WeakMap();
-  function rememberResourceIdentity(metadata, raw) {
+  function rememberResourceIdentity(metadata2, raw) {
     var _a5;
-    identities.set(metadata, raw !== null && ((_a5 = safeResourceUrl(raw)) == null ? void 0 : _a5.identitySafe) === true);
+    identities.set(metadata2, raw !== null && ((_a5 = safeResourceUrl(raw)) == null ? void 0 : _a5.identitySafe) === true);
   }
-  function resourceIdentitySafe(metadata) {
+  function resourceIdentitySafe(metadata2) {
     var _a5;
-    return (_a5 = identities.get(metadata)) != null ? _a5 : true;
+    return (_a5 = identities.get(metadata2)) != null ? _a5 : true;
   }
   function safeResourceUrl(raw) {
     var _a5, _b;
@@ -23720,10 +24466,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/package.json
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/package.json
   var package_default = {
     name: "@debugbundle/sdk-browser",
-    version: "3.2.4",
+    version: "3.3.0",
     private: false,
     type: "module",
     license: "Apache-2.0",
@@ -23755,12 +24501,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       access: "public"
     },
     dependencies: {
-      "@debugbundle/shared-types": "3.0.0",
-      "@debugbundle/redaction": "2.7.1"
+      "@debugbundle/shared-types": "3.9.0",
+      "@debugbundle/redaction": "2.8.0"
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/types.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/types.js
   var SDK_NAME = "@debugbundle/sdk-browser";
   var SDK_VERSION = package_default.version;
   var SDK_SCHEMA_VERSION = "2026-03-01";
@@ -23784,7 +24530,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var DEFAULT_LOG_LEVEL = "warning";
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/native-fields.js
   function readNativeField(value, key2) {
     try {
       return value !== null && (typeof value === "object" || typeof value === "function") ? value[key2] : void 0;
@@ -23815,7 +24561,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return count;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/response-json.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/response-json.js
   async function readBoundedBrowserJson(response, signal) {
     var _a5, _b;
     const maximumBytes = 256 * 1024;
@@ -23867,7 +24613,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/fetch-transport.js
   function getFetchSource() {
     const candidate = globalThis["fetch"];
     return typeof candidate === "function" ? candidate : null;
@@ -23922,7 +24668,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return transportMode === "direct" ? JSON.stringify({ events }) : JSON.stringify({ batch: events });
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/runtime.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/runtime.js
   var DEFAULT_REQUEST_FAILURE_PRESET = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES = [];
@@ -24032,13 +24778,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   function normalizeError(error62) {
     var _a5, _b, _c;
     if (hasErrorDetails(error62)) {
-      const fields = readNativeFields(error62, ["name", "message", "stack"]);
-      const name = (_a5 = getStringField(fields, "name")) != null ? _a5 : "Error";
-      const message = (_b = getStringField(fields, "message")) != null ? _b : "Unknown browser error";
+      const fields2 = readNativeFields(error62, ["name", "message", "stack"]);
+      const name = (_a5 = getStringField(fields2, "name")) != null ? _a5 : "Error";
+      const message = (_b = getStringField(fields2, "message")) != null ? _b : "Unknown browser error";
       return {
         name,
         message,
-        stack: sanitizeBrowserStack((_c = getStringField(fields, "stack")) != null ? _c : `${name}: ${message}`)
+        stack: sanitizeBrowserStack((_c = getStringField(fields2, "stack")) != null ? _c : `${name}: ${message}`)
       };
     }
     if (typeof error62 === "string") {
@@ -24096,14 +24842,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   function normalizeVisibilityState(value) {
     return value === "visible" || value === "hidden" || value === "prerender" || value === "unloaded" ? value : null;
   }
-  function normalizeBrowserErrorPage() {
+  function normalizeBrowserErrorPage(options) {
     const locationSource = getLocationSource();
     const documentSource = getDocumentSource();
     return {
       url: sanitizeBrowserEventUrl(typeof (locationSource == null ? void 0 : locationSource.href) === "string" ? locationSource.href : null),
       referrer: sanitizeBrowserEventUrl(typeof (documentSource == null ? void 0 : documentSource.referrer) === "string" ? documentSource.referrer : null),
       ready_state: normalizeReadyState(documentSource == null ? void 0 : documentSource.readyState),
-      visibility_state: normalizeVisibilityState(documentSource == null ? void 0 : documentSource.visibilityState)
+      visibility_state: (options == null ? void 0 : options.pageUnloading) === true ? "unloaded" : normalizeVisibilityState(documentSource == null ? void 0 : documentSource.visibilityState)
     };
   }
   function normalizeBrowserErrorTargetAttributes(record2) {
@@ -24151,7 +24897,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     rememberResourceIdentity(normalized, sourceUrl);
     return normalized;
   }
-  function normalizeBrowserErrorEvent(event) {
+  function normalizeBrowserErrorEvent(event, options) {
     const record2 = readNativeFields(event, ["message", "filename", "lineno", "colno"]);
     const target = normalizeBrowserErrorTarget(readNativeField(event, "target"));
     const hasErrorObject = hasErrorDetails(readNativeField(event, "error"));
@@ -24163,7 +24909,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       line_number: getNonnegativeIntegerField(record2, "lineno"),
       column_number: getNonnegativeIntegerField(record2, "colno"),
       target,
-      page: normalizeBrowserErrorPage(),
+      page: normalizeBrowserErrorPage(options),
       opaque: !hasErrorObject
     };
   }
@@ -24604,7 +25350,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return "desktop";
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/internal-diagnostics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/internal-diagnostics.js
   var depth = 0;
   var inBrowserDiagnostic = () => depth > 0;
   var diagnosticCode = (value) => value.length <= 64 && !value.startsWith("dbundle_") && /^[a-z][a-z0-9_]*$/.test(value) ? value : "unknown_rejection";
@@ -24620,21 +25366,21 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.at = 0;
       this.count = 0;
     }
-    unauthorized(lane, status, endpoint, body, fields) {
+    unauthorized(lane, status, endpoint, body, fields2, exactFields = []) {
       try {
         const descriptor2 = body !== null && typeof body === "object" ? Object.getOwnPropertyDescriptor(body, "error") : void 0;
         const error62 = descriptor2 !== void 0 && "value" in descriptor2 ? descriptor2.value : void 0;
         const detail = typeof error62 === "string" && error62.length > 0 ? ` (${diagnosticCode(error62)})` : "";
-        this.emit("error", `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} disabled after ingestion returned ${status} for ${endpoint.length <= 2048 ? endpoint : "configured endpoint"}. Check the project token or relay configuration${detail}.`, fields);
+        this.emit("error", `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} disabled after ingestion returned ${status} for ${endpoint.length <= 2048 ? endpoint : "configured endpoint"}. Check the project token or relay configuration${detail}.`, fields2, exactFields);
       } catch {
       }
     }
-    acknowledgement(lane, code, detail, fields) {
+    acknowledgement(lane, code, detail, fields2, exactFields = []) {
       const safe = detail.split(",", 5).map(diagnosticCode).join(",");
       const key2 = `${lane}:${code}:${safe}`;
-      this.emit("warn", code === "invalid" ? `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} retained events after an invalid ingestion acknowledgement (${safe}).` : `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} removed terminally rejected events (${safe}).`, fields, key2);
+      this.emit("warn", code === "invalid" ? `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} retained events after an invalid ingestion acknowledgement (${safe}).` : `DebugBundle ${lane === "debug" ? "browser SDK" : "browser analytics"} removed terminally rejected events (${safe}).`, fields2, exactFields, key2);
     }
-    emit(level, message, fields, key2) {
+    emit(level, message, fields2, exactFields, key2) {
       var _a5;
       if (inBrowserDiagnostic() || this.pending)
         return;
@@ -24651,7 +25397,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         this.count++;
         if (key2 !== void 0)
           this.seen.add(key2);
-        const safe = sanitizeTelemetry(message, { additionalKeys: fields });
+        const safe = sanitizeTelemetry(message, { additionalKeys: fields2, exactKeys: exactFields });
         if (!safe.ok || typeof safe.value !== "string")
           return;
         const consoleSource = getConsoleSource();
@@ -24676,15 +25422,420 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/privacy.js
-  function protectBrowserEvent(event, additionalKeys) {
-    var _a5, _b;
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/privacy.js
+  var MAX_PROTECTED_BYTES = 256 * 1024;
+  var ALLOWED_HTML_RESOURCE_TAGS = /* @__PURE__ */ new Set([
+    "script",
+    "link",
+    "img",
+    "audio",
+    "video",
+    "source",
+    "iframe",
+    "object",
+    "embed",
+    "input"
+  ]);
+  var ALLOWED_READY_STATES = /* @__PURE__ */ new Set(["loading", "interactive", "complete"]);
+  var ALLOWED_VISIBILITY_STATES = /* @__PURE__ */ new Set(["visible", "hidden", "prerender", "unloaded"]);
+  var ALLOWED_REJECTION_KINDS = /* @__PURE__ */ new Set(["error", "string", "object", "null", "undefined", "unknown"]);
+  var ALLOWED_EVIDENCE_LIMIT_REASONS = /* @__PURE__ */ new Set(["budget_exceeded", "unsafe", "unsupported", "unknown"]);
+  var ALLOWED_EVIDENCE_LIMIT_KEYS = /* @__PURE__ */ new Set(["version", "exception_evidence", "execution", "resource_observations"]);
+  var ALLOWED_BROWSER_EVENT_KEYS = /* @__PURE__ */ new Set([
+    "kind",
+    "message",
+    "file_name",
+    "line_number",
+    "column_number",
+    "target",
+    "page",
+    "opaque"
+  ]);
+  var ALLOWED_TARGET_KEYS = /* @__PURE__ */ new Set(["tag_name", "source_url", "attributes"]);
+  var ALLOWED_TARGET_ATTR_STRING_KEYS = ["rel", "as", "type", "media", "cross_origin"];
+  var ALLOWED_TARGET_ATTR_BOOL_KEYS = ["async", "defer", "integrity_present"];
+  var ALLOWED_TARGET_ATTR_KEYS = /* @__PURE__ */ new Set([
+    ...ALLOWED_TARGET_ATTR_STRING_KEYS,
+    ...ALLOWED_TARGET_ATTR_BOOL_KEYS
+  ]);
+  var ALLOWED_PAGE_KEYS = /* @__PURE__ */ new Set(["url", "referrer", "ready_state", "visibility_state"]);
+  var ALLOWED_REJECTION_KEYS = /* @__PURE__ */ new Set(["kind", "name", "message", "preview"]);
+  function isPlainObject2(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      return false;
+    }
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+  }
+  function readOwnData(record2, key2) {
+    if (!Object.prototype.hasOwnProperty.call(record2, key2)) {
+      return { ok: true, present: false, value: void 0 };
+    }
+    const descriptor2 = Object.getOwnPropertyDescriptor(record2, key2);
+    if (descriptor2 === void 0 || !("value" in descriptor2)) {
+      return { ok: false };
+    }
+    return { ok: true, present: true, value: descriptor2.value };
+  }
+  function isPlainDataTree(value, seen = /* @__PURE__ */ new WeakSet(), depth2 = 0) {
+    if (value === null || value === void 0 || typeof value === "string" || typeof value === "boolean") {
+      return true;
+    }
+    if (typeof value === "number") {
+      return Number.isFinite(value);
+    }
+    if (typeof value !== "object" || depth2 > 16 || seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    try {
+      if (Array.isArray(value)) {
+        for (let index = 0; index < value.length; index += 1) {
+          const descriptor2 = Object.getOwnPropertyDescriptor(value, String(index));
+          if (descriptor2 === void 0 || !("value" in descriptor2) || !isPlainDataTree(descriptor2.value, seen, depth2 + 1)) {
+            return false;
+          }
+        }
+        return true;
+      }
+      if (!isPlainObject2(value)) {
+        return false;
+      }
+      for (const key2 of Object.keys(value)) {
+        const descriptor2 = Object.getOwnPropertyDescriptor(value, key2);
+        if (descriptor2 === void 0 || !("value" in descriptor2) || !isPlainDataTree(descriptor2.value, seen, depth2 + 1)) {
+          return false;
+        }
+      }
+      return true;
+    } finally {
+      seen.delete(value);
+    }
+  }
+  function scrubString(value, options) {
+    const result = sanitizeTelemetry(value, options);
+    return result.ok && typeof result.value === "string" ? result.value : null;
+  }
+  function scrubNullableString(value, options) {
+    if (value === null) {
+      return { ok: true, value: null };
+    }
+    if (typeof value !== "string") {
+      return { ok: false };
+    }
+    const scrubbed = scrubString(value, options);
+    return scrubbed === null ? { ok: false } : { ok: true, value: scrubbed };
+  }
+  function hasOnlyAllowedKeys(record2, allowed) {
+    return Object.keys(record2).every((key2) => allowed.has(key2));
+  }
+  function sanitizeBrowserEventBlock(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw) || !hasOnlyAllowedKeys(raw, ALLOWED_BROWSER_EVENT_KEYS)) {
+      return null;
+    }
+    const kind = raw["kind"];
+    const opaque = raw["opaque"];
+    const lineNumber = raw["line_number"];
+    const columnNumber = raw["column_number"];
+    if (kind !== "window_error" && kind !== "resource_error" || typeof opaque !== "boolean" || lineNumber !== null && (typeof lineNumber !== "number" || !Number.isInteger(lineNumber) || lineNumber < 0) || columnNumber !== null && (typeof columnNumber !== "number" || !Number.isInteger(columnNumber) || columnNumber < 0)) {
+      return null;
+    }
+    const message = scrubNullableString(raw["message"], options);
+    const fileName = scrubNullableString(raw["file_name"], options);
+    if (!message.ok || !fileName.ok) {
+      return null;
+    }
+    let targetOut = null;
+    const rawTarget = raw["target"];
+    if (rawTarget !== null) {
+      if (!isPlainObject2(rawTarget) || !hasOnlyAllowedKeys(rawTarget, ALLOWED_TARGET_KEYS)) {
+        return null;
+      }
+      let tagNameOut;
+      const rawTagName = rawTarget["tag_name"];
+      if (rawTagName === null) {
+        tagNameOut = null;
+      } else if (typeof rawTagName === "string") {
+        if (ALLOWED_HTML_RESOURCE_TAGS.has(rawTagName.toLowerCase())) {
+          tagNameOut = rawTagName;
+        } else {
+          const sanitizedTag = sanitizeTelemetry({ tag_name: rawTagName }, options);
+          if (!sanitizedTag.ok || !isPlainObject2(sanitizedTag.value) || typeof sanitizedTag.value["tag_name"] !== "string") {
+            return null;
+          }
+          tagNameOut = sanitizedTag.value["tag_name"];
+        }
+      } else {
+        return null;
+      }
+      const sourceUrl = scrubNullableString(rawTarget["source_url"], options);
+      if (!sourceUrl.ok) {
+        return null;
+      }
+      targetOut = {
+        tag_name: tagNameOut,
+        source_url: sourceUrl.value
+      };
+      if (Object.prototype.hasOwnProperty.call(rawTarget, "attributes") && rawTarget["attributes"] !== void 0) {
+        const rawAttrs = rawTarget["attributes"];
+        if (!isPlainObject2(rawAttrs) || !hasOnlyAllowedKeys(rawAttrs, ALLOWED_TARGET_ATTR_KEYS)) {
+          return null;
+        }
+        const attrsOut = {};
+        for (const key2 of ALLOWED_TARGET_ATTR_STRING_KEYS) {
+          if (Object.prototype.hasOwnProperty.call(rawAttrs, key2) && rawAttrs[key2] !== void 0) {
+            const attrValue = rawAttrs[key2];
+            if (typeof attrValue !== "string")
+              return null;
+            const scrubbed = scrubString(attrValue, options);
+            if (scrubbed === null)
+              return null;
+            attrsOut[key2] = scrubbed;
+          }
+        }
+        for (const key2 of ALLOWED_TARGET_ATTR_BOOL_KEYS) {
+          if (Object.prototype.hasOwnProperty.call(rawAttrs, key2) && rawAttrs[key2] !== void 0) {
+            if (typeof rawAttrs[key2] !== "boolean")
+              return null;
+            attrsOut[key2] = rawAttrs[key2];
+          }
+        }
+        targetOut["attributes"] = attrsOut;
+      }
+    }
+    const out = {
+      kind,
+      message: message.value,
+      file_name: fileName.value,
+      line_number: lineNumber,
+      column_number: columnNumber,
+      target: targetOut,
+      opaque
+    };
+    if (Object.prototype.hasOwnProperty.call(raw, "page") && raw["page"] !== void 0) {
+      const rawPage = raw["page"];
+      if (!isPlainObject2(rawPage) || !hasOnlyAllowedKeys(rawPage, ALLOWED_PAGE_KEYS)) {
+        return null;
+      }
+      const pageUrl = scrubNullableString(rawPage["url"], options);
+      const pageReferrer = scrubNullableString(rawPage["referrer"], options);
+      const readyState = rawPage["ready_state"];
+      const visibilityState = rawPage["visibility_state"];
+      if (!pageUrl.ok || !pageReferrer.ok || readyState !== null && (typeof readyState !== "string" || !ALLOWED_READY_STATES.has(readyState)) || visibilityState !== null && (typeof visibilityState !== "string" || !ALLOWED_VISIBILITY_STATES.has(visibilityState))) {
+        return null;
+      }
+      out["page"] = {
+        url: pageUrl.value,
+        referrer: pageReferrer.value,
+        ready_state: readyState,
+        visibility_state: visibilityState
+      };
+    }
+    return out;
+  }
+  function sanitizeRejectionReasonBlock(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw) || !hasOnlyAllowedKeys(raw, ALLOWED_REJECTION_KEYS)) {
+      return null;
+    }
+    const kind = raw["kind"];
+    if (typeof kind !== "string" || !ALLOWED_REJECTION_KINDS.has(kind)) {
+      return null;
+    }
+    const out = { kind };
+    for (const field of ["name", "message", "preview"]) {
+      if (Object.prototype.hasOwnProperty.call(raw, field) && raw[field] !== void 0) {
+        const value = raw[field];
+        if (typeof value !== "string")
+          return null;
+        const scrubbed = scrubString(value, options);
+        if (scrubbed === null)
+          return null;
+        out[field] = scrubbed;
+      }
+    }
+    return out;
+  }
+  function sanitizeExceptionEvidenceBlock(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw)) {
+      return null;
+    }
+    const parsed = ExceptionEvidenceV1Schema.safeParse(raw);
+    if (!parsed.success) {
+      return null;
+    }
+    const nodes = [];
+    for (const node2 of parsed.data.nodes) {
+      const name = scrubString(node2.name, options);
+      const message = scrubString(node2.message, options);
+      const stack = node2.stack === null ? null : scrubString(sanitizeBrowserStackUrls(node2.stack), options);
+      if (name === null || message === null || node2.stack !== null && stack === null) {
+        return null;
+      }
+      const frames = [];
+      for (const frame2 of node2.frames) {
+        const fn = frame2.function === null ? null : scrubString(frame2.function, options);
+        const file2 = frame2.file === null ? null : scrubString(sanitizeBrowserStackUrls(frame2.file), options);
+        if (frame2.function !== null && fn === null || frame2.file !== null && file2 === null) {
+          return null;
+        }
+        frames.push({
+          function: fn,
+          file: file2,
+          line: frame2.line,
+          column: frame2.column,
+          classification: frame2.classification
+        });
+      }
+      nodes.push({
+        id: node2.id,
+        name,
+        message,
+        stack,
+        trace_origin: node2.trace_origin,
+        parsing_status: node2.parsing_status,
+        frames,
+        relationships: node2.relationships.map((edge) => ({ kind: edge.kind, target_id: edge.target_id }))
+      });
+    }
+    return {
+      version: parsed.data.version,
+      runtime: parsed.data.runtime,
+      root_id: parsed.data.root_id,
+      nodes,
+      truncated: parsed.data.truncated,
+      unavailable_reason: parsed.data.unavailable_reason
+    };
+  }
+  function sanitizeResourceObservationsBlock(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw)) {
+      return null;
+    }
+    const parsed = ResourceObservationsSchema.safeParse(raw);
+    if (!parsed.success) {
+      return null;
+    }
+    const items = [];
+    for (const item of parsed.data.items) {
+      const sourceUrl = item.source_url === null ? null : scrubString(item.source_url, options);
+      if (item.source_url !== null && sourceUrl === null) {
+        return null;
+      }
+      if (item.kind === "timing") {
+        items.push({
+          kind: item.kind,
+          observed_at: item.observed_at,
+          source_url: sourceUrl,
+          availability: item.availability,
+          response_status: item.response_status,
+          duration_ms: item.duration_ms,
+          transfer_size_bytes: item.transfer_size_bytes
+        });
+      } else {
+        items.push({
+          kind: item.kind,
+          observed_at: item.observed_at,
+          source_url: sourceUrl,
+          effective_directive: item.effective_directive,
+          disposition: item.disposition,
+          document_status_code: item.document_status_code
+        });
+      }
+    }
+    return { version: parsed.data.version, items };
+  }
+  function sanitizeExecutionBlock(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw)) {
+      return null;
+    }
+    const parsed = ExecutionContextSchema.safeParse(raw);
+    if (!parsed.success) {
+      return null;
+    }
+    const name = parsed.data.name === null ? null : scrubString(parsed.data.name, options);
+    if (parsed.data.name !== null && name === null) {
+      return null;
+    }
+    return {
+      version: parsed.data.version,
+      kind: parsed.data.kind,
+      name,
+      elapsed_ms: parsed.data.elapsed_ms,
+      limit_ms: parsed.data.limit_ms
+    };
+  }
+  function sanitizeDiagnosticContextPayload(raw, options) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw)) {
+      return null;
+    }
+    const parsed = DiagnosticContextPayloadSchema.safeParse(raw);
+    if (!parsed.success) {
+      return null;
+    }
+    if (parsed.data.kind === "recovery") {
+      const operation = parsed.data.operation === void 0 ? void 0 : scrubString(parsed.data.operation, options);
+      if (parsed.data.operation !== void 0 && operation === null) {
+        return null;
+      }
+      return {
+        version: parsed.data.version,
+        kind: parsed.data.kind,
+        failure_ref: parsed.data.failure_ref,
+        scope: parsed.data.scope,
+        attempt_id: parsed.data.attempt_id,
+        state: parsed.data.state,
+        ...operation === void 0 ? {} : { operation },
+        ...parsed.data.status_code === void 0 ? {} : { status_code: parsed.data.status_code },
+        ...parsed.data.duration_ms === void 0 ? {} : { duration_ms: parsed.data.duration_ms }
+      };
+    }
+    const observations = sanitizeResourceObservationsBlock(parsed.data.observations, options);
+    if (observations === null) {
+      return null;
+    }
+    return {
+      version: parsed.data.version,
+      kind: parsed.data.kind,
+      failure_ref: parsed.data.failure_ref,
+      scope: parsed.data.scope,
+      source_event_id: parsed.data.source_event_id,
+      observations
+    };
+  }
+  function isValidEvidenceLimits(raw) {
+    if (!isPlainObject2(raw) || !isPlainDataTree(raw) || !hasOnlyAllowedKeys(raw, ALLOWED_EVIDENCE_LIMIT_KEYS)) {
+      return false;
+    }
+    if (raw["version"] !== 1) {
+      return false;
+    }
+    for (const [key2, value] of Object.entries(raw)) {
+      if (key2 === "version")
+        continue;
+      if (typeof value !== "string" || !ALLOWED_EVIDENCE_LIMIT_REASONS.has(value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function shallowClonePlainOwn(record2) {
+    const clone2 = {};
+    for (const key2 of Object.keys(record2)) {
+      const entry = readOwnData(record2, key2);
+      if (!entry.ok)
+        return null;
+      clone2[key2] = entry.value;
+    }
+    return clone2;
+  }
+  function protectBrowserEvent(event, additionalKeys, exactKeys = []) {
+    var _a5;
+    const options = { additionalKeys, exactKeys };
     const fallback = () => {
       var _a6;
       const reduced = withoutOptionalExceptionEvidence(event, true);
       if (reduced === null)
         return null;
-      return (_a6 = protectBrowserEvent(reduced, additionalKeys)) != null ? _a6 : protectBrowserEvent(withoutOptionalExceptionEvidence(event, false), additionalKeys);
+      return (_a6 = protectBrowserEvent(reduced, additionalKeys, exactKeys)) != null ? _a6 : protectBrowserEvent(withoutOptionalExceptionEvidence(event, false), additionalKeys, exactKeys);
     };
     for (const value of [
       event.schema_version,
@@ -24694,27 +25845,116 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     ]) {
       if (typeof value !== "string")
         continue;
-      const checked = sanitizeTelemetry(value, { additionalKeys });
+      const checked = sanitizeTelemetry(value, options);
       if (!checked.ok || checked.value !== value)
         return null;
     }
-    const graph = event.event_type === "backend_exception" || event.event_type === "frontend_exception" ? event.payload.exception_evidence : void 0;
-    const payload = graph === void 0 ? event.payload : { ...event.payload, exception_evidence: { ...graph, nodes: graph.nodes.map((node2) => ({
-      ...node2,
-      stack: node2.stack === null ? null : sanitizeBrowserStackUrls(node2.stack),
-      frames: node2.frames.map((frame2) => ({ ...frame2, file: frame2.file === null ? null : sanitizeBrowserStackUrls(frame2.file) }))
-    })) } };
-    const result = sanitizeTelemetry({ payload, service: event.service, context: (_b = event.context) != null ? _b : {} }, {
-      additionalKeys
-    });
-    if (!result.ok)
+    if (!isPlainObject2(event.payload)) {
       return fallback();
-    const protectedFields = Object(result.value);
+    }
+    const rawPayload = shallowClonePlainOwn(event.payload);
+    if (rawPayload === null) {
+      return null;
+    }
+    const preservedPayloadFields = {};
+    let diagnosticPayload = null;
+    if (event.event_type === "diagnostic_context") {
+      diagnosticPayload = sanitizeDiagnosticContextPayload(rawPayload, options);
+      if (diagnosticPayload === null) {
+        return null;
+      }
+    } else {
+      if (event.event_type === "frontend_exception") {
+        if (Object.prototype.hasOwnProperty.call(rawPayload, "browser_event") && rawPayload["browser_event"] !== void 0) {
+          const safeBrowserEvent = sanitizeBrowserEventBlock(rawPayload["browser_event"], options);
+          if (safeBrowserEvent !== null) {
+            preservedPayloadFields["browser_event"] = safeBrowserEvent;
+            delete rawPayload["browser_event"];
+          }
+        }
+        if (Object.prototype.hasOwnProperty.call(rawPayload, "rejection_reason") && rawPayload["rejection_reason"] !== void 0) {
+          const safeRejectionReason = sanitizeRejectionReasonBlock(rawPayload["rejection_reason"], options);
+          if (safeRejectionReason !== null) {
+            preservedPayloadFields["rejection_reason"] = safeRejectionReason;
+            delete rawPayload["rejection_reason"];
+          }
+        }
+        if (Object.prototype.hasOwnProperty.call(rawPayload, "resource_observations") && rawPayload["resource_observations"] !== void 0) {
+          const safeObservations = sanitizeResourceObservationsBlock(rawPayload["resource_observations"], options);
+          if (safeObservations !== null) {
+            preservedPayloadFields["resource_observations"] = safeObservations;
+            delete rawPayload["resource_observations"];
+          }
+        }
+      }
+      if (event.event_type === "backend_exception" || event.event_type === "frontend_exception") {
+        if (Object.prototype.hasOwnProperty.call(rawPayload, "exception_evidence") && rawPayload["exception_evidence"] !== void 0) {
+          const safeGraph = sanitizeExceptionEvidenceBlock(rawPayload["exception_evidence"], options);
+          if (safeGraph !== null) {
+            preservedPayloadFields["exception_evidence"] = safeGraph;
+            delete rawPayload["exception_evidence"];
+          }
+        }
+      }
+      if (event.event_type === "backend_exception") {
+        if (Object.prototype.hasOwnProperty.call(rawPayload, "execution") && rawPayload["execution"] !== void 0) {
+          const safeExecution = sanitizeExecutionBlock(rawPayload["execution"], options);
+          if (safeExecution !== null) {
+            preservedPayloadFields["execution"] = safeExecution;
+            delete rawPayload["execution"];
+          }
+        }
+      }
+      if (event.event_type === "error_suppressed" && rawPayload["reason"] === "queue_pressure") {
+        preservedPayloadFields["reason"] = "queue_pressure";
+        delete rawPayload["reason"];
+      }
+    }
+    let rawContext = {};
+    const preservedContextFields = {};
+    if (event.context !== void 0) {
+      if (!isPlainObject2(event.context)) {
+        return fallback();
+      }
+      const clonedContext = shallowClonePlainOwn(event.context);
+      if (clonedContext === null) {
+        return null;
+      }
+      rawContext = clonedContext;
+      if (Object.prototype.hasOwnProperty.call(rawContext, "evidence_reference") && isPlainDataTree(rawContext["evidence_reference"])) {
+        const parsedRef = EvidenceReferenceSchema.safeParse(rawContext["evidence_reference"]);
+        if (parsedRef.success) {
+          preservedContextFields["evidence_reference"] = parsedRef.data;
+          delete rawContext["evidence_reference"];
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(rawContext, "evidence_limits") && isValidEvidenceLimits(rawContext["evidence_limits"])) {
+        preservedContextFields["evidence_limits"] = rawContext["evidence_limits"];
+        delete rawContext["evidence_limits"];
+      }
+    }
+    const result = sanitizeTelemetry({
+      payload: diagnosticPayload === null ? rawPayload : {},
+      service: event.service,
+      context: rawContext
+    }, options);
+    if (!result.ok || !isPlainObject2(result.value))
+      return fallback();
+    const protectedPayload = diagnosticPayload !== null ? diagnosticPayload : isPlainObject2(result.value["payload"]) ? { ...result.value["payload"], ...preservedPayloadFields } : result.value["payload"];
+    const protectedContext = isPlainObject2(result.value["context"]) ? { ...result.value["context"], ...preservedContextFields } : result.value["context"];
+    const assembled = {
+      payload: protectedPayload,
+      service: result.value["service"],
+      ...event.context === void 0 ? {} : { context: protectedContext }
+    };
+    if (new TextEncoder().encode(JSON.stringify(assembled)).length > MAX_PROTECTED_BYTES) {
+      return fallback();
+    }
     const parsed = EventEnvelopeSchema.safeParse({
       ...event,
-      payload: protectedFields["payload"],
-      service: protectedFields["service"],
-      ...event.context === void 0 ? {} : { context: protectedFields["context"] }
+      payload: assembled.payload,
+      service: assembled.service,
+      ...event.context === void 0 ? {} : { context: assembled.context }
     });
     if (parsed.success) {
       const fitted = fitEventToIngestionWire(parsed.data);
@@ -24724,7 +25964,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return fallback();
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/evidence-controller.js
   function browserEvidenceEndpoint(endpoint) {
     const hashAt = endpoint.indexOf("#"), clean = hashAt < 0 ? endpoint : endpoint.slice(0, hashAt);
     return `${clean}${clean.includes("?") ? "&" : "?"}debugbundle_evidence=1`;
@@ -24759,7 +25999,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         if (config3 === null || policy === null || !this.allowedResources(config3, policy))
           return;
         try {
-          const raw = (_a5 = this.late) == null ? void 0 : _a5.call(this, source, payload), event = raw ? protectBrowserEvent(raw, config3.redactFields) : null;
+          const raw = (_a5 = this.late) == null ? void 0 : _a5.call(this, source, payload), event = raw ? protectBrowserEvent(raw, config3.redactFields, config3.redactExactFields) : null;
           if ((event == null ? void 0 : event.event_type) === "diagnostic_context" && this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
             (_b = this.enqueue) == null ? void 0 : _b.call(this, event);
         } catch {
@@ -24869,7 +26109,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       });
       if (!parsed.success)
         return;
-      const event = protectBrowserEvent(create(parsed.data), config3.redactFields);
+      const event = protectBrowserEvent(create(parsed.data), config3.redactFields, config3.redactExactFields);
       if ((event == null ? void 0 : event.event_type) !== "diagnostic_context" || !this.budget.reserve(event.event_id, event.payload, this.bytes(event), Date.now()))
         return;
       enqueue(event);
@@ -24912,7 +26152,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/diagnostic-capture.js
   function createBrowserDiagnosticEvent(config3, payload, correlation, service) {
     const event = createEventEnvelope({
       schema_version: SDK_SCHEMA_VERSION,
@@ -24930,7 +26170,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return event;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/exception-evidence.js
   var NativeError = Error;
   var nativeStackDescriptor;
   var nativePrototypes = /* @__PURE__ */ new Set([
@@ -25090,7 +26330,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return (parsed == null ? void 0 : parsed.success) ? parsed.data : void 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/capture-exception.js
   function createBrowserExceptionEvent(input2) {
     var _a5, _b, _c;
     const { error: error62, context, config: config3, device, breadcrumbs, probeData, route, correlation, evidence } = input2;
@@ -25148,7 +26388,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return event;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/analytics-friction.js
   var FRICTION_CLICK_THRESHOLD = 3;
   var FRICTION_CLICK_WINDOW_MS = 2e3;
   var FRICTION_CLICK_COOLDOWN_MS = 1e4;
@@ -25203,7 +26443,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/analytics-normalization.js
   var MAX_CUSTOM_DIMENSIONS = 8;
   var MAX_CUSTOM_KEY_LENGTH = 64;
   var MAX_CUSTOM_STRING_LENGTH = 128;
@@ -25398,8 +26638,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     if (typeof ((_a5 = cryptoSource == null ? void 0 : cryptoSource.subtle) == null ? void 0 : _a5.digest) !== "function" || TextEncoderConstructor === void 0) {
       return null;
     }
-    const digest = await cryptoSource.subtle.digest("SHA-256", new TextEncoderConstructor().encode(value));
-    return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+    const digest2 = await cryptoSource.subtle.digest("SHA-256", new TextEncoderConstructor().encode(value));
+    return `sha256:${Array.from(new Uint8Array(digest2), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
   }
   function normalizeSignalKey(value) {
     if (typeof value !== "string") {
@@ -25477,7 +26717,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/analytics.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/analytics.js
   var ANALYTICS_EVENT_SCHEMA_VERSION2 = "2026-07-analytics-01";
   var HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
   var MAX_PENDING_STANDARD_EVENTS = 16;
@@ -25888,7 +27128,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/before-send.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/before-send.js
   function cloneEvent(event) {
     return JSON.parse(JSON.stringify(event));
   }
@@ -25933,7 +27173,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return EventEnvelopeSchema.safeParse(reduced);
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/capture-helpers.js
   var DEFAULT_REQUEST_FAILURE_PRESET2 = "balanced";
   var DEFAULT_REQUEST_CAPTURE_EVENTS2 = "failures_only";
   var DEFAULT_IMMEDIATE_CLIENT_ERROR_STATUSES2 = [];
@@ -25961,13 +27201,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   function normalizeUnhandledRejectionReason(reason) {
     var _a5, _b;
     if (hasErrorDetails(reason) && typeof readNativeField(reason, "stack") === "string") {
-      const fields = readNativeFields(reason, ["name", "message"]);
+      const fields2 = readNativeFields(reason, ["name", "message"]);
       return {
         error: reason,
         rejectionReason: {
           kind: "error",
-          name: (_a5 = readReasonStringField(fields, "name")) != null ? _a5 : "Error",
-          message: truncateRejectionReasonPreview((_b = readReasonStringField(fields, "message")) != null ? _b : "Unknown rejection error")
+          name: (_a5 = readReasonStringField(fields2, "name")) != null ? _a5 : "Error",
+          message: truncateRejectionReasonPreview((_b = readReasonStringField(fields2, "message")) != null ? _b : "Unknown rejection error")
         }
       };
     }
@@ -26087,7 +27327,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/resource-origin.js
   function httpUrl2(value, base) {
     if (typeof value !== "string" || !value || value.length > 4096 || /[\u0000-\u0020\u007f]/.test(value))
       return null;
@@ -26115,7 +27355,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return {};
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/capture-rules.js
   function asRecord2(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
       return null;
@@ -26666,7 +27906,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return null;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/event-pipeline.js
   function applyBrowserCaptureRules(input2) {
     var _a5;
     const { config: config3, event } = input2;
@@ -26752,7 +27992,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/hooks.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/hooks.js
   var MUTATING_METHODS = /* @__PURE__ */ new Set(["POST", "PUT", "PATCH", "DELETE"]);
   var INTERESTING_RESPONSE_HEADERS = [
     "content-type",
@@ -27143,11 +28383,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
-  function captureNativeError(event, capture) {
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/native-error-hooks.js
+  function captureNativeError(event, capture, options) {
     var _a5;
     try {
-      const browserEvent = normalizeBrowserErrorEvent(event);
+      const browserEvent = normalizeBrowserErrorEvent(event, options);
       const fallback = browserEvent.kind === "resource_error" ? "Browser resource load error" : "Window error";
       const error62 = readNativeField(event, "error");
       capture(hasErrorDetails(error62) || typeof error62 === "string" ? error62 : (_a5 = browserEvent.message) != null ? _a5 : fallback, { browser_event: browserEvent });
@@ -27162,7 +28402,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/suppression.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/suppression.js
   var DUPLICATE_WINDOW_MS = 3e4;
   var LOOP_WINDOW_MS = 2e3;
   var LOOP_THRESHOLD = 10;
@@ -27331,7 +28571,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }
   };
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/transport-lane.js
   function createLane() {
     return {
       events: [],
@@ -27566,7 +28806,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     invalidateAdmission(lane);
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/ingestion-acknowledgement.js
   var RETRYABLE_REASONS = /* @__PURE__ */ new Set([
     "rate_limited",
     "monthly_quota_exceeded",
@@ -27613,7 +28853,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return typeof value === "number" && Number.isInteger(value) && value >= 0;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/event-transport.js
   var BrowserEventTransport = class {
     constructor(callbacks) {
       __publicField(this, "callbacks");
@@ -28207,7 +29447,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/trigger-token.js
   var PROBE_TRIGGER_TOKEN_PREFIX = "dbundle_probe_";
   function decodeBase64Url(segment) {
     try {
@@ -28296,7 +29536,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/probes.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/probes.js
   var evidencePolicySchema = ResolvedCapturePolicySchema.partial();
   function validEvidenceConfig(payload, status) {
     if (status < 200 || status >= 300 || payload === null || typeof payload !== "object" || Array.isArray(payload))
@@ -28342,7 +29582,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         return;
       }
       try {
-        const protectedData = sanitizeTelemetry(normalizeProbeInput(data), { additionalKeys: config3.redactFields });
+        const protectedData = sanitizeTelemetry(normalizeProbeInput(data), {
+          additionalKeys: config3.redactFields,
+          exactKeys: config3.redactExactFields
+        });
         if (!protectedData.ok)
           return;
         const probeData = normalizeUnknownRecord(protectedData.value);
@@ -28518,7 +29761,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return pattern === label;
   }
 
-  // node_modules/.pnpm/@debugbundle+sdk-browser@3.2.4/node_modules/@debugbundle/sdk-browser/dist/index.js
+  // node_modules/.pnpm/@debugbundle+sdk-browser@3.3.0/node_modules/@debugbundle/sdk-browser/dist/index.js
   var BrowserSdk = class {
     constructor() {
       __publicField(this, "config", null);
@@ -28537,6 +29780,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       __publicField(this, "originalConsoleWarn", null);
       __publicField(this, "sessionSampledIn", true);
       __publicField(this, "sessionEventCount", 0);
+      __publicField(this, "pageUnloading", false);
       __publicField(this, "internalDiagnostics", new BrowserInternalDiagnostics());
       __publicField(this, "pendingEventOptions", /* @__PURE__ */ new WeakMap());
       __publicField(this, "suppressionTracker", new EventSuppressionTracker());
@@ -28565,12 +29809,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             this.evidence.release(event);
         },
         onUnauthorized: (lane, statusCode, endpoint, body) => {
-          var _a5, _b;
-          this.internalDiagnostics.unauthorized(lane, statusCode, endpoint, body, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : []);
+          var _a5, _b, _c, _d;
+          this.internalDiagnostics.unauthorized(lane, statusCode, endpoint, body, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : [], (_d = (_c = this.config) == null ? void 0 : _c.redactExactFields) != null ? _d : []);
         },
         onAcknowledgementDiagnostic: (lane, code, detail) => {
-          var _a5, _b;
-          this.internalDiagnostics.acknowledgement(lane, code, detail, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : []);
+          var _a5, _b, _c, _d;
+          this.internalDiagnostics.acknowledgement(lane, code, detail, (_b = (_a5 = this.config) == null ? void 0 : _a5.redactFields) != null ? _b : [], (_d = (_c = this.config) == null ? void 0 : _c.redactExactFields) != null ? _d : []);
         }
       }));
       __publicField(this, "analyticsController", new BrowserAnalyticsController({
@@ -28596,7 +29840,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       return this.eventTransport.lastEventAt;
     }
     init(config3) {
-      var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+      var _a5, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
       this.dispose();
       const enabled = (_a5 = config3.enabled) != null ? _a5 : true;
       const resolvedTransport = resolveBrowserTransport({
@@ -28613,12 +29857,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         service: ((_c = config3.service) == null ? void 0 : _c.trim()) || "browser-app",
         enabled,
         redactFields: (_d = config3.redactFields) != null ? _d : ["password", "secret", "token", "authorization", "cookie", "ssn", "credit_card"],
+        redactExactFields: (_e = config3.redactExactFields) != null ? _e : [],
         tracePropagationTargets: normalizeTracePropagationTargets(config3.tracePropagationTargets),
         sampleRate: normalizeSampleRate(config3.sampleRate, DEFAULT_SAMPLE_RATE),
         batchSize: normalizePositiveNumber(config3.batchSize, DEFAULT_BATCH_SIZE),
         flushInterval: normalizePositiveNumber(config3.flushInterval, DEFAULT_FLUSH_INTERVAL_MS),
         endpoint: resolvedTransport.endpoint,
-        logLevel: normalizeLogLevel((_e = config3.logLevel) != null ? _e : DEFAULT_LOG_LEVEL),
+        logLevel: normalizeLogLevel((_f = config3.logLevel) != null ? _f : DEFAULT_LOG_LEVEL),
         maxBreadcrumbs: normalizePositiveNumber(config3.maxBreadcrumbs, DEFAULT_MAX_BREADCRUMBS),
         breadcrumbsOnErrorOnly: normalizeBoolean(config3.breadcrumbsOnErrorOnly, true),
         captureNetwork: normalizeBoolean(config3.captureNetwork, true),
@@ -28632,14 +29877,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         maxProbeEntriesPerLabel: normalizePositiveNumber(config3.maxProbeEntriesPerLabel, 10),
         probeFlushOnError: normalizeBoolean(config3.probeFlushOnError, true),
         requestTimeoutMs: normalizePositiveNumber(config3.requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS),
-        captureExceptionEvidence: (_f = config3.captureExceptionEvidence) != null ? _f : true,
-        captureRecoveryObservations: (_g = config3.captureRecoveryObservations) != null ? _g : false,
-        captureResourceObservations: (_h = config3.captureResourceObservations) != null ? _h : true,
+        captureExceptionEvidence: (_g = config3.captureExceptionEvidence) != null ? _g : true,
+        captureRecoveryObservations: (_h = config3.captureRecoveryObservations) != null ? _h : false,
+        captureResourceObservations: (_i = config3.captureResourceObservations) != null ? _i : true,
         discoverEvidence: config3.transport === void 0,
-        requestsAnalyticsConfig: ((_i = config3.analytics) == null ? void 0 : _i.enabled) === true,
+        requestsAnalyticsConfig: ((_j = config3.analytics) == null ? void 0 : _j.enabled) === true,
         captureRules: [],
         fetchImpl: getFetchSource(),
-        transport: (_j = config3.transport) != null ? _j : createFetchTransport(),
+        transport: (_k = config3.transport) != null ? _k : createFetchTransport(),
         requireAcknowledgement: config3.transport === void 0 && resolvedTransport.mode === "direct",
         transportMode: resolvedTransport.mode,
         ...config3.beforeSend === void 0 ? {} : { beforeSend: config3.beforeSend }
@@ -28650,6 +29895,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.eventTransport.configure(this.config);
       this.sessionSampledIn = this.config.sessionSampleRate >= 1 || Math.random() < this.config.sessionSampleRate;
       this.sessionEventCount = 0;
+      this.pageUnloading = false;
       this.browserSessionId = createBrowserTraceId();
       this.deviceInfo = collectDeviceInfo();
       const deferAnalyticsCapture = this.config.requestsAnalyticsConfig && this.config.transportMode === "direct" && this.config.projectToken !== null && this.config.fetchImpl !== null;
@@ -28728,7 +29974,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         const protectedAttributes = sanitizeTelemetry({
           ...this.persistentContext,
           ...normalizeUnknownRecord(context)
-        }, { additionalKeys: config3.redactFields });
+        }, { additionalKeys: config3.redactFields, exactKeys: config3.redactExactFields });
         if (!protectedAttributes.ok || protectedAttributes.value === null || Array.isArray(protectedAttributes.value) || typeof protectedAttributes.value !== "object")
           return;
         const attributes = protectedAttributes.value;
@@ -28774,7 +30020,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         return;
       }
       try {
-        const result = sanitizeTelemetry({ ...this.persistentContext, [key2]: value }, { additionalKeys: config3.redactFields });
+        const result = sanitizeTelemetry({ ...this.persistentContext, [key2]: value }, { additionalKeys: config3.redactFields, exactKeys: config3.redactExactFields });
         if (!result.ok || result.value === null || Array.isArray(result.value) || typeof result.value !== "object")
           return;
         this.persistentContext = result.value;
@@ -28806,6 +30052,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       this.config = null;
       this.sessionSampledIn = true;
       this.sessionEventCount = 0;
+      this.pageUnloading = false;
       this.internalDiagnostics.reset();
       this.suppressionTracker.reset();
       this.probeController.reset();
@@ -28844,15 +30091,21 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       const windowSource = getWindowSource();
       if (windowSource !== null) {
         const onPageHide = (event) => {
+          this.pageUnloading = true;
           if (readNativeField(event, "persisted") !== true) {
             this.analyticsController.captureSessionSummary();
           }
           this.flushViaBeacon();
         };
+        const onPageShow = () => {
+          this.pageUnloading = false;
+        };
         const onError = (event) => {
           if (!this.eventTransport.canCaptureDebug("frontend_exception"))
             return;
-          captureNativeError(event, (error62, context) => this.captureException(error62, context));
+          captureNativeError(event, (error62, context) => this.captureException(error62, context), {
+            pageUnloading: this.pageUnloading
+          });
         };
         const onUnhandledRejection = (event) => {
           if (!this.eventTransport.canCaptureDebug("frontend_exception"))
@@ -28860,9 +30113,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           captureNativeRejection(event, (error62, context) => this.captureException(error62, context));
         };
         windowSource.addEventListener("pagehide", onPageHide);
+        windowSource.addEventListener("pageshow", onPageShow);
         windowSource.addEventListener("error", onError, true);
         windowSource.addEventListener("unhandledrejection", onUnhandledRejection);
         this.registeredListeners.push(() => windowSource.removeEventListener("pagehide", onPageHide));
+        this.registeredListeners.push(() => windowSource.removeEventListener("pageshow", onPageShow));
         this.registeredListeners.push(() => windowSource.removeEventListener("error", onError, true));
         this.registeredListeners.push(() => windowSource.removeEventListener("unhandledrejection", onUnhandledRejection));
       }
@@ -28969,7 +30224,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
       if (config3.breadcrumbsOnErrorOnly !== true && !this.eventTransport.canCaptureDebug("frontend_breadcrumb"))
         return;
-      const protectedBreadcrumb = sanitizeTelemetry(breadcrumb, { additionalKeys: config3.redactFields });
+      const protectedBreadcrumb = sanitizeTelemetry(breadcrumb, {
+        additionalKeys: config3.redactFields,
+        exactKeys: config3.redactExactFields
+      });
       if (!protectedBreadcrumb.ok || protectedBreadcrumb.value === null || Array.isArray(protectedBreadcrumb.value) || typeof protectedBreadcrumb.value !== "object")
         return;
       breadcrumb = protectedBreadcrumb.value;
@@ -29140,7 +30398,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         this.evidence.release(event);
         return;
       }
-      const protectedInput = protectBrowserEvent(event, config3.redactFields);
+      const protectedInput = protectBrowserEvent(event, config3.redactFields, config3.redactExactFields);
       if (protectedInput === null) {
         this.evidence.release(event);
         return;
@@ -29169,7 +30427,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       const replacement = applyBrowserBeforeSend(event, config3.beforeSend);
       if (replacement === null || this.config !== config3)
         return null;
-      const protectedResult = protectBrowserEvent(replacement, config3.redactFields);
+      const protectedResult = protectBrowserEvent(replacement, config3.redactFields, config3.redactExactFields);
       if (protectedResult === null)
         return null;
       if (protectedResult.event_type === "log_event" && LOG_LEVEL_ORDER[normalizeLogLevel(protectedResult.payload.level)] < LOG_LEVEL_ORDER[config3.logLevel])
