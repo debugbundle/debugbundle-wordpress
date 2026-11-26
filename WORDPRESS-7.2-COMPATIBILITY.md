@@ -18,8 +18,9 @@ WP-CLI, its upstream MD5 verified, and its installed version checked before
 activating the plugin. The installer needs 512 MiB for extraction; the first
 attempt failed at WP-CLI's default 128 MiB before plugin activation.
 
-No existing WordPress installation, consumer product, production configuration,
-production telemetry, or public distribution was changed.
+Initial qualification changed no existing WordPress installation, consumer
+product, production configuration, production telemetry or public distribution.
+The subsequent approved publication below changes only two directory readmes.
 
 ## Checks and evidence
 
@@ -98,14 +99,14 @@ Local changes update `readme.txt` to `Tested up to: 7.2`, its metadata regressio
 and README qualification instructions. The smoke harness can download an exact
 RC without a Docker core tag, records the actual runtime and optionally runs
 Plugin Check. CI retains the previous WordPress 7.1.1 smoke and adds 7.2-RC3 on
-PHP 8.2/8.6 plus PHP 8.6 unit/static analysis. These CI changes have been reviewed
-locally; no remote workflow was dispatched.
+PHP 8.2/8.6 plus PHP 8.6 unit/static analysis. These changes passed local review
+and the remote CI run recorded below.
 
 **Retain** WordPress 2.2.0, PHP 2.2.0, Browser 3.3.0 and every other distribution
-version: no shipped runtime behaviour or dependency changed. After explicit
-publication approval, update only the `Tested up to` line in WordPress.org SVN
-`trunk/readme.txt` and `tags/2.2.0/readme.txt`, verifying the stable tag and reading
-the directory metadata back. Do not use the full release workflow to rebuild or
+version: no shipped runtime behaviour or dependency changed. The approved
+publication updated only the `Tested up to` line in WordPress.org SVN
+`trunk/readme.txt` and `tags/2.2.0/readme.txt`, verified the stable tag and read the
+directory metadata back. The full release workflow was not used to rebuild or
 replace the retained plugin version. Recheck against the final 7.2 release when
 available; consumer installation remains separately authorised.
 
@@ -113,11 +114,29 @@ The manual `update-wordpress-compatibility.yml` workflow prepares that exact
 two-readme diff using the existing GitHub WordPress.org credentials. Its target
 is fixed to plugin 2.2.0 and WordPress 7.2; unexpected stable tags or previous
 compatibility values fail before writing. A subsequent run is idempotent. The
-workflow needs to be committed/pushed before it can be dispatched; it has not
-been published or run yet.
+workflow was committed, pushed and dispatched with explicit owner approval.
 
 The preparation step was validated against both current SVN readmes: each diff
 contains only `Tested up to: 7.1` to `7.2`. Local checks passed for idempotence,
 changed stable tags, unexpected/duplicate compatibility fields, refusal of any
 third path or property change, and no partial writes when either readme fails
 validation. Receipts are under `.tmp/wordpress-7.2/publication/`.
+
+## Publication receipts
+
+- Source commit: [`d97823d5902a20ff6e3a6cbe2b97942a2472df75`](https://github.com/debugbundle/debugbundle-wordpress/commit/d97823d5902a20ff6e3a6cbe2b97942a2472df75).
+- [CI run 45824702322](https://github.com/debugbundle/debugbundle-wordpress/actions/runs/45824702322)
+  passed all ten jobs: PHP 8.2–8.6, browser build, coverage, and three installed
+  WordPress smoke lanes (7.1.1/PHP 8.2 and 7.2-RC3/PHP 8.2/8.6).
+- [Readme-only publication run 45825069549](https://github.com/debugbundle/debugbundle-wordpress/actions/runs/45825069549)
+  succeeded at 13:01 UTC on 26 November 2026. SVN revision **3827011** changed
+  only `trunk/readme.txt` and `tags/2.2.0/readme.txt`: `Tested up to: 7.1` → `7.2`.
+- Independent public readback verified both readmes byte-for-byte against their
+  previous contents with that one-line replacement. The WordPress.org plugin
+  information API reports `version: "2.2.0"` and `tested: "7.2"`.
+- The plugin version and dependency versions were retained. No consumer site
+  was installed, updated or otherwise changed by this publication.
+
+Ignored receipts include `ci-result.json`, `published-run.log`,
+`trunk-readme-published.txt`, `stable-readme-published.txt`, and
+`directory-before.json` / `directory-after.json` under the publication directory.
