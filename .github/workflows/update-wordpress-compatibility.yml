@@ -1,0 +1,101 @@
+name: update-wordpress-compatibility
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wordpress-compatibility
+  cancel-in-progress: false
+
+jobs:
+  readme-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLUGIN_VERSION: '2.2.0'
+      PREVIOUS_TESTED_VERSION: '7.1'
+      TESTED_VERSION: '7.2'
+    steps:
+      - name: Install Subversion
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes subversion
+
+      - name: Check out only the published readmes
+        shell: bash
+        run: |
+          set -euo pipefail
+          svn checkout --non-interactive --depth empty \
+            https://plugins.svn.wordpress.org/debugbundle "$RUNNER_TEMP/wordpress-compatibility"
+          cd "$RUNNER_TEMP/wordpress-compatibility"
+          svn update --non-interactive --depth empty trunk tags
+          svn update --non-interactive --depth empty "tags/$PLUGIN_VERSION"
+          svn update --non-interactive trunk/readme.txt "tags/$PLUGIN_VERSION/readme.txt"
+
+      - name: Prepare and validate the exact compatibility diff
+        working-directory: ${{ runner.temp }}/wordpress-compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          version = os.environ['PLUGIN_VERSION']
+          old = ('Tested up to: ' + os.environ['PREVIOUS_TESTED_VERSION']).encode()
+          new = ('Tested up to: ' + os.environ['TESTED_VERSION']).encode()
+          prepared = []
+          for path in [Path('trunk/readme.txt'), Path('tags') / version / 'readme.txt']:
+              data = path.read_bytes()
+              lines = data.splitlines(keepends=True)
+              if data.splitlines().count(('Stable tag: ' + version).encode()) != 1:
+                  raise SystemExit(f'{path}: published stable tag changed')
+              tested = [line for line in data.splitlines() if line.startswith(b'Tested up to:')]
+              if tested not in [[old], [new]]:
+                  raise SystemExit(f'{path}: unexpected published compatibility metadata')
+              replacement = b''.join(new + line[len(old):] if line.rstrip(b'\r\n') == old else line for line in lines)
+              prepared.append((path, replacement))
+          # Validate both readmes before writing either; preserve every other byte.
+          for path, data in prepared:
+              path.write_bytes(data)
+          PY
+          svn status --xml > "$RUNNER_TEMP/wordpress-compatibility-status.xml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          allowed = {'trunk/readme.txt', 'tags/' + os.environ['PLUGIN_VERSION'] + '/readme.txt'}
+          status = ET.parse(Path(os.environ['RUNNER_TEMP']) / 'wordpress-compatibility-status.xml')
+          for entry in status.findall('.//entry'):
+              state = entry.find('wc-status')
+              if entry.attrib['path'] not in allowed or state.attrib['item'] != 'modified' or state.attrib['props'] != 'none':
+                  raise SystemExit('Refusing a change outside the two readmes')
+          PY
+          svn diff
+
+      - name: Publish only the two readmes
+        working-directory: ${{ runner.temp }}/wordpress-compatibility
+        shell: bash
+        env:
+          WORDPRESS_ORG_USERNAME: ${{ secrets.WORDPRESS_ORG_USERNAME }}
+          WORDPRESS_ORG_PASSWORD: ${{ secrets.WORDPRESS_ORG_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$WORDPRESS_ORG_USERNAME"
+          test -n "$WORDPRESS_ORG_PASSWORD"
+          if [[ -n "$(svn status)" ]]; then
+            svn commit trunk/readme.txt "tags/$PLUGIN_VERSION/readme.txt" \
+              -m "Mark DebugBundle $PLUGIN_VERSION tested up to WordPress $TESTED_VERSION" \
+              --username "$WORDPRESS_ORG_USERNAME" --password "$WORDPRESS_ORG_PASSWORD" \
+              --non-interactive --no-auth-cache
+          fi
+          for path in trunk/readme.txt "tags/$PLUGIN_VERSION/readme.txt"; do
+            svn cat --non-interactive "https://plugins.svn.wordpress.org/debugbundle/$path" \
+              > "$RUNNER_TEMP/wordpress-published-readme.txt"
+            grep -Fx "Stable tag: $PLUGIN_VERSION" "$RUNNER_TEMP/wordpress-published-readme.txt"
+            grep -Fx "Tested up to: $TESTED_VERSION" "$RUNNER_TEMP/wordpress-published-readme.txt"
+          done

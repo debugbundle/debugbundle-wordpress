@@ -25,7 +25,7 @@ for activation and runtime limits.
 
 <a id="install"></a>
 
-- WordPress 6.5 or newer (tested through WordPress 7.1)
+- WordPress 6.5 or newer (WordPress 7.2 compatibility tested against 7.2-RC3)
 - PHP 8.2 or newer
 
 1. Install **DebugBundle** from the [WordPress.org plugin directory](https://wordpress.org/plugins/debugbundle/).
@@ -136,6 +136,28 @@ make smoke-wordpress
 
 The local smoke uses the published PHP SDK version pinned in `composer.lock`. CI may additionally set `DEBUGBUNDLE_PHP_SDK_CHECKOUT` to exercise a coordinated PHP SDK checkout before that dependency is published.
 
+To test an exact WordPress release candidate without waiting for an official
+Docker tag, set `WORDPRESS_SMOKE_DOWNLOAD_CORE=1`. Core is downloaded into the
+disposable volume and its exact version is verified before plugin activation:
+
+```bash
+WORDPRESS_SMOKE_DOWNLOAD_CORE=1 WORDPRESS_SMOKE_VERSION=7.2-RC3 \
+  WORDPRESS_SMOKE_PLUGIN_CHECK=1 make smoke-wordpress
+```
+
+Plugin Check is optional and runs its default static WP-CLI checks after the
+installed-plugin smoke. Its version and report remain under `.smoke/`; warnings
+need review even when the command succeeds. This does not run Plugin Check's
+separate runtime checks or any AI review.
+
+For PHP 8.6, also set `WORDPRESS_SMOKE_IMAGE=wordpress:php8.6-apache` and
+`WORDPRESS_SMOKE_CLI_IMAGE=wordpress:cli-php8.6`. After `make verify-docker`
+installs locked development dependencies, run the unit and static-analysis suite
+on that runtime with `make verify-runtime-docker PHP_RUNTIME_IMAGE=wordpress:cli-php8.6`.
+To qualify an existing release ZIP, place it and its matching checksum in `.dist/`
+and set `DEBUGBUNDLE_USE_ASSEMBLED_ARTIFACT=1 VERSION=2.2.0`; no source overlay is
+permitted in that mode. See [the compatibility record](https://github.com/debugbundle/debugbundle-wordpress/blob/main/WORDPRESS-7.2-COMPATIBILITY.md).
+
 For local evidence qualification, first qualify the exact ZIP, then run
 `make evidence-performance WP_VERSION=7.1.1 PHP_VERSION=8.5`. It reuses that exact
 checksum-verified ZIP in a disposable WordPress installation. The wrapper creates
@@ -170,6 +192,11 @@ make wordpress-org-assets
 
 - `.github/workflows/release.yml` runs tests, builds the browser asset, assembles the ZIP, and attaches it to a GitHub release.
 - `.github/workflows/deploy-wordpress-org.yml` publishes the built plugin to WordPress.org SVN after a GitHub release is published or via manual dispatch.
+- `.github/workflows/update-wordpress-compatibility.yml` is a manual readme-only
+  publication for the qualified WordPress 7.2 update. It checks the existing stable
+  tag and previous tested version, changes only the compatibility line in trunk
+  and tag 2.2.0, and verifies both published readmes. It succeeds without a commit
+  if both already show 7.2. It does not rebuild the plugin or create a release.
 
 Required WordPress.org workflow setup:
 

@@ -17,6 +17,7 @@ jobs:
           - '8.3'
           - '8.4'
           - '8.5'
+          - '8.6'
 
     steps:
       - name: Check out repository
@@ -85,6 +86,27 @@ jobs:
 
   smoke:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - wordpress: '7.1.1'
+            image: wordpress:7.1.1-php8.2-apache
+            cli-image: wordpress:cli-php8.2
+            download-core: '0'
+          - wordpress: '7.2-RC3'
+            image: wordpress:7.1.1-php8.2-apache
+            cli-image: wordpress:cli-php8.2
+            download-core: '1'
+          - wordpress: '7.2-RC3'
+            image: wordpress:php8.6-apache
+            cli-image: wordpress:cli-php8.6
+            download-core: '1'
+    env:
+      WORDPRESS_SMOKE_VERSION: ${{ matrix.wordpress }}
+      WORDPRESS_SMOKE_IMAGE: ${{ matrix.image }}
+      WORDPRESS_SMOKE_CLI_IMAGE: ${{ matrix.cli-image }}
+      WORDPRESS_SMOKE_DOWNLOAD_CORE: ${{ matrix.download-core }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v5

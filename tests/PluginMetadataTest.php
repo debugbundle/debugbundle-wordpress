@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 final class PluginMetadataTest extends TestCase
 {
-    public function testReleaseMetadataDeclaresWordPress71Compatibility(): void
+    public function testReleaseMetadataDeclaresWordPress72Compatibility(): void
     {
         $plugin = (string) file_get_contents(dirname(__DIR__) . '/debugbundle.php');
         $readme = (string) file_get_contents(dirname(__DIR__) . '/readme.txt');
@@ -16,7 +16,7 @@ final class PluginMetadataTest extends TestCase
         self::assertStringContainsString('Version:           2.2.0', $plugin);
         self::assertStringContainsString("define('DEBUGBUNDLE_WORDPRESS_VERSION', '2.2.0');", $plugin);
         self::assertStringContainsString("define('DEBUGBUNDLE_WORDPRESS_BROWSER_SDK_VERSION', '3.3.0');", $plugin);
-        self::assertStringContainsString('Tested up to: 7.1', $readme);
+        self::assertStringContainsString('Tested up to: 7.2', $readme);
         self::assertStringContainsString('Stable tag: 2.2.0', $readme);
     }
 

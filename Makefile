@@ -43,6 +43,12 @@ update-browser-sdk:
 verify-docker:
 	docker run --rm -v "$(CURDIR):/app" -w /app --entrypoint sh composer:2 -lc 'composer install --no-interaction --prefer-dist && composer test && composer typecheck'
 
+# Reuse the installed, locked development dependencies on a selected PHP runtime.
+.PHONY: verify-runtime-docker
+verify-runtime-docker:
+	test -n "$(PHP_RUNTIME_IMAGE)"
+	docker run --rm -v "$(CURDIR):/app" -w /app --entrypoint sh "$(PHP_RUNTIME_IMAGE)" -lc 'php -v && php vendor/bin/phpunit --configuration phpunit.xml.dist && php vendor/bin/phpstan analyse --memory-limit=512M'
+
 .PHONY: test-focused test-php-sdk check-php-sdk
 test-focused:
 	docker run --rm -v "$(CURDIR):/app" -w /app composer:2 composer test -- $(TEST_ARGS)

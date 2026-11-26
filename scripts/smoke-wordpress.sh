@@ -108,6 +108,15 @@ export DEBUGBUNDLE_WORDPRESS_PLUGIN_DIR
 
 compose up -d --wait db mock-ingestion wordpress
 
+# Release candidates need not have an official Docker tag. Replace core only in
+# this disposable volume, then verify the exact version before plugin activation.
+if [ "${WORDPRESS_SMOKE_DOWNLOAD_CORE:-0}" = "1" ]; then
+  # WP-CLI's PHP extractor exceeds its default 128 MiB on recent core archives.
+  compose run --rm -e WP_CLI_CACHE_DIR=/tmp/wp-cli-cache wpcli \
+    php -d memory_limit=512M /usr/local/bin/wp core download \
+    --version="$EXPECTED_WORDPRESS_VERSION" --force --allow-root
+fi
+
 compose run --rm wpcli wp core install \
   --allow-root \
   --url="$WP_URL" \
@@ -122,6 +131,8 @@ if [ "$wordpress_version" != "$EXPECTED_WORDPRESS_VERSION" ]; then
   echo "Expected WordPress $EXPECTED_WORDPRESS_VERSION in the compatibility smoke, got $wordpress_version" >&2
   exit 1
 fi
+php_version=$(compose exec -T wordpress php -r 'echo PHP_VERSION;')
+printf 'Compatibility runtime: WordPress %s / PHP %s\n' "$wordpress_version" "$php_version"
 
 compose run --rm wpcli wp plugin activate debugbundle --allow-root
 
@@ -429,5 +440,15 @@ PY
     if [ "$kind" = "spooled" ]; then touch "$REPO_DIR/.smoke/fail-ingestion"; fi
   done
   compose run --rm wpcli wp eval 'require "/debugbundle-smoke/verify-evidence-delivery.php";' --allow-root
+fi
+
+if [ "${WORDPRESS_SMOKE_PLUGIN_CHECK:-0}" = "1" ]; then
+  compose run --rm wpcli wp plugin install plugin-check --activate --allow-root
+  compose run --rm wpcli wp plugin get plugin-check --field=version --allow-root \
+    > "$REPO_DIR/.smoke/plugin-check-version.txt"
+  # WP-CLI's default check is static; runtime capture is exercised above.
+  compose run --rm wpcli wp plugin check debugbundle --format=json --allow-root \
+    > "$REPO_DIR/.smoke/plugin-check.json"
+  cat "$REPO_DIR/.smoke/plugin-check.json"
 fi
 echo "WordPress smoke passed: authenticated policy, PHP compatibility, exact browser asset, native and relayed evidence, durable retry, and policy revocation."

@@ -2,7 +2,7 @@
 Contributors: owenfar, debugbundle
 Tags: debugging, error-tracking, monitoring, ai, observability
 Requires at least: 6.5
-Tested up to: 7.1
+Tested up to: 7.2
 Stable tag: 2.2.0
 Requires PHP: 8.2
 License: GPLv2 or later
